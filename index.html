@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>閩海關 · 聯合調查卷宗 · 民國十七年</title>
+<meta name="description" content="一份民国十七年的渔船失踪调查卷宗。非授权人员不得开启。">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/archive.css">
+<link rel="stylesheet" href="css/corruption.css">
+<link rel="stylesheet" href="css/eye.css">
+</head>
+<body class="stage-cover">
+
+<!-- 光标即灯：全屏暗层，中心透光 -->
+<div id="lamp" aria-hidden="true"></div>
+<!-- 颗粒噪点 -->
+<canvas id="grain" aria-hidden="true"></canvas>
+<!-- 全局扫描/偏移层 -->
+<div id="drift" aria-hidden="true"></div>
+
+<!-- ============ 序幕：卷宗封面 ============ -->
+<section id="cover" aria-label="卷宗封面">
+  <div class="cover-sheet">
+    <div class="cover-holes"><i></i><i></i></div>
+    <div class="cover-head">
+      <p class="cover-org">閩 海 關 · 霞 浦 縣 公 署</p>
+      <h1 class="cover-title">聯 合 調 查 卷 宗</h1>
+      <p class="cover-year">民 國 十 七 年</p>
+      <p class="cover-no">第 <span class="blank">▉</span> 號</p>
+    </div>
+
+    <div class="cover-seal" aria-hidden="true">絕密</div>
+
+    <div class="cover-body">
+      <p class="cover-case">案由：三沙灣漁船「順發」失蹤事</p>
+      <p class="cover-warn">非授權人員不得開啟</p>
+    </div>
+
+    <div class="cover-borrow">
+      <p class="borrow-title">調 閱 記 錄</p>
+      <table class="borrow-table">
+        <tr><td>民國十七年十一月初九</td><td>教員 <b>陳守義</b></td></tr>
+        <tr><td class="borrow-empty">　　　　　　　　　　</td><td class="borrow-empty">　　　　　　</td></tr>
+        <tr><td class="borrow-empty">　　　　　　　　　　</td><td class="borrow-empty">　　　　　　</td></tr>
+      </table>
+    </div>
+
+    <p class="cover-note">本卷已閱 <b id="readCount">一</b> 次。</p>
+
+    <button id="untie" class="untie" type="button" aria-label="解开封绳，开启卷宗">
+      <span class="cord"></span>
+      <span class="untie-hint">解 封</span>
+    </button>
+
+    <p class="cover-a11y">本卷含連續圖形變化，閱者若感不適可掩卷。</p>
+  </div>
+</section>
+
+<!-- ============ 主卷宗 ============ -->
+<div id="archive" hidden>
+
+  <nav id="index" aria-label="案卷目录">
+    <p class="index-title">案 卷 目 錄</p>
+    <ol>
+      <li><a href="#ex01" data-no="01">立案文書</a></li>
+      <li><a href="#ex02" data-no="02">現場照片</a></li>
+      <li><a href="#ex03" data-no="03">村民筆錄</a></li>
+      <li><a href="#ex04" data-no="04">漁船檔案</a></li>
+      <li><a href="#ex05" data-no="05">生還者訊問</a></li>
+      <li><a href="#ex06" data-no="06">回收物清單</a></li>
+      <li><a href="#ex07" data-no="07">附錄 · 未歸檔</a></li>
+    </ol>
+    <p class="index-foot">閱畢請歸還</p>
+  </nav>
+
+  <main id="stack">
+
+    <!-- ---------- 01 立案文書 ---------- -->
+    <section class="exhibit" id="ex01" data-ex="1">
+      <div class="sheet sheet-gov">
+        <div class="form-head">
+          <span class="form-org">閩海關稅務司公署</span>
+          <span class="form-no">第 三七 號</span>
+        </div>
+        <h2 class="form-title">公　函</h2>
+        <div class="form-body">
+          <p>逕啟者：</p>
+          <p>本年十月十四日，據本口緝私艇報稱，霞浦縣屬三沙灣外，有漁船一艘，名「順發」，船牌閩霞字第〇四七號，自十月十一日出港後，迄今未歸。</p>
+          <p>查該船船主林阿水，年四十一歲，三沙澳人。船員五名：林阿火（船主之弟）、陳水來、王番薯、許乞食、鄭炎生。均係本澳漁戶。</p>
+          <p>本關已飭沿海各汛口一體查訪。相應函請　貴公署查照，派員查勘，並取具該船船主族鄰保結，以備核銷。</p>
+          <p class="form-sign">此致<br>霞浦縣公署</p>
+          <p class="form-date">署理閩海關稅務司　<span class="blank">▉▉▉</span><br>民國十七年十月十四日</p>
+        </div>
+
+        <div class="stamp-wrap">
+          <span class="stamp stamp-recv">霞浦縣公署<br>收文　十月初七</span>
+        </div>
+
+        <div class="form-enclosed">
+          <p>附：剪報一紙（美利堅《詭麗幻譚》二月號，本關譯員節譯）</p>
+          <blockquote class="clipping" lang="en">
+            <p>…the cult still whispers a formula handed down from the elder time —</p>
+            <p class="clipping-latin">Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.</p>
+            <p class="clipping-cn">「在拉萊耶的宅邸裏，長眠的克蘇魯在夢中等待着。」</p>
+            <p class="clipping-tail">本關譯員按：此語與本澳去年查獲木牌所刻，字字相同。</p>
+          </blockquote>
+        </div>
+
+        <aside class="margin-note" data-note="1">
+          收文日期早於發文日期七日。<br>——已核。
+        </aside>
+      </div>
+    </section>
+
+    <!-- ---------- 02 現場照片 ---------- -->
+    <section class="exhibit" id="ex02" data-ex="2">
+      <div class="sheet sheet-envelope">
+        <h2 class="ex-title">證物 二 · 現場照片</h2>
+        <div class="film-bag">
+          <div class="film-tab">
+            <p>三沙灣　順發船</p>
+            <p class="film-tab-small">民國十七年十月　共 三 張</p>
+          </div>
+          <div class="film-slot empty"><span>第一張</span></div>
+          <div class="film-slot empty"><span>第二張</span></div>
+          <div class="film-slot missing"><span>第 <b>三</b> 張</span></div>
+        </div>
+        <ol class="photo-caption">
+          <li>一、船首殘舵一段，長約四尺，木質，有嚙痕。</li>
+          <li>二、網具一具，網目盡破，破口整齊。</li>
+          <li>三、澳口灘上足印，自水際起，止於社廟階前。</li>
+        </ol>
+        <p class="photo-empty">以上照片三張，附袋移送。<br><b>袋中實存二張。</b></p>
+
+        <button class="loupe" type="button" data-loupe="1" aria-label="細看底片袋">◎</button>
+        <aside class="margin-note" data-note="2">
+          第三張沖印日期：十月十六。<br>晚於案發兩日。
+        </aside>
+      </div>
+    </section>
+
+    <!-- ---------- 03 村民筆錄 ---------- -->
+    <section class="exhibit" id="ex03" data-ex="3">
+      <div class="sheet sheet-form">
+        <h2 class="ex-title">證物 三 · 村民筆錄（節六份）</h2>
+
+        <table class="depo">
+          <tr><th>問</th><td>十月十一日，汝在何處？</td></tr>
+          <tr><th>答</th><td>在澳裏補網。討海人不出海，就在補網。</td></tr>
+          <tr><th>問</th><td>可見「順發」出港？</td></tr>
+          <tr><th>答</th><td>看見。天未光就出去。<b>潮水正漲。</b>船上六個人。</td></tr>
+        </table>
+
+        <table class="depo">
+          <tr><th>問</th><td>十月十一日，汝在何處？</td></tr>
+          <tr><th>答</th><td>在澳裏補網。</td></tr>
+          <tr><th>問</th><td>可見「順發」出港？</td></tr>
+          <tr><th>答</th><td>看見。<b>潮水正退。</b>船上六個人。</td></tr>
+        </table>
+
+        <table class="depo depo-dialect">
+          <tr><th>問</th><td>當日有無異樣？</td></tr>
+          <tr><th>答</th><td><span class="dialect">「有看著好兄弟咧。」</span></td></tr>
+          <tr><th>譯</th><td>稱：見有不應見之物。</td></tr>
+        </table>
+
+        <table class="depo">
+          <tr><th>問</th><td>船可曾翻？</td></tr>
+          <tr><th>答</th><td>（不答）</td></tr>
+          <tr><th colspan="2" class="rec-note">記錄員註：被問人不肯答此字。</th></tr>
+        </table>
+
+        <table class="depo">
+          <tr><th>問</th><td>船可曾翻？</td></tr>
+          <tr><th>答</th><td>（不答）</td></tr>
+          <tr><th colspan="2" class="rec-note">記錄員註：二次問，仍不答。</th></tr>
+        </table>
+
+        <table class="depo">
+          <tr><th>問</th><td>汝等如何知船出事？</td></tr>
+          <tr><th>答</th><td>第三日，海面浮起柴只一雙。</td></tr>
+          <tr><th>問</th><td>何以知是「順發」之物？</td></tr>
+          <tr><th>答</th><td>（久不作答）</td></tr>
+          <tr><th colspan="2" class="rec-note">記錄員註：被問人自始至終不肯說出該字。</th></tr>
+        </table>
+
+        <aside class="margin-note" data-note="3">
+          六份皆言「同一事」。<br>唯潮水一漲一退。<br>問：何者為真？
+        </aside>
+      </div>
+    </section>
+
+    <!-- ---------- 04 漁船檔案 ---------- -->
+    <section class="exhibit" id="ex04" data-ex="4">
+      <div class="sheet sheet-card">
+        <h2 class="ex-title">證物 四 · 漁船檔案</h2>
+
+        <div class="shipcard">
+          <p class="shipcard-head">福建霞浦縣　漁船船牌存根</p>
+          <dl class="shipcard-list">
+            <dt>船　牌</dt><dd>閩霞字第〇四七號</dd>
+            <dt>船　名</dt><dd class="ship-name">順　發</dd>
+            <dt>船　式</dt><dd>十三股艚</dd>
+            <dt>船　主</dt><dd>林阿水</dd>
+            <dt>保　結</dt><dd>族鄰 林阿火、陳水來；澳甲 王番薯</dd>
+            <dt>發　證</dt><dd>民國十五年三月初二</dd>
+          </dl>
+          <p class="shipcard-rule">帆面兩側，應用油墨大字書寫縣分、船戶姓名，自帆頂至帆腳，不得過五六字。</p>
+          <p class="shipcard-hand">帆上所書：「霞浦　<u>順　興</u>」</p>
+          <p class="shipcard-verdict">與船牌不符。</p>
+        </div>
+
+        <button class="loupe" type="button" data-loupe="2" aria-label="調閱船牌存根原件">◎</button>
+        <aside class="margin-note" data-note="4">
+          帆非原帆。<br>重寫於發證之後。<br>——何人所寫？
+        </aside>
+      </div>
+    </section>
+
+    <!-- ---------- 05 生還者訊問 ---------- -->
+    <section class="exhibit" id="ex05" data-ex="5">
+      <div class="sheet sheet-type">
+        <h2 class="ex-title">證物 五 · 生還者訊問</h2>
+        <p class="type-head">被訊問人：鄭炎生，年十九，三沙澳人。十月廿七日於東衝口外拾獲。</p>
+
+        <h3>第一日 · 十月廿七</h3>
+        <p class="typed">問：船在何處出事？<br>答：南邊。過了白犬。</p>
+        <p class="typed">問：如何出事？<br>答：風。船底破了。</p>
+        <p class="typed">問：其餘五人？<br>答：沉了。</p>
+        <p class="typed">問：你如何不死？<br>答：抱着舵。</p>
+
+        <h3>第二日 · 十月廿八</h3>
+        <p class="typed">問：昨日所言，可再述一遍？<br>答：（照第一日所言，一字不差。）</p>
+        <p class="typed">問：出事時，水深幾何？<br>答：摸不到底。</p>
+
+        <h3>第三日 · 十月廿九</h3>
+        <p class="typed">問：船在何處出事？<br>答：<b>不在海上。</b></p>
+        <p class="typed">問：不在海上，在何處？<br>答：在下面。街上也有。<b>街上跟澳裏一樣。</b></p>
+        <p class="typed">問：你見到何人？<br>答：見着他們五個。他們在走路。<b>他們沒有影子。</b></p>
+        <p class="typed">問：何以此前不言？<br>答：<b>問的人不是你們。</b></p>
+
+        <p class="thumb-mark">（被訊問人按：<span class="thumb">■■■■■</span>）</p>
+
+        <button class="loupe" type="button" data-loupe="3" aria-label="翻至背面">◎</button>
+        <aside class="margin-note" data-note="5">
+          第一日、第三日，同一個人所供。<br>中間隔一日。<br>——那一日他見了誰？
+        </aside>
+      </div>
+    </section>
+
+    <!-- ---------- 06 回收物清單 ---------- -->
+    <section class="exhibit" id="ex06" data-ex="6">
+      <div class="sheet sheet-carbon">
+        <h2 class="ex-title">證物 六 · 回收物清單</h2>
+        <p class="carbon-head">三沙灣外海面撈獲物件　民國十七年十月廿五日　覆寫一份</p>
+        <table class="carbon-table">
+          <tr><td>〇一</td><td>舵板一段</td><td>四尺二寸</td><td>有嚙痕</td></tr>
+          <tr><td>〇二</td><td>漁網一具</td><td>破</td><td>破口齊整</td></tr>
+          <tr><td>〇三</td><td>木牌一枚</td><td>三寸</td><td>刻字</td></tr>
+          <tr><td>〇四</td><td>瓷碗半隻</td><td>—</td><td>碗底有字</td></tr>
+          <tr><td>〇五</td><td>草席一張</td><td>濕</td><td>捲起，內空</td></tr>
+          <tr><td>〇六</td><td>紙船一艘</td><td>二尺</td><td><b>未燒完</b></td></tr>
+          <tr class="carbon-gap"><td>〇七</td><td colspan="3">（此欄空白）</td></tr>
+          <tr><td>〇八</td><td>布鞋一雙</td><td>男式</td><td>鞋底無泥</td></tr>
+          <tr><td>〇九</td><td>油紙一束</td><td>—</td><td>潮，字盡失</td></tr>
+        </table>
+        <p class="carbon-foot">以上共 <b>十</b> 件。<br>本清單係覆寫件，原件存關。</p>
+        <aside class="margin-note" data-note="6">
+          十件。<br>編號至〇九。<br>〇七從未存在。
+        </aside>
+      </div>
+    </section>
+
+    <!-- ---------- 空白頁 ---------- -->
+    <section class="exhibit" id="exBlank" data-ex="0" aria-hidden="true">
+      <div class="sheet sheet-blank"><span class="page-no">— 一 〇 —</span></div>
+    </section>
+
+    <!-- ---------- 07 附錄 · 未歸檔 ---------- -->
+    <section class="exhibit" id="ex07" data-ex="7">
+      <div class="sheet sheet-notebook">
+        <h2 class="ex-title">附錄 · 未 歸 檔</h2>
+        <p class="nb-head">（非公文紙。另夾卷中。字為鋼筆。）</p>
+
+        <div class="nb-body">
+          <p>十月初十日。受縣署命，抄錄本案卷宗。教員本不熟公事，字寫得難看，科員罵了我兩回。</p>
+          <p>十一月十二日。今日抄到第四份。船名在船牌上是「順發」，在帆上是「順興」。科員說我抄錯。我看了三遍，不是我抄錯。</p>
+          <p class="nb-key">十一月十三日。我核了七次。不是我看錯。</p>
+          <p>十一月十四日。第六份清單抄到一半，我發現中間少一個號。我不敢問。</p>
+          <p>十一月十五日。我今天從頭再看了一遍。第四頁船名，是「順發」。<br>我記得昨天是「順興」。</p>
+          <p>十一月十六日。<span class="nb-slow">我又看了。這一次，兩個字都不是。</span></p>
+          <p class="nb-broken">十一月十七日。<span class="nb-corrupt">卷宗在夜裡自己翻了一頁。我沒有開窗。桌上有水。</span></p>
+          <p class="nb-broken2">十一月十八日。<span class="nb-corrupt2">這卷不是給人看的。科員今天沒來。沒有人來。我在抄一份沒有人會讀的東西。</span></p>
+          <p class="nb-final">十一月十九日。你要讀到這裡了。</p>
+          <p class="nb-final">我寫在上面那一句，你知道是什麼意思。</p>
+          <p class="nb-stop">別抬頭。</p>
+        </div>
+
+        <p class="nb-mark">（此下十六行空白。第十九行有一墨點，餘皆空。）</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ 眼睛 ============ -->
+<div id="eye-layer" hidden aria-label="它">
+  <canvas id="eye"></canvas>
+  <div id="eye-readout" aria-live="polite">
+    <p class="ro-line"><span class="ro-k">開卷時刻</span><span class="ro-v" id="roTime">—</span></p>
+    <p class="ro-line"><span class="ro-k">持　械</span><span class="ro-v" id="roOS">—</span></p>
+    <p class="ro-line"><span class="ro-k">窗　幅</span><span class="ro-v" id="roSize">—</span></p>
+    <p class="ro-line"><span class="ro-k">所　在</span><span class="ro-v" id="roTZ">—</span></p>
+    <p class="ro-line ro-odd"><span class="ro-k">前一位閱者</span><span class="ro-v" id="roPrev">仍在室內</span></p>
+    <div class="ro-say">
+      <p>本頁應載事項，已閱畢。</p>
+      <p>現將閱卷人告知於下：</p>
+      <p class="ro-final" id="roFinal"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 輪迴 ============ -->
+<section id="endcard" hidden>
+  <div class="end-inner">
+    <p class="end-doc">民國十七年十一月十四日</p>
+    <p class="end-body">
+      本卷複核人閱畢後失蹤。桌面留有未閱完之卷宗，<br>
+      翻至第 <b id="endPage">—</b> 頁，燈未熄，窗未開。<br>
+      其筆跡與附錄所載相符。
+    </p>
+    <p class="end-body end-fill">
+      本卷現由 <b id="endName" class="type-cursor">　</b> 接手複核。
+    </p>
+    <p class="end-dialect">阮看著汝矣。</p>
+  </div>
+</section>
+
+<!-- ============ 結尾歸檔 ============ -->
+<section id="filed" hidden>
+  <div class="filed-inner">
+    <p>本卷已歸還。</p>
+    <p class="filed-no">編號 <span class="blank">▉▉▉</span></p>
+    <button id="again" class="again" type="button">再次調閱</button>
+  </div>
+</section>
+
+<div id="hud" aria-hidden="true">
+  <span id="hudDepth">第一卷</span>
+</div>
+
+<div id="blink" aria-hidden="true"></div>
+
+<script src="js/content.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/corruption.js"></script>
+<script src="js/glitch.js"></script>
+<script src="js/reveal.js"></script>
+<script src="js/eye.js"></script>
+<script src="js/endgame.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

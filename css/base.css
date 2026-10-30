@@ -1,0 +1,352 @@
+/* ============================================================
+   base.css — 基础／灯／噪点／序幕封面
+   ============================================================ */
+
+:root{
+  --ink:#14100c;
+  --ink-soft:#3a322a;
+  --paper:#e7dfcd;
+  --paper-2:#ddd3bd;
+  --paper-3:#cfc3a8;
+  --seal:#9d2b20;
+  --seal-deep:#6d1a13;
+  --sea:#0b1414;
+  --bruise:#2d1b3d;
+  --void:#05090c;
+
+  --f-gov:"FangSong","STFangsong","仿宋","FangSong_GB2312","SimSun",serif;
+  --f-song:"SimSun","Songti SC","STSong","Songti TC",serif;
+  --f-kai:"KaiTi","STKaiti","楷体","KaiTi_GB2312","Kaiti SC",serif;
+  --f-type:"Courier New",Courier,"Nimbus Mono PS",monospace;
+
+  /* 退化总控 0→1 */
+  --corruption:0;
+  --damp:1;          /* 灯亮度 */
+  --lamp-r:320px;
+  --mx:50%;
+  --my:50%;
+}
+
+*{box-sizing:border-box;}
+
+html{
+  scroll-behavior:smooth;
+  background:var(--void);
+}
+
+body{
+  margin:0;
+  min-height:100%;
+  background:var(--void);
+  color:var(--ink);
+  font-family:var(--f-gov);
+  font-size:17px;
+  line-height:1.95;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+
+body.locked{overflow:hidden;}
+
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+
+/* ---------------- 光标即灯 ---------------- */
+#lamp{
+  position:fixed;
+  inset:0;
+  z-index:60;
+  pointer-events:none;
+  opacity:var(--damp);
+  transition:opacity .8s ease;
+  background:radial-gradient(
+      circle var(--lamp-r) at var(--mx) var(--my),
+      rgba(2,4,6,0) 0%,
+      rgba(2,4,6,0) 42%,
+      rgba(2,4,6,.42) 68%,
+      rgba(2,4,6,.80) 88%,
+      rgba(2,4,6,.90) 100%);
+}
+body.lamp-off #lamp{display:none;}
+
+/* ---------------- 颗粒 ---------------- */
+#grain{
+  position:fixed;
+  inset:0;
+  z-index:70;
+  pointer-events:none;
+  opacity:.16;
+  mix-blend-mode:overlay;
+  image-rendering:pixelated;
+}
+body.grain-off #grain{display:none;}
+
+/* ---------------- 漂移层 ---------------- */
+#drift{
+  position:fixed;
+  inset:0;
+  z-index:65;
+  pointer-events:none;
+  opacity:0;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+  mix-blend-mode:multiply;
+  transition:opacity .35s;
+}
+#drift.on{opacity:calc(.06 + var(--corruption) * .10);}
+
+/* ============================================================
+   序幕 · 卷宗封面
+   ============================================================ */
+#cover{
+  position:relative;
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:5vh 4vw;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 40%, #121a1c 0%, #05090c 65%, #000 100%);
+}
+
+.cover-sheet{
+  position:relative;
+  width:min(680px,92vw);
+  padding:56px 54px 40px;
+  background:
+    linear-gradient(168deg,#c9bda3 0%,#d5c9ae 18%,#c2b69b 52%,#cbbfa4 78%,#b9ac92 100%);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.35),
+    0 40px 90px -20px rgba(0,0,0,.9),
+    inset 0 0 90px rgba(120,96,60,.25);
+  color:#2a2015;
+  transform:rotate(-.4deg);
+  transition:transform 1.2s cubic-bezier(.2,.8,.2,1), filter .8s;
+}
+
+/* 装订孔 */
+.cover-holes{
+  position:absolute;left:22px;top:0;bottom:0;
+  display:flex;flex-direction:column;justify-content:space-around;
+  padding:16% 0;
+}
+.cover-holes i{
+  display:block;width:13px;height:13px;border-radius:50%;
+  background:#05090c;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.15);
+}
+
+.cover-sheet::after{
+  content:"";
+  position:absolute;inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(90,64,30,.28), transparent 32%),
+    radial-gradient(circle at 8% 88%, rgba(70,48,20,.30), transparent 38%),
+    repeating-linear-gradient(92deg, rgba(90,70,40,.045) 0 2px, transparent 2px 5px);
+}
+
+.cover-head{text-align:center;position:relative;padding-bottom:18px;}
+.cover-org{
+  margin:0 0 14px;font-size:13px;letter-spacing:.5em;
+  font-family:var(--f-song);color:#3d3020;
+}
+.cover-title{
+  margin:0;font-size:33px;font-weight:400;letter-spacing:.28em;
+  font-family:var(--f-song);color:#241b10;
+  text-shadow:0 1px 0 rgba(255,255,255,.35);
+}
+.cover-year{
+  margin:14px 0 4px;font-size:15px;letter-spacing:.55em;
+  font-family:var(--f-song);color:#3d3020;
+}
+.cover-no{margin:0;font-size:15px;letter-spacing:.3em;color:#3d3020;}
+
+.cover-seal{
+  position:absolute;right:34px;top:96px;
+  width:86px;height:86px;
+  display:grid;place-items:center;
+  font-size:19px;letter-spacing:.12em;font-family:var(--f-song);
+  color:var(--seal);
+  border:3px solid var(--seal);
+  border-radius:4px;
+  transform:rotate(-8deg);
+  opacity:.82;
+  box-shadow:inset 0 0 12px rgba(157,43,32,.35);
+  filter:blur(.3px);
+}
+.cover-seal::before{
+  content:"";position:absolute;inset:5px;border:1px solid var(--seal);opacity:.55;
+}
+
+.cover-body{
+  margin:26px 0 0;padding-top:20px;
+  border-top:1px solid rgba(60,45,25,.45);
+}
+.cover-case{margin:0 0 16px;font-size:16px;letter-spacing:.04em;}
+.cover-warn{
+  margin:0;text-align:center;font-size:16px;letter-spacing:.5em;
+  color:var(--seal);font-family:var(--f-song);
+}
+
+/* 调阅记录 */
+.cover-borrow{
+  margin-top:26px;padding:14px 16px;
+  border:1px solid rgba(60,45,25,.4);
+  background:rgba(255,250,238,.22);
+}
+.borrow-title{
+  margin:0 0 8px;font-size:12px;letter-spacing:.42em;text-align:center;color:#4a3a24;
+}
+.borrow-table{width:100%;border-collapse:collapse;font-size:13px;font-family:var(--f-kai);}
+.borrow-table td{
+  padding:6px 4px;border-bottom:1px dotted rgba(60,45,25,.35);
+  color:#33271a;
+}
+.borrow-table td:first-child{width:52%;letter-spacing:.06em;}
+.borrow-empty{color:transparent;}
+
+.cover-note{
+  margin:18px 0 0;text-align:center;font-size:11px;letter-spacing:.18em;
+  color:rgba(60,45,25,.55);
+}
+
+/* 解封 */
+.untie{
+  position:relative;
+  display:block;margin:22px auto 0;
+  width:112px;height:112px;
+  border:0;background:none;
+  color:#3d3020;
+}
+.untie .cord{
+  position:absolute;inset:0;
+  border-radius:50%;
+  border:6px dotted rgba(110,80,44,.85);
+  box-shadow:0 0 0 1px rgba(0,0,0,.15) inset;
+  transition:transform .5s, opacity .5s;
+}
+.untie .cord::after{
+  content:"";position:absolute;inset:16px;border-radius:50%;
+  border:1px solid rgba(110,80,44,.4);
+  background:radial-gradient(circle,rgba(157,43,32,.14),transparent 70%);
+}
+.untie-hint{
+  position:relative;font-size:13px;letter-spacing:.42em;
+  font-family:var(--f-song);
+  transition:opacity .3s;
+}
+.untie:hover .cord{transform:rotate(6deg) scale(1.04);}
+.untie:focus-visible{outline:2px dashed var(--seal);outline-offset:6px;}
+
+.cover-a11y{
+  margin:26px 0 0;text-align:center;font-size:10px;letter-spacing:.06em;
+  color:rgba(48,36,20,.62);
+}
+.cover-a11y kbd{
+  font-family:var(--f-type);font-size:10px;
+  padding:1px 4px;border:1px solid rgba(60,45,25,.5);border-radius:2px;
+}
+
+/* 封面退场 */
+body.stage-open #cover{
+  transform:scale(1.04);
+  filter:blur(6px) brightness(.55);
+  pointer-events:none;
+}
+
+/* ============================================================
+   HUD
+   ============================================================ */
+#hud{
+  position:fixed;right:18px;bottom:16px;z-index:80;
+  font-size:11px;letter-spacing:.3em;
+  color:rgba(160,150,130,.45);
+  font-family:var(--f-song);
+  pointer-events:none;
+  transition:opacity .6s;
+}
+
+/* ============================================================
+   静阅／降级
+   ============================================================ */
+@media (prefers-reduced-motion: reduce){
+  #grain,#drift{display:none !important;}
+  #lamp{display:none !important;}
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+  html{scroll-behavior:auto;}
+}
+body.quiet #grain,
+body.quiet #drift,
+body.quiet #lamp{display:none !important;}
+
+/* 移动端：无光标灯，直接给光 */
+@media (max-width:820px), (hover:none){
+  #lamp{display:none;}
+  #grain{opacity:.10;}
+}
+
+/* hidden 必须压过任何 display 声明 */
+[hidden]{display:none !important;}
+
+/* ============================================================
+   灯参数修正（覆盖上方默认值）
+   ============================================================ */
+:root{--lamp-r:520px;}
+
+#lamp{
+  background:radial-gradient(
+      circle var(--lamp-r) at var(--mx) var(--my),
+      rgba(2,4,6,0) 0%,
+      rgba(2,4,6,0) 40%,
+      rgba(2,4,6,.26) 62%,
+      rgba(2,4,6,.54) 82%,
+      rgba(2,4,6,.74) 100%);
+}
+
+/* 封面／归档阶段不加灯：第一印象要完整 */
+body.stage-cover #lamp,
+body.stage-filed #lamp{display:none !important;}
+body.stage-cover #hud{opacity:0;}
+
+/* ▉ 等块字符在仿宋里可能缺字，用涂黑的墨块代替（编号被抹掉的痕迹） */
+.blank{
+  display:inline-block;
+  min-width:.86em;
+  height:.66em;
+  background:rgba(26,20,14,.88);
+  text-indent:-9999px;
+  overflow:hidden;
+  vertical-align:-.02em;
+  border-radius:38% 62% 44% 56% / 52% 46% 54% 48%;
+  filter:blur(.35px);
+  letter-spacing:0;
+}
+.clipping .blank{background:rgba(26,20,14,.78);}
+
+/* 封面装订：三个孔（民国线装更近真实） */
+.cover-holes::before{
+  content:"";
+  display:block;
+  width:13px;height:13px;border-radius:50%;
+  background:#05090c;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.15);
+  margin:16% auto;
+}
+.cover-holes{
+  justify-content:space-between;
+  padding:10% 0;
+}
+
+/* 封面污渍与磨损 */
+.cover-sheet::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse 20% 12% at 82% 74%, rgba(104,78,42,.20), transparent 70%),
+    radial-gradient(ellipse 12% 16% at 14% 32%, rgba(96,72,40,.16), transparent 72%),
+    radial-gradient(ellipse 34% 8% at 50% 96%, rgba(78,58,30,.22), transparent 76%);
+  mix-blend-mode:multiply;
+}

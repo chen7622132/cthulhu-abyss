@@ -1,0 +1,170 @@
+/* ============================================================
+   corruption.css — 退化系统（单变量 --corruption 驱动）
+   ============================================================ */
+
+/* 整体：纸变黄、对比下降、边缘发暗（放在 #archive 上，避开 JS 给 #stack 加的位移滤镜） */
+#archive{
+  filter:
+    saturate(calc(1 - var(--corruption) * .34))
+    contrast(calc(1 + var(--corruption) * .06))
+    brightness(calc(1 - var(--corruption) * .10));
+}
+body.quiet #archive{filter:none;}
+
+.sheet{
+  background-color:color-mix(in srgb,
+      var(--paper) calc((1 - var(--corruption)) * 100%),
+      #c9b892 calc(var(--corruption) * 100%));
+}
+
+/* 字距与字重：越往后越挤、越淡 */
+.exhibit p,
+.exhibit td,
+.exhibit dd,
+.exhibit li{
+  letter-spacing:calc(var(--corruption) * .045em);
+}
+
+/* 边缘暗角：停留越久越明显（由 JS 调 --corruption 的局部增量） */
+.sheet{
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.24) inset,
+    0 30px 60px -30px rgba(0,0,0,.85),
+    0 0 0 1px rgba(0,0,0,.30),
+    inset 0 0 calc(var(--corruption) * 150px) rgba(60,44,24,calc(var(--corruption) * .55));
+}
+
+/* 水渍：corruption > .2 后从右下角爬上来 */
+.sheet .stain{
+  position:absolute;
+  right:-30px;bottom:-26px;
+  width:calc(var(--corruption) * 460px);
+  height:calc(var(--corruption) * 420px);
+  border-radius:48% 52% 62% 38% / 55% 42% 58% 45%;
+  background:radial-gradient(circle at 42% 38%,
+      rgba(120,96,54,.02) 0%,
+      rgba(114,92,52,.10) 58%,
+      rgba(96,74,40,.24) 78%,
+      rgba(78,58,30,.30) 100%);
+  mix-blend-mode:multiply;
+  pointer-events:none;
+  opacity:calc(var(--corruption) * 1.1);
+}
+
+/* ---------------- 单字抖动（JS 注入 span 后生效） ---------------- */
+.ch{
+  display:inline-block;
+  transform:translateY(var(--dy,0)) rotate(var(--rot,0deg)) skewX(var(--sk,0deg));
+  will-change:transform;
+}
+body.corrupt-mid .ch{--dy:.18px;}
+body.corrupt-high .ch{--dy:.42px;}
+
+/* ---------------- 漂移／模糊（间歇污染用） ---------------- */
+.exhibit.glitching .sheet{
+  animation:sheetGlitch .18s steps(2) 1;
+}
+@keyframes sheetGlitch{
+  0%{transform:translate3d(0,0,0);}
+  50%{transform:translate3d(1px,-1px,0);}
+  100%{transform:translate3d(0,0,0);}
+}
+
+/* 重影：文字瞬时出现第二层 */
+.echo-wrap{position:relative;}
+.echo-wrap::after{
+  content:attr(data-echo);
+  position:absolute;left:0;top:0;
+  color:rgba(60,44,24,.55);
+  transform:translate(1.5px,-1px);
+  opacity:0;
+  pointer-events:none;
+  white-space:pre-wrap;
+  filter:blur(.4px);
+}
+.echo-wrap.echo-on::after{
+  opacity:.85;
+  animation:echoFade .16s ease-out forwards;
+}
+@keyframes echoFade{
+  0%{opacity:.9;}
+  100%{opacity:0;}
+}
+
+/* 瞬间失焦（不改变布局，用 filter 的极短脉冲） */
+.blur-pulse{
+  animation:blurPulse .22s ease-out 1;
+}
+@keyframes blurPulse{
+  0%{filter:blur(0);}
+  35%{filter:blur(1.1px);}
+  100%{filter:blur(0);}
+}
+
+/* ---------------- 局部永久损坏（07 附录） ---------------- */
+.nb-corrupt,
+.nb-corrupt2{
+  text-shadow:
+    .6px 0 0 rgba(157,43,32,.36),
+    -.5px 0 0 rgba(40,60,80,.28);
+  animation:jitterCorrupt 7s ease-in-out infinite;
+}
+@keyframes jitterCorrupt{
+  0%,92%,100%{transform:translate(0,0);}
+  94%{transform:translate(.6px,-.4px);}
+  96%{transform:translate(-.5px,.3px);}
+  98%{transform:translate(.3px,.4px);}
+}
+
+/* 07 末尾整体失稳 */
+.exhibit.wrecked .nb-body{
+  filter:blur(.35px);
+  transform:skewX(-.35deg);
+}
+.exhibit.wrecked .sheet-notebook{
+  box-shadow:
+    0 30px 60px -30px rgba(0,0,0,.9),
+    0 0 0 1px rgba(157,43,32,.22),
+    inset 0 0 180px rgba(60,20,10,.30);
+}
+
+/* 07 最后几段：字不在同一条线上（永不消失） */
+.exhibit.wrecked .nb-body p:nth-last-child(1){transform:translate(1px,2px) rotate(-.25deg);}
+.exhibit.wrecked .nb-body p:nth-last-child(2){transform:translate(-2px,-1px) rotate(.18deg);}
+.exhibit.wrecked .nb-body p:nth-last-child(3){
+  transform:translate(2px,1px);
+  letter-spacing:.10em;
+}
+.exhibit.wrecked .nb-body p:nth-last-child(4){
+  transform:translate(-1px,2px);
+  text-shadow:1px 0 rgba(157,43,32,.40), -1px 0 rgba(46,66,84,.32);
+}
+.exhibit.wrecked .nb-body p:nth-last-child(5),
+.exhibit.wrecked .nb-body p:nth-last-child(6){
+  text-shadow:.8px 0 rgba(157,43,32,.30), -.7px 0 rgba(46,66,84,.24);
+}
+.exhibit.wrecked .nb-stop{
+  animation:nbStopPulse 9s ease-in-out infinite;
+}
+@keyframes nbStopPulse{
+  0%,88%,100%{opacity:1;transform:none;}
+  92%{opacity:.55;transform:translateX(2px);}
+  96%{opacity:1;transform:translateX(-1px);}
+}
+
+/* ---------------- 回看验证：回去看什么都没有 ---------------- */
+.exhibit.seen .margin-note{opacity:.6;}
+.exhibit.seen .lupe{opacity:.9;}
+
+/* ---------------- 静阅降级 ---------------- */
+body.quiet .ch{transform:none;}
+body.quiet .nb-corrupt,
+body.quiet .nb-corrupt2{animation:none;text-shadow:none;}
+body.quiet .exhibit.wrecked .nb-body{filter:none;transform:none;}
+body.quiet #stack{filter:none;}
+
+@media (prefers-reduced-motion: reduce){
+  .ch{transform:none !important;}
+  .nb-corrupt,.nb-corrupt2{animation:none !important;}
+  #stack{filter:none !important;}
+}

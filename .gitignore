@@ -1,0 +1,9 @@
+node_modules/
+shots/
+*.log
+check.js
+check_html.py
+test.js
+shot.js
+package.json
+package-lock.json
