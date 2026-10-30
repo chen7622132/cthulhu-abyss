@@ -3,7 +3,7 @@ const path = require('path');
 const URL = 'https://chen7622132.github.io/cthulhu-abyss/';
 (async () => {
   const browser = await chromium.launch({
-    executablePath: '/root/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome',
+    executablePath: '/sandbox/workspace/chromebin/chrome-linux64/chrome',
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--enable-unsafe-swiftshader',
       '--use-gl=angle', '--use-angle=swiftshader']
   });
