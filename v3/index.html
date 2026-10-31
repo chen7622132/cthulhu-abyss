@@ -2,23 +2,23 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#000000">
 <meta name="format-detection" content="telephone=no">
-<title>記錄 01</title>
+<title>密字第〇四七號</title>
 <style>
   html,body{
     margin:0;padding:0;height:100%;width:100%;background:#000;overflow:hidden;
     -webkit-user-select:none;user-select:none;
     -webkit-tap-highlight-color:transparent;
     -webkit-text-size-adjust:100%;
+    touch-action:none;
   }
   #out{position:fixed;left:0;top:0;width:100%;height:100%;display:block;}
   #dbg{
     position:fixed;left:0;bottom:0;right:0;z-index:99;
-    font:11px/1.6 monospace;color:#8a8;background:rgba(0,0,0,.82);
-    padding:6px 8px;white-space:pre-wrap;word-break:break-all;
-    display:none;pointer-events:none;
+    font:11px/1.55 monospace;color:#8a8;background:rgba(0,0,0,.85);
+    padding:6px 8px;white-space:pre-wrap;display:none;pointer-events:none;
   }
   #dbg.on{display:block;}
 </style>
@@ -31,85 +31,191 @@
 'use strict';
 
 /* ============================================================
-   0. 全局错误捕获 —— 绝不允许“静默黑屏”
+   0. 错误捕获
    ============================================================ */
 var dbgEl = document.getElementById('dbg');
 var DEBUG = /[?&]debug=1/.test(location.search);
 var ERRORS = [];
-
-function say(msg){
-  ERRORS.push(msg);
-  if (DEBUG){
-    dbgEl.classList.add('on');
-    dbgEl.textContent += msg + '\n';
-  }
+function say(m){
+  ERRORS.push(m);
+  if (DEBUG){ dbgEl.classList.add('on'); dbgEl.textContent += m + '\n'; }
 }
-window.addEventListener('error', function(e){
-  say('ERR: ' + (e.message||'') + ' @' + (e.lineno||''));
-});
+window.addEventListener('error', function(e){ say('ERR: '+(e.message||'')+' @'+e.lineno); });
 window.addEventListener('unhandledrejection', function(e){
   say('REJ: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
 });
 
 /* ============================================================
-   1. 配置
+   1. 基础配置
    ============================================================ */
-var W = 480, H = 854;
-var PAD = 40;
-var COL_BG   = '#0c0e0b';
-var COL_TXT  = '#c4c2b2';
-var COL_DIM  = '#6b7264';
-var COL_RED  = '#9a2b18';
-var COL_FAINT= '#3a4038';
+var W = 480, H = 854, PAD = 40;
+var CW = W - PAD*2;
+
+var C_BG   = '#0c0e0b';
+var C_TXT  = '#c4c2b2';
+var C_DIM  = '#78806f';
+var C_FAINT= '#454c41';
+var C_RED  = '#9a2b18';
+var C_REDD = 'rgba(154,43,24,.45)';
 
 var MONO  = '"Noto Sans Mono CJK SC","Noto Sans Mono",Menlo,Consolas,monospace';
-var SERIF = '"Noto Serif CJK SC","Noto Serif SC","Songti SC","STSong",serif';
-
-var HEAD_NO  = '第 三七 號';
-var HEAD_ORG = '閩海關稅務司公署';
-var TITLE    = '公　函';
-var BODY = [
-  '逕啟者：',
-  '本年十月十四日，據本口緝私艇報稱，霞浦縣屬三沙灣外，有漁船一艘，名「順發」，船牌閩霞字第〇四七號，自十月十一日出港後，迄今未歸。',
-  '查該船船主林阿水，年四十一歲，三沙澳人。船員五名：林阿火、陳水來、王番薯、許乞食、鄭炎生。均係本澳漁戶。',
-  '本關已飭沿海各汛口一體查訪。相應函請　貴公署查照，派員查勘，並取具該船船主族鄰保結，以備核銷。',
-  '又查：該船係民國十五年三月初二領牌，牌載「煙囪式硬帆一副」，於十六年換。本年十月十一日清晨出港，未經汛口掛驗。據澳甲稱，該船並未報關。',
-  '按現行船政法，漁船出港須報澳甲、掛汛口，違者以走私論。惟近年海上不靖，各澳多有未報即出者，積習已久，本關亦難盡究。'
-];
-var SIGN = '此致　霞浦縣公署';
-var DATE = '民國十七年十月十四日';
+var SERIF = '"Noto Serif CJK SC","Noto Serif SC","Songti SC","STSong","SimSun",serif';
+var KAI   = '"Kaiti SC","STKaiti","KaiTi","Noto Serif CJK SC",serif';
 
 /* ============================================================
-   2. 源图层（内存 canvas，绝不放进 DOM，避免 display:none 取不到像素）
+   2. 七屏数据
+   ============================================================ */
+var PAGES = [
+
+/* -------- 01 公文 -------- */
+{
+  kind: 'doc',
+  stamp: '證物　〇一',
+  reg: '11 · 03',
+  num: '01',
+  title: '公　　函',
+  org: '閩海關稅務司公署',
+  no: '第 三七 號',
+  paras: [
+    '逕啟者：',
+    '本年十月十四日，據本口緝私艇報稱，霞浦縣屬三沙灣外，有漁船一艘，名「順發」，船牌閩霞字第〇四七號，自十月十一日出港後，迄今未歸。',
+    '查該船船主林阿水，年四十一歲，三沙澳人。船員五名：林阿火、陳水來、王番薯、許乞食、鄭炎生。均係本澳漁戶。',
+    '本關已飭沿海各汛口一體查訪。相應函請　貴公署查照，派員查勘，並取具該船船主族鄰保結，以備核銷。',
+    '又查：該船係民國十五年三月初二領牌，本年十月十一日清晨出港，未經汛口掛驗。據澳甲稱，該船並未報關。',
+    '按現行船政法，漁船出港須報澳甲、掛汛口，違者以走私論。惟近年海上不靖，各澳多有未報即出者，積習已久。'
+  ],
+  sign: '此致　霞浦縣公署',
+  date: '民國十七年十月十四日',
+  seal: ['收', '文'],
+  hint: '上滑　續'
+},
+
+/* -------- 02 照片 -------- */
+{
+  kind: 'photo',
+  stamp: '證物　〇二',
+  reg: '10 · 28',
+  num: '02',
+  title: '現場照片',
+  bag: ['三沙灣　順發船', '民國十七年十月　共 三 張'],
+  frames: [
+    { label:'第一張', sub:'船首殘舵一段' },
+    { label:'第二張', sub:'網具一具　網目盡破' },
+    { label:'第 三 張', sub:'另　寄', mark:true }
+  ],
+  notes: [
+    '一、船首殘舵一段，長約四尺，木質，有嚙痕。',
+    '二、網具一具，網目盡破，破口整齊。',
+    '三、澳口灘上足印，自水際起，止於社廟階前。'
+  ],
+  tail: '以上照片三張，附袋移送。',
+  tailStrong: '袋中實存二張。',
+  margin: '沖印單存根：十月十六日。\n案發：十月十一日。'
+},
+
+/* -------- 03 笔录 -------- */
+{
+  kind: 'depo',
+  stamp: '證物　〇三',
+  reg: '10 · 21',
+  num: '03',
+  title: '村民筆錄（節六份）',
+  rows: [
+    { no:'〇〇一', q:'十月十一日清晨，爾在何處？', a:'在澳裏。看船出港。' },
+    { no:'〇〇二', q:'船上幾人？', a:'六人。船主一個，夥計五個。' },
+    { no:'〇〇三', q:'爾可識船上諸人？', a:'識。都是澳裏的。' },
+    { no:'〇〇四', q:'可有生人？', a:'沒有。', note:'「沒有」二字旁有鉛筆圈。' },
+    { no:'〇〇五', q:'出港時天色如何？', a:'晴。日頭很好。',
+      extra:'問：日頭底下，船板上看得見人否？\n答：看得見。\n問：影子呢？\n答：（久不答）' },
+    { no:'〇〇六', q:'爾還有何說？', a:'……請官長不要寫我的名字。' }
+  ],
+  tail: '本頁六份，均經捺印。'
+},
+
+/* -------- 04 海图 -------- */
+{
+  kind: 'map',
+  stamp: '證物　〇四',
+  reg: '10 · 14',
+  num: '04',
+  title: '三沙灣海圖（摹本）',
+  cap: '據光緒二十四年測繪，民國十七年九月重摹。',
+  /* 海岸线：归一化坐标 [x,y] */
+  coast: [
+    [0.04,0.10],[0.10,0.16],[0.15,0.14],[0.20,0.20],[0.24,0.18],
+    [0.30,0.24],[0.34,0.23],[0.40,0.30],[0.44,0.29],[0.50,0.36],
+    [0.54,0.34],[0.60,0.42],[0.64,0.40],[0.70,0.48],[0.74,0.46],
+    [0.80,0.54],[0.86,0.52],[0.92,0.60],[0.96,0.58]
+  ],
+  bays: [
+    { x:0.18, y:0.26, t:'〇〇一' },
+    { x:0.32, y:0.36, t:'〇〇二' },
+    { x:0.47, y:0.44, t:'〇〇三' },
+    { x:0.61, y:0.52, t:'〇〇四' },
+    { x:0.76, y:0.60, t:'〇〇五' },
+    { x:0.88, y:0.68, t:'〇〇六' }
+  ],
+  extraBay: { x:0.38, y:0.66, t:'〇〇七' },
+  hand: '此處無澳。',
+  note: '紅筆所標，摹本原無。'
+},
+
+/* -------- 05 勘测表 -------- */
+{
+  kind: 'table',
+  stamp: '證物　〇五',
+  reg: '10 · 08',
+  num: '05',
+  title: '海岸線勘測記錄',
+  cap: '測量員二人，儀器各異，同日不同時。',
+  head: ['段', '第一次', '第二次', '差'],
+  rows: [
+    ['一', '一四二·〇', '一八二·〇', '四〇·〇'],
+    ['二', '九八·五',  '一三八·五', '四〇·〇'],
+    ['三', '一一六·〇', '一五六·〇', '四〇·〇'],
+    ['四', '七三·二',  '一一三·二', '四〇·〇'],
+    ['五', '一〇四·八', '　　—', '　　—']
+  ],
+  unit: '單位：公尺',
+  tail: '第五段，第二次測量未記。',
+  tail2: '按：同日午後，潮退。'
+},
+
+/* -------- 06 译员手记 -------- */
+{
+  kind: 'note',
+  stamp: '譯員　手記',
+  reg: '09 · 29',
+  num: '06',
+  title: '譯　稿',
+  lead: '同一句，譯了四回。第四回我沒敢交上去。',
+  items: [
+    { n:'其一', t:'「在拉萊耶的宅邸裏，長眠的克蘇魯在夢中等待着。」' },
+    { n:'其二', t:'「在拉萊耶的宅邸裏，長眠者夢着。」' },
+    { n:'其三', t:'「宅邸在。長眠者在。夢在。」' },
+    { n:'其四', t:'「他們都在。他們一直。他們。」', mark:true }
+  ],
+  foot: '——九月十七夜，燈將盡'
+},
+
+/* -------- 07 空白 -------- */
+{
+  kind: 'blank',
+  stamp: '　',
+  reg: '—',
+  num: '07',
+  line: '本卷至此，以下空白。',
+  faint: '本卷所附各件，均已登記。惟本卷正文，自第一頁起，即無一字。',
+  by: '歸檔員　記'
+}
+];
+
+/* ============================================================
+   3. 画布
    ============================================================ */
 var srcC = document.createElement('canvas');
 srcC.width = W; srcC.height = H;
 var sx = srcC.getContext('2d');
-
-function wrapText(ctx, text, maxW, font){
-  ctx.font = font;
-  var out = [], cur = '';
-  for (var i=0;i<text.length;i++){
-    var ch = text[i];
-    var t = cur + ch;
-    if (ctx.measureText(t).width > maxW && cur.length){ out.push(cur); cur = ch; }
-    else cur = t;
-  }
-  if (cur) out.push(cur);
-  return out;
-}
-
-var LINES = [];
-function layout(){
-  LINES = [];
-  var font = '18px ' + SERIF;
-  var maxW = W - PAD*2;
-  for (var i=0;i<BODY.length;i++){
-    if (i>0) LINES.push({ gap:true });
-    var ls = wrapText(sx, BODY[i], maxW, font);
-    for (var j=0;j<ls.length;j++) LINES.push({ t: ls[j] });
-  }
-}
 
 function pad2(n){ n = Math.floor(n); return n<10 ? '0'+n : ''+n; }
 function srnd(i){
@@ -117,300 +223,669 @@ function srnd(i){
   return x - Math.floor(x);
 }
 
-function drawFrame(tc){
-  sx.fillStyle = COL_BG;
-  sx.fillRect(0,0,W,H);
-
-  /* 极微弱底噪 */
-  sx.save();
-  for (var i=0;i<1200;i++){
-    sx.fillStyle = Math.random()<0.5 ? 'rgba(43,50,42,.10)' : 'rgba(27,33,26,.10)';
-    sx.fillRect(Math.random()*W, Math.random()*H, 1, 1);
+function wrapText(text, maxW, font){
+  sx.font = font;
+  var out = [], cur = '';
+  for (var i=0;i<text.length;i++){
+    var ch = text[i];
+    var t = cur + ch;
+    if (sx.measureText(t).width > maxW && cur.length){ out.push(cur); cur = ch; }
+    else cur = t;
   }
-  sx.restore();
+  if (cur) out.push(cur);
+  return out;
+}
 
-  /* 顶部 OSD */
-  sx.font = '12px ' + MONO;
-  sx.fillStyle = COL_DIM;
-  sx.fillText('REC', PAD, 46);
-  sx.beginPath();
-  sx.arc(PAD+34, 42, 3.2, 0, Math.PI*2);
-  sx.fillStyle = COL_RED;
-  sx.fill();
+/* 统一页眉页脚 */
+function chrome(p, tc){
+  /* 页眉 */
+  sx.font = '11px ' + MONO;
+  sx.fillStyle = C_FAINT;
+  sx.fillText(p.stamp, PAD, 44);
 
-  sx.fillStyle = COL_DIM;
-  sx.fillText('CH-03', PAD+50, 46);
-
-  var tcStr = '00:' + pad2(tc/60) + ':' + pad2(tc%60) + ':' + pad2((tc%1)*24);
+  sx.font = '11px ' + MONO;
   sx.textAlign = 'right';
-  sx.fillText(tcStr, W-PAD, 46);
+  sx.fillStyle = C_FAINT;
+  sx.fillText('登記 ' + p.reg, W-PAD, 44);
   sx.textAlign = 'left';
 
-  sx.strokeStyle = 'rgba(120,130,112,.22)';
+  sx.strokeStyle = 'rgba(120,130,112,.20)';
   sx.lineWidth = 1;
-  sx.beginPath(); sx.moveTo(PAD,66); sx.lineTo(W-PAD,66); sx.stroke();
+  sx.beginPath(); sx.moveTo(PAD, 58); sx.lineTo(W-PAD, 58); sx.stroke();
 
-  /* 文件头 */
-  var y = 100;
-  sx.font = '13px ' + MONO;
-  sx.fillStyle = COL_FAINT;
-  sx.fillText(HEAD_ORG, PAD, y);
+  /* 页脚 */
+  sx.font = '11px ' + MONO;
+  sx.fillStyle = C_FAINT;
+  sx.fillText('記錄 ' + p.num + ' / 07', PAD, H-34);
+
   sx.textAlign = 'right';
-  sx.fillText(HEAD_NO, W-PAD, y);
+  sx.fillText(p.num === '07' ? '○' : '↑ ↓', W-PAD, H-34);
   sx.textAlign = 'left';
 
-  /* 标题 */
-  y = 148;
-  sx.font = '26px ' + SERIF;
-  sx.fillStyle = COL_RED;
-  sx.fillText(TITLE, PAD, y);
-  sx.strokeStyle = 'rgba(154,43,24,.55)';
-  sx.beginPath(); sx.moveTo(PAD, y+12); sx.lineTo(PAD+96, y+12); sx.stroke();
+  /* REC */
+  sx.font = '10px ' + MONO;
+  sx.fillStyle = 'rgba(120,130,112,.55)';
+  sx.fillText('REC', W-PAD-42, H-34);
+  sx.beginPath();
+  sx.arc(W-PAD-18, H-37, 2.6, 0, Math.PI*2);
+  sx.fillStyle = 'rgba(154,43,24,.75)';
+  sx.fill();
+}
 
-  /* 正文 */
-  sx.font = '18px ' + SERIF;
-  var ly = 200, LH = 33;
-  for (var k=0;k<LINES.length;k++){
-    var L = LINES[k];
-    if (L.gap){ ly += 12; continue; }
-    if (ly > H-150) break;
-    sx.fillStyle = 'rgba(196,194,178,' + (0.80 + srnd(k)*0.20).toFixed(2) + ')';
-    sx.fillText(L.t, PAD + (srnd(k+900)-0.5)*1.2, ly + (srnd(k)-0.5)*1.5);
-    ly += LH;
+/* ---------- 01 公文 ---------- */
+function rDoc(p){
+  var y = 92;
+  sx.font = '11px ' + MONO;
+  sx.fillStyle = C_FAINT;
+  sx.fillText(p.org, PAD, y);
+  sx.textAlign = 'right';
+  sx.fillText(p.no, W-PAD, y);
+  sx.textAlign = 'left';
+
+  y = 138;
+  sx.font = '25px ' + SERIF;
+  sx.fillStyle = C_RED;
+  sx.fillText(p.title, PAD, y);
+  sx.strokeStyle = C_REDD;
+  sx.beginPath(); sx.moveTo(PAD, y+11); sx.lineTo(PAD+82, y+11); sx.stroke();
+
+  y = 186;
+  var F = '15px ' + SERIF;
+  for (var i=0;i<p.paras.length;i++){
+    var ls = wrapText(p.paras[i], CW, F);
+    for (var j=0;j<ls.length;j++){
+      if (y > H-146) break;
+      sx.font = F;
+      sx.fillStyle = 'rgba(196,194,178,' + (0.84+srnd(i*9+j)*0.16).toFixed(2) + ')';
+      sx.fillText(ls[j], PAD + (srnd(i*9+j+500)-0.5)*1.0, y + (srnd(i*9+j)-0.5)*1.2);
+      y += 26;
+    }
+    y += 11;
   }
 
-  /* 落款 */
-  var sy = H - 132;
-  sx.font = '17px ' + SERIF;
-  sx.fillStyle = COL_TXT;
-  sx.fillText(SIGN, PAD, sy);
-  sx.font = '16px ' + SERIF;
-  sx.fillStyle = COL_DIM;
-  sx.fillText(DATE, PAD, sy+36);
-
-  /* 红印 */
-  sx.save();
-  sx.strokeStyle = 'rgba(154,43,24,.42)';
-  sx.lineWidth = 2;
-  sx.strokeRect(W-PAD-78, sy-24, 78, 78);
-  sx.globalAlpha = 0.55;
+  var sy = H-118;
   sx.font = '15px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.sign, PAD, sy);
+  sx.font = '14px ' + SERIF;
+  sx.fillStyle = C_DIM;
+  sx.fillText(p.date, PAD, sy+30);
+
+  sx.save();
+  sx.strokeStyle = 'rgba(154,43,24,.40)';
+  sx.lineWidth = 2;
+  sx.strokeRect(W-PAD-70, sy-26, 70, 70);
+  sx.globalAlpha = .55;
+  sx.font = '14px ' + SERIF;
   sx.fillStyle = 'rgba(154,43,24,.9)';
-  sx.fillText('收', W-PAD-64, sy+4);
-  sx.fillText('文', W-PAD-64, sy+26);
+  sx.fillText(p.seal[0], W-PAD-57, sy+2);
+  sx.fillText(p.seal[1], W-PAD-57, sy+22);
+  sx.restore();
+}
+
+/* ---------- 02 照片 ---------- */
+function rPhoto(p){
+  var y = 96;
+  sx.font = '20px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.title, PAD, y);
+
+  /* 底片袋 */
+  var by = 126, bh = 250;
+  sx.strokeStyle = 'rgba(120,130,112,.34)';
+  sx.lineWidth = 1;
+  sx.strokeRect(PAD, by, CW, bh);
+
+  sx.font = '12px ' + MONO;
+  sx.fillStyle = C_DIM;
+  sx.fillText(p.bag[0], PAD+12, by+22);
+  sx.fillStyle = C_FAINT;
+  sx.fillText(p.bag[1], PAD+12, by+40);
+
+  /* 三个格子 */
+  var fw = (CW-24-16)/3, fh = 150, fy = by+58;
+  for (var i=0;i<3;i++){
+    var fx = PAD+12 + i*(fw+8);
+    var f = p.frames[i];
+
+    sx.strokeStyle = f.mark ? 'rgba(154,43,24,.55)' : 'rgba(120,130,112,.30)';
+    sx.setLineDash(f.mark ? [4,3] : []);
+    sx.strokeRect(fx, fy, fw, fh);
+    sx.setLineDash([]);
+
+    /* 空洞的角标 */
+    sx.strokeStyle = 'rgba(120,130,112,.18)';
+    sx.beginPath();
+    sx.moveTo(fx+6, fy+6); sx.lineTo(fx+18, fy+6);
+    sx.moveTo(fx+6, fy+6); sx.lineTo(fx+6, fy+18);
+    sx.moveTo(fx+fw-6, fy+fh-6); sx.lineTo(fx+fw-18, fy+fh-6);
+    sx.moveTo(fx+fw-6, fy+fh-6); sx.lineTo(fx+fw-6, fy+fh-18);
+    sx.stroke();
+
+    sx.font = '11px ' + MONO;
+    sx.fillStyle = f.mark ? 'rgba(154,43,24,.75)' : C_FAINT;
+    sx.textAlign = 'center';
+    sx.fillText(f.label, fx+fw/2, fy+16);
+    if (f.sub){
+      sx.font = '9px ' + KAI;
+      sx.fillStyle = f.mark ? 'rgba(154,43,24,.68)' : 'rgba(120,130,112,.55)';
+      sx.fillText(f.sub, fx+fw/2, fy+32);
+    }
+    sx.textAlign = 'left';
+  }
+
+  /* 说明 */
+  y = by+bh+26;
+  sx.font = '13px ' + SERIF;
+  for (var k=0;k<p.notes.length;k++){
+    var ls = wrapText(p.notes[k], CW, '13px ' + SERIF);
+    for (var j=0;j<ls.length;j++){
+      sx.fillStyle = 'rgba(196,194,178,.82)';
+      sx.fillText(ls[j], PAD, y);
+      y += 21;
+    }
+    y += 3;
+  }
+
+  y += 12;
+  sx.font = '14px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.tail, PAD, y);
+  y += 26;
+  sx.font = '15px ' + SERIF;
+  sx.fillStyle = C_RED;
+  sx.fillText(p.tailStrong, PAD, y);
+
+  /* 边注 */
+  var my = H-150;
+  sx.font = '11px ' + KAI;
+  sx.fillStyle = 'rgba(154,43,24,.62)';
+  var ml = p.margin.split('\n');
+  for (var m=0;m<ml.length;m++) sx.fillText(ml[m], W-PAD-136, my + m*18);
+  sx.strokeStyle = 'rgba(154,43,24,.25)';
+  sx.beginPath(); sx.moveTo(W-PAD-140, my-14); sx.lineTo(W-PAD-140, my+18*ml.length); sx.stroke();
+}
+
+/* ---------- 03 笔录 ---------- */
+function rDepo(p){
+  var y = 96;
+  sx.font = '19px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.title, PAD, y);
+
+  y = 132;
+  for (var i=0;i<p.rows.length;i++){
+    var r = p.rows[i];
+    if (y > H-96) break;
+
+    sx.font = '10px ' + MONO;
+    sx.fillStyle = C_FAINT;
+    sx.fillText(r.no, PAD, y);
+
+    var ql = wrapText(r.q, CW-34, '13px ' + SERIF);
+    sx.font = '13px ' + SERIF;
+    sx.fillStyle = 'rgba(196,194,178,.62)';
+    for (var j=0;j<ql.length;j++){ sx.fillText(ql[j], PAD+34, y + j*20); }
+    y += ql.length*20;
+
+    var al = wrapText(r.a, CW-34, '14px ' + SERIF);
+    sx.font = '14px ' + SERIF;
+    sx.fillStyle = 'rgba(196,194,178,.92)';
+    for (var k=0;k<al.length;k++){ sx.fillText(al[k], PAD+34, y + k*21); }
+    y += al.length*21;
+
+    if (r.note){
+      sx.font = '10px ' + KAI;
+      sx.fillStyle = 'rgba(154,43,24,.55)';
+      sx.fillText(r.note, PAD+34, y+13);
+      y += 20;
+    }
+
+    if (r.extra){
+      var el = r.extra.split('\n');
+      y += 4;
+      sx.font = '12px ' + KAI;
+      for (var e=0;e<el.length;e++){
+        sx.fillStyle = e >= 2 ? 'rgba(196,194,178,.75)' : 'rgba(120,130,112,.75)';
+        sx.fillText(el[e], PAD+34, y);
+        y += 19;
+      }
+    }
+    y += 14;
+  }
+
+  sx.font = '11px ' + MONO;
+  sx.fillStyle = C_FAINT;
+  sx.fillText(p.tail, PAD, H-72);
+}
+
+/* ---------- 04 海图 ---------- */
+function rMap(p){
+  var y = 92;
+  sx.font = '19px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.title, PAD, y);
+
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = C_FAINT;
+  sx.fillText(p.cap, PAD, y+20);
+
+  /* 图框 */
+  var gx = PAD, gy = 132, gw = CW, gh = 480;
+  sx.strokeStyle = 'rgba(120,130,112,.28)';
+  sx.lineWidth = 1;
+  sx.strokeRect(gx, gy, gw, gh);
+
+  /* 网格 */
+  sx.strokeStyle = 'rgba(120,130,112,.06)';
+  for (var i=1;i<8;i++){
+    sx.beginPath(); sx.moveTo(gx+gw*i/8, gy); sx.lineTo(gx+gw*i/8, gy+gh); sx.stroke();
+  }
+  for (var j=1;j<10;j++){
+    sx.beginPath(); sx.moveTo(gx, gy+gh*j/10); sx.lineTo(gx+gw, gy+gh*j/10); sx.stroke();
+  }
+
+  function px(nx){ return gx + nx*gw; }
+  function py(ny){ return gy + ny*gh; }
+
+  /* 海岸线：细分 + 手绘抖动，避免过于光滑 */
+  var pts = [];
+  for (var a=0;a<p.coast.length;a++){
+    pts.push(p.coast[a]);
+    if (a < p.coast.length-1){
+      var A = p.coast[a], B = p.coast[a+1];
+      for (var k=1;k<=3;k++){
+        var tt = k/4;
+        pts.push([
+          A[0] + (B[0]-A[0])*tt + (srnd(a*10+k)-0.5)*0.013,
+          A[1] + (B[1]-A[1])*tt + (srnd(a*10+k+99)-0.5)*0.017
+        ]);
+      }
+    }
+  }
+
+  /* 陆侧淡填充 */
+  sx.save();
+  sx.beginPath();
+  sx.moveTo(px(pts[0][0]), py(pts[0][1]));
+  for (var q=1;q<pts.length;q++) sx.lineTo(px(pts[q][0]), py(pts[q][1]));
+  sx.lineTo(px(1.02), py(-0.02)); sx.lineTo(px(-0.02), py(-0.02));
+  sx.closePath();
+  sx.fillStyle = 'rgba(196,194,178,.055)';
+  sx.fill();
   sx.restore();
 
-  /* 底部 */
-  sx.font = '12px ' + MONO;
-  sx.fillStyle = COL_FAINT;
-  sx.fillText('記錄 01 / 07', PAD, H-38);
+  /* 海岸线 */
+  sx.strokeStyle = 'rgba(196,194,178,.66)';
+  sx.lineWidth = 1.3;
+  sx.beginPath();
+  sx.moveTo(px(pts[0][0]), py(pts[0][1]));
+  for (var q2=1;q2<pts.length;q2++) sx.lineTo(px(pts[q2][0]), py(pts[q2][1]));
+  sx.stroke();
+
+  /* 海中散岛 */
+  var isles = [[0.22,0.62,9],[0.55,0.70,6],[0.83,0.80,11],[0.14,0.44,5]];
+  for (var s=0;s<isles.length;s++){
+    var it = isles[s];
+    sx.beginPath();
+    sx.ellipse(px(it[0]), py(it[1]), it[2], it[2]*0.66, srnd(s)*1.2, 0, Math.PI*2);
+    sx.strokeStyle = 'rgba(196,194,178,.34)';
+    sx.lineWidth = 1;
+    sx.stroke();
+  }
+
+  /* 澳口编号 */
+  for (var b=0;b<p.bays.length;b++){
+    var bay = p.bays[b];
+    sx.font = '11px ' + MONO;
+    sx.fillStyle = 'rgba(150,158,138,.9)';
+    sx.fillText(bay.t, px(bay.x), py(bay.y));
+    sx.beginPath(); sx.arc(px(bay.x)+2, py(bay.y)+4, 1.6, 0, Math.PI*2);
+    sx.fillStyle = 'rgba(150,158,138,.55)'; sx.fill();
+  }
+
+  /* 多出来的那个 */
+  var e = p.extraBay;
+  sx.setLineDash([3,3]);
+  sx.strokeStyle = 'rgba(154,43,24,.62)';
+  sx.lineWidth = 1.2;
+  sx.strokeRect(px(e.x)-24, py(e.y)-18, 48, 32);
+  sx.setLineDash([]);
+  sx.font = '11px ' + MONO;
+  sx.fillStyle = 'rgba(154,43,24,.9)';
+  sx.fillText(e.t, px(e.x)-22, py(e.y)-4);
+
+  /* 手写批注 */
+  sx.save();
+  sx.translate(px(e.x)+30, py(e.y)+34);
+  sx.rotate(-0.065);
+  sx.font = '14px ' + KAI;
+  sx.fillStyle = 'rgba(154,43,24,.8)';
+  sx.fillText(p.hand, 0, 0);
+  sx.restore();
+
+  /* 指北针 */
+  var nx2 = gx+gw-30, ny2 = gy+26;
+  sx.strokeStyle = 'rgba(150,158,138,.5)';
+  sx.lineWidth = 1;
+  sx.beginPath();
+  sx.moveTo(nx2, ny2+14); sx.lineTo(nx2, ny2-12);
+  sx.moveTo(nx2, ny2-12); sx.lineTo(nx2-4, ny2-4);
+  sx.moveTo(nx2, ny2-12); sx.lineTo(nx2+4, ny2-4);
+  sx.stroke();
+  sx.font = '9px ' + MONO;
+  sx.fillStyle = 'rgba(150,158,138,.7)';
+  sx.textAlign = 'center';
+  sx.fillText('北', nx2, ny2+26);
+  sx.textAlign = 'left';
+
+  /* 比例尺 */
+  var sbx = gx+14, sby = gy+gh-16;
+  sx.strokeStyle = 'rgba(150,158,138,.55)';
+  sx.beginPath();
+  sx.moveTo(sbx, sby); sx.lineTo(sbx+72, sby);
+  sx.moveTo(sbx, sby-4); sx.lineTo(sbx, sby+4);
+  sx.moveTo(sbx+36, sby-3); sx.lineTo(sbx+36, sby+3);
+  sx.moveTo(sbx+72, sby-4); sx.lineTo(sbx+72, sby+4);
+  sx.stroke();
+  sx.font = '8px ' + MONO;
+  sx.fillStyle = 'rgba(150,158,138,.65)';
+  sx.fillText('〇', sbx-2, sby+13);
+  sx.fillText('五〇〇公尺', sbx+40, sby+13);
+
+  /* 批注脚注 */
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = 'rgba(154,43,24,.55)';
   sx.textAlign = 'right';
-  sx.fillText('↓', W-PAD, H-38);
+  sx.fillText(p.note, gx+gw-10, gy+gh-42);
+  sx.textAlign = 'left';
+}
+
+/* ---------- 05 表格 ---------- */
+function rTable(p){
+  var y = 96;
+  sx.font = '19px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.title, PAD, y);
+
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = C_FAINT;
+  sx.fillText(p.cap, PAD, y+20);
+
+  var ty = 150, rh = 44;
+  var cols = [0.10, 0.34, 0.34, 0.22];
+  var xs = [], acc = PAD;
+  for (var i=0;i<cols.length;i++){ xs.push(acc); acc += cols[i]*CW; }
+
+  /* 表头 */
+  sx.font = '11px ' + MONO;
+  sx.fillStyle = C_DIM;
+  for (var h=0;h<p.head.length;h++){
+    sx.textAlign = h===0 ? 'left' : 'center';
+    var cx = h===0 ? xs[h] : xs[h] + cols[h]*CW/2;
+    sx.fillText(p.head[h], cx, ty+16);
+  }
+  sx.textAlign = 'left';
+
+  sx.strokeStyle = 'rgba(120,130,112,.32)';
+  sx.beginPath(); sx.moveTo(PAD, ty+26); sx.lineTo(PAD+CW, ty+26); sx.stroke();
+
+  /* 竖线 */
+  sx.strokeStyle = 'rgba(120,130,112,.14)';
+  for (var v=1;v<cols.length;v++){
+    sx.beginPath(); sx.moveTo(xs[v], ty); sx.lineTo(xs[v], ty+26+rh*p.rows.length); sx.stroke();
+  }
+
+  /* 行 */
+  for (var r=0;r<p.rows.length;r++){
+    var row = p.rows[r];
+    var ry = ty+26+rh*r;
+    var odd = (r % 2 === 1);
+
+    if (odd){
+      sx.fillStyle = 'rgba(120,130,112,.045)';
+      sx.fillRect(PAD, ry, CW, rh);
+    }
+
+    sx.strokeStyle = 'rgba(120,130,112,.10)';
+    sx.beginPath(); sx.moveTo(PAD, ry+rh); sx.lineTo(PAD+CW, ry+rh); sx.stroke();
+
+    for (var c=0;c<row.length;c++){
+      var isLast = (r === p.rows.length-1);
+      sx.font = (c===0 ? '13px ' + MONO : '14px ' + MONO);
+      if (isLast && c>0) sx.fillStyle = 'rgba(154,43,24,.62)';
+      else if (c===0) sx.fillStyle = C_DIM;
+      else sx.fillStyle = 'rgba(196,194,178,.88)';
+
+      if (c===0){
+        sx.fillText(row[c], xs[c]+6, ry+28);
+      } else {
+        sx.textAlign = 'center';
+        sx.fillText(row[c], xs[c] + cols[c]*CW/2, ry+28);
+        sx.textAlign = 'left';
+      }
+    }
+  }
+
+  /* 单位 */
+  sx.font = '10px ' + MONO;
+  sx.fillStyle = C_FAINT;
+  sx.fillText(p.unit, PAD, ty+26+rh*p.rows.length+20);
+
+  /* 结语 */
+  var ny = ty+26+rh*p.rows.length+62;
+  sx.font = '14px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.tail, PAD, ny);
+
+  sx.font = '13px ' + KAI;
+  sx.fillStyle = 'rgba(154,43,24,.62)';
+  sx.fillText(p.tail2, PAD, ny+30);
+}
+
+/* 逐字绘制：模拟手写/油印的不匀（字体缺楷体时也能有“不齐”的手感） */
+function handLine(text, x, y, size, rgb, seed){
+  sx.font = size + 'px ' + KAI;
+  var cx = x;
+  for (var i=0;i<text.length;i++){
+    var ch = text[i];
+    var w = sx.measureText(ch).width;
+    var a = 0.56 + srnd(seed+i*3)*0.42;
+    var jx = (srnd(seed+i*7)-0.5)*1.2;
+    var jy = (srnd(seed+i*11)-0.5)*2.0;
+    sx.fillStyle = 'rgba(' + rgb + ',' + a.toFixed(2) + ')';
+    sx.fillText(ch, cx+jx, y+jy);
+    cx += w * (0.975 + srnd(seed+i*13)*0.06);
+  }
+  return cx;
+}
+
+/* ---------- 06 手记 ---------- */
+function rNote(p){
+  var y = 92;
+  sx.save();
+  sx.translate(PAD, y);
+  sx.rotate(-0.012);
+  sx.font = '18px ' + KAI;
+  sx.fillStyle = 'rgba(196,194,178,.88)';
+  sx.fillText(p.title, 0, 0);
+  sx.restore();
+
+  y = 126;
+  handLine(p.lead, PAD, y, 12, '154,43,24', 7);
+
+  y = 168;
+  for (var i=0;i<p.items.length;i++){
+    var it = p.items[i];
+    var rot = (srnd(i*3+1) - 0.5) * 0.048;
+
+    sx.save();
+    sx.translate(PAD, y);
+    sx.rotate(rot);
+
+    sx.font = '10px ' + MONO;
+    sx.fillStyle = C_FAINT;
+    sx.fillText(it.n, 0, 0);
+
+    var lines = wrapText(it.t, CW-42, '15px ' + KAI);
+    var ty2 = 20;
+    for (var j=0;j<lines.length;j++){
+      handLine(lines[j], 34, ty2, 15, it.mark ? '154,43,24' : '196,194,178', i*100+j*17+5);
+      ty2 += 27;
+    }
+    y += ty2 + 24;
+    sx.restore();
+  }
+
+  /* 涂改的斜线 */
+  sx.strokeStyle = 'rgba(154,43,24,.32)';
+  sx.lineWidth = 1.2;
+  for (var d=0;d<3;d++){
+    var dy = 650 + d*16;
+    sx.beginPath();
+    sx.moveTo(PAD-4, dy);
+    sx.lineTo(PAD + 200 + srnd(d)*90, dy - 6);
+    sx.stroke();
+  }
+
+  sx.font = '12px ' + KAI;
+  sx.fillStyle = C_DIM;
+  sx.fillText(p.foot, PAD, H-108);
+}
+
+/* ---------- 07 空白 ---------- */
+function rBlank(p){
+  var el = t - pageEnter;
+
+  /* 第一段：只有一句话 */
+  if (el < 13){
+    sx.font = '15px ' + SERIF;
+    sx.fillStyle = 'rgba(196,194,178,0.62)';
+    sx.textAlign = 'center';
+    sx.fillText(p.line, W/2, 320);
+  }
+
+  /* 第二段：六秒后才浮出来的归档说明 */
+  if (el >= 6 && el < 13){
+    var a2 = Math.min(1, (el-6)/2.2);
+    sx.font = '11px ' + KAI;
+    sx.fillStyle = 'rgba(120,130,112,' + (0.42*a2).toFixed(2) + ')';
+    var ls = wrapText(p.faint, CW-40, '11px ' + KAI);
+    for (var i=0;i<ls.length;i++){ sx.fillText(ls[i], W/2, 470 + i*19); }
+
+    sx.font = '12px ' + KAI;
+    sx.fillStyle = 'rgba(154,43,24,' + (0.42*a2).toFixed(2) + ')';
+    sx.fillText(p.by, W/2, 470 + ls.length*19 + 48);
+  }
+
+  /* 第三段：十三秒后，全部抹掉，只剩一句 */
+  if (el >= 13){
+    var a3 = Math.min(1, (el-13)/3.0);
+    sx.font = '13px ' + SERIF;
+    sx.fillStyle = 'rgba(196,194,178,' + (0.50*a3).toFixed(2) + ')';
+    sx.fillText('本卷已歸還。', W/2, 420);
+  }
+
   sx.textAlign = 'left';
 }
 
 /* ============================================================
-   3. 曝光节律（两种模式共用）
+   4. 页面绘制
+   ============================================================ */
+var cur = 0;
+var pageEnter = 0;
+
+function drawSource(tc){
+  var p = PAGES[cur];
+
+  sx.fillStyle = C_BG;
+  sx.fillRect(0,0,W,H);
+
+  /* 底噪 */
+  for (var i=0;i<1100;i++){
+    sx.fillStyle = Math.random()<0.5 ? 'rgba(43,50,42,.09)' : 'rgba(27,33,26,.09)';
+    sx.fillRect(Math.random()*W, Math.random()*H, 1, 1);
+  }
+
+  chrome(p, tc);
+
+  if (p.kind === 'doc')   rDoc(p);
+  if (p.kind === 'photo') rPhoto(p);
+  if (p.kind === 'depo')  rDepo(p);
+  if (p.kind === 'map')   rMap(p);
+  if (p.kind === 'table') rTable(p);
+  if (p.kind === 'note')  rNote(p);
+  if (p.kind === 'blank') rBlank(p);
+
+  /* 时间码 */
+  sx.font = '10px ' + MONO;
+  sx.textAlign = 'right';
+  sx.fillStyle = 'rgba(120,130,112,.42)';
+  sx.fillText('00:' + pad2(tc/60) + ':' + pad2(tc%60), PAD+120, 44);
+  sx.textAlign = 'left';
+}
+
+/* ============================================================
+   5. 曝光
    ============================================================ */
 var t = 0, exp = 0.0, clock = 0;
-var nextSurge = 3.2, surgeLeft = 0, flick = 0;
-var track = -1, trackV = 0, jitter = 0;
+var nextSurge = 3.0, surgeLeft = 0, flick = 0;
+var track = -1, trackV = 0;
 var FROZEN = null;
 
 window.__freezeExp = function(v){ FROZEN = v; };
-window.__release  = function(){ FROZEN = null; };
+window.__goPage = function(i){ cur = i; drawSource(t); };
+
+/* 每屏底色强度不同：越往后越暗 */
+var PAGE_EXP = [0.32, 0.30, 0.27, 0.25, 0.23, 0.20, 0.19];
 
 function updateExposure(dt){
   clock += dt;
+  var base = PAGE_EXP[cur] || 0.28;
+
   if (surgeLeft <= 0 && clock >= nextSurge){
-    surgeLeft = 0.30 + Math.random()*0.55;
+    surgeLeft = 0.28 + Math.random()*0.5;
     flick = 0;
     clock = 0;
-    nextSurge = 5.5 + Math.random()*10.0;
+    nextSurge = 5.0 + Math.random()*9.5;
     track = 1.15;
     trackV = 0.55 + Math.random()*0.6;
   }
+
   var target;
   if (surgeLeft > 0){
     surgeLeft -= dt;
     if (Math.random() < 0.10) flick = 0.06;
-    target = (flick > 0) ? 0.42 : 1.02;
+    target = (flick > 0) ? base*1.5 : 1.02;
     flick -= dt;
   } else {
-    target = 0.30 + Math.sin(clock*1.15) * 0.05;
+    target = base + Math.sin(clock*1.15) * base*0.16;
   }
+
   var k = (surgeLeft > 0) ? 22.0 : 1.6;
-  exp += (target - exp) * Math.min(1, dt * k);
+  exp += (target - exp) * Math.min(1, dt*k);
+
   if (track > -0.2) track -= dt * trackV;
-  jitter = (Math.random() - 0.5) * 0.0016;
-  if (surgeLeft > 0 && Math.random() < 0.25) jitter += (Math.random()-0.5)*0.004;
   if (FROZEN !== null) exp = FROZEN;
 }
 
 /* ============================================================
-   4. 渲染通道
+   6. 2D 输出管线
    ============================================================ */
 var out = document.getElementById('out');
-var mode = 'none';
-var gl = null, glProg = null, glTex = null, glU = {};
+var ctx2 = null, scanPat = null, noisePat = null, vigGrad = null;
 
-function initGL(){
-  var opts = {
-    antialias:false, alpha:false, depth:false, stencil:false,
-    preserveDrawingBuffer:true, powerPreference:'high-performance',
-    failIfMajorPerformanceCaveat:false
-  };
-  var g = null;
-  try { g = out.getContext('webgl', opts) || out.getContext('experimental-webgl', opts); } catch(e){ g = null; }
-  if (!g) { say('no webgl context'); return null; }
-
-  var VERT = 'attribute vec2 aPos;varying vec2 vUv;void main(){vUv=vec2(aPos.x*0.5+0.5,0.5-aPos.y*0.5);gl_Position=vec4(aPos,0.0,1.0);}';
-
-  var FRAG = [
-    'precision mediump float;',
-    'varying vec2 vUv;',
-    'uniform sampler2D uTex;',
-    'uniform vec2 uRes;',
-    'uniform float uTime;',
-    'uniform float uExp;',
-    'uniform float uTrack;',
-    'uniform float uJitter;',
-    'float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
-    'float vnoise(vec2 p){',
-    '  vec2 i=floor(p),f=fract(p);',
-    '  f=f*f*(3.0-2.0*f);',
-    '  float a=hash(i),b=hash(i+vec2(1.0,0.0)),c=hash(i+vec2(0.0,1.0)),d=hash(i+vec2(1.0,1.0));',
-    '  return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);',
-    '}',
-    'void main(){',
-    '  vec2 uv=vUv;',
-    '  vec2 c=uv-0.5;',
-    '  uv+=c*dot(c,c)*0.045;',
-    '  float field=vnoise(uv*vec2(3.5,5.0)+vec2(uTime*0.021,uTime*0.034));',
-    '  float field2=vnoise(uv*vec2(9.0,18.0)-uTime*0.048);',
-    '  float rowJit=(hash(vec2(floor(uv.y*480.0),floor(uTime*26.0)))-0.5)*0.0012*(0.4+field);',
-    '  uv.x+=rowJit;',
-    '  uv.x+=uJitter;',
-    '  float band=smoothstep(0.035,0.0,abs(uv.y-uTrack));',
-    '  uv.x+=band*(hash(vec2(floor(uv.y*90.0),floor(uTime*18.0)))-0.5)*0.06;',
-
-    /* 右向拖尾：手写展开 6 tap，不用循环（老驱动不接受非恒定边界循环） */
-    '  vec3 sm=vec3(0.0);',
-    '  float ws=0.0;',
-    '  sm+=texture2D(uTex,uv+vec2(0.0050*(0.3+field*0.95),0.0)).rgb*0.7057; ws+=0.7057;',
-    '  sm+=texture2D(uTex,uv+vec2(0.0100*(0.3+field*0.95),0.0)).rgb*0.4779; ws+=0.4779;',
-    '  sm+=texture2D(uTex,uv+vec2(0.0150*(0.3+field*0.95),0.0)).rgb*0.2994; ws+=0.2994;',
-    '  sm+=texture2D(uTex,uv+vec2(0.0200*(0.3+field*0.95),0.0)).rgb*0.1614; ws+=0.1614;',
-    '  sm+=texture2D(uTex,uv+vec2(0.0250*(0.3+field*0.95),0.0)).rgb*0.0608; ws+=0.0608;',
-    '  sm+=texture2D(uTex,uv+vec2(0.0300*(0.3+field*0.95),0.0)).rgb*0.0147; ws+=0.0147;',
-    '  sm/=ws;',
-
-    '  vec3 base=texture2D(uTex,uv).rgb;',
-    '  base=mix(base,sm,0.24+field*0.46);',
-
-    '  vec3 bl=texture2D(uTex,uv+vec2(0.0016,0.0)).rgb',
-    '        +texture2D(uTex,uv-vec2(0.0016,0.0)).rgb',
-    '        +texture2D(uTex,uv+vec2(0.0,0.0016)).rgb',
-    '        +texture2D(uTex,uv-vec2(0.0,0.0016)).rgb;',
-    '  base=mix(base,bl*0.25,0.45);',
-
-    '  float ab=(0.0010+abs(uv.x-0.5)*0.0034+band*0.004)*(0.45+field*1.45);',
-    '  vec3 col;',
-    '  col.r=mix(base.r,texture2D(uTex,uv+vec2(ab,0.0)).r,0.85);',
-    '  col.g=base.g;',
-    '  col.b=mix(base.b,texture2D(uTex,uv-vec2(ab,0.0)).b,0.85);',
-
-    '  float scan=0.84+0.16*sin(uv.y*480.0*3.14159265);',
-    '  col*=scan;',
-
-    '  float g=hash(floor(uv*uRes*0.25)+floor(uTime*13.0)*17.0);',
-    '  col+=(g-0.5)*(0.028+field2*0.080)*max(0.0,1.0-col.g*1.7);',
-
-    '  float sp=hash(floor(uv*uRes*0.25)+floor(uTime*11.0)*31.0);',
-    '  col+=step(0.9988,sp)*0.45;',
-
-    '  col*=(0.86+field*0.30);',
-
-    '  vec2 v=uv-0.5;',
-    '  float vig=smoothstep(1.02,0.34,length(v*vec2(1.15,1.0)));',
-    '  col*=mix(0.42,1.0,vig);',
-
-    '  col*=vec3(0.93,1.0,0.90);',
-    '  col+=band*0.10;',
-    '  col*=uExp;',
-    '  col+=smoothstep(0.85,1.25,uExp)*0.05;',
-    '  col=pow(max(col,0.0),vec3(0.94));',
-    '  gl_FragColor=vec4(col,1.0);',
-    '}'
-  ].join('\n');
-
-  function mk(type, s){
-    var sh = g.createShader(type);
-    g.shaderSource(sh, s);
-    g.compileShader(sh);
-    if (!g.getShaderParameter(sh, g.COMPILE_STATUS)){
-      say('shader: ' + g.getShaderInfoLog(sh));
-      return null;
-    }
-    return sh;
-  }
-  var vs = mk(g.VERTEX_SHADER, VERT), fs = mk(g.FRAGMENT_SHADER, FRAG);
-  if (!vs || !fs) return null;
-
-  var p = g.createProgram();
-  g.attachShader(p, vs); g.attachShader(p, fs);
-  g.linkProgram(p);
-  if (!g.getProgramParameter(p, g.LINK_STATUS)){ say('link: ' + g.getProgramInfoLog(p)); return null; }
-  g.useProgram(p);
-
-  var buf = g.createBuffer();
-  g.bindBuffer(g.ARRAY_BUFFER, buf);
-  g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), g.STATIC_DRAW);
-  var aPos = g.getAttribLocation(p, 'aPos');
-  g.enableVertexAttribArray(aPos);
-  g.vertexAttribPointer(aPos, 2, g.FLOAT, false, 0, 0);
-
-  var tex = g.createTexture();
-  g.bindTexture(g.TEXTURE_2D, tex);
-  g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
-  g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
-  g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
-  g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
-  g.pixelStorei(g.UNPACK_FLIP_Y_WEBGL, false);
-
-  gl = g; glProg = p; glTex = tex;
-  glU = {
-    tex: g.getUniformLocation(p,'uTex'),
-    res: g.getUniformLocation(p,'uRes'),
-    time: g.getUniformLocation(p,'uTime'),
-    exp: g.getUniformLocation(p,'uExp'),
-    track: g.getUniformLocation(p,'uTrack'),
-    jitter: g.getUniformLocation(p,'uJitter')
-  };
-  return g;
-}
-
-var quality = 1.0;
 function resize(){
-  var dpr = Math.min(window.devicePixelRatio || 1, 2) * quality;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
   var w = Math.max(2, Math.floor(window.innerWidth * dpr));
   var h = Math.max(2, Math.floor(window.innerHeight * dpr));
   if (out.width !== w || out.height !== h){ out.width = w; out.height = h; }
-  if (mode === 'gl' && gl) gl.viewport(0,0,w,h);
+  if (ctx2) rebuildGrad();
 }
 window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', function(){ setTimeout(resize, 120); });
-
-function uploadGL(){
-  gl.bindTexture(gl.TEXTURE_2D, glTex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, srcC);
-}
-
-/* ---------- 降级通道：纯 Canvas 2D，微信/老浏览器也能跑 ---------- */
-var ctx2 = null, scanPat = null, noisePat = null, vigGrad = null;
+window.addEventListener('orientationchange', function(){ setTimeout(resize, 140); });
 
 function makePatterns(){
-  /* 扫描线：4px 周期 */
   var s = document.createElement('canvas');
   s.width = 1; s.height = 4;
   var sc = s.getContext('2d');
@@ -418,7 +893,6 @@ function makePatterns(){
   sc.fillRect(0,0,1,2);
   scanPat = ctx2.createPattern(s, 'repeat');
 
-  /* 噪点：96×96 随机 */
   var n = document.createElement('canvas');
   n.width = 96; n.height = 96;
   var nc = n.getContext('2d');
@@ -426,43 +900,36 @@ function makePatterns(){
   for (var i=0;i<img.data.length;i+=4){
     var v = Math.random()*255;
     img.data[i] = v; img.data[i+1] = v; img.data[i+2] = v;
-    img.data[i+3] = Math.random()<0.45 ? 60 : 0;
+    img.data[i+3] = Math.random()<0.45 ? 62 : 0;
   }
   nc.putImageData(img,0,0);
   noisePat = ctx2.createPattern(n, 'repeat');
 }
 
-function init2D(){
-  /* 关键：一个 canvas 拿过 webgl 就永远拿不到 2d，必须换一个新的 */
-  var nc = document.createElement('canvas');
-  nc.id = 'out';
-  if (out.parentNode) out.parentNode.replaceChild(nc, out);
-  out = nc;
-  mode = '2d';
-  resize();
-  ctx2 = out.getContext('2d');
-  if (!ctx2) { say('no canvas2d'); return false; }
-  makePatterns();
+function rebuildGrad(){
+  var w = out.width, h = out.height;
   vigGrad = ctx2.createRadialGradient(
-    out.width/2, out.height/2, Math.min(out.width,out.height)*0.18,
-    out.width/2, out.height/2, Math.max(out.width,out.height)*0.72
+    w/2, h/2, Math.min(w,h)*0.18,
+    w/2, h/2, Math.max(w,h)*0.72
   );
   vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
   vigGrad.addColorStop(1, 'rgba(0,0,0,0.62)');
+}
+
+function boot(){
+  resize();
+  ctx2 = out.getContext('2d');
+  if (!ctx2){ say('no canvas2d'); return false; }
+  makePatterns();
+  rebuildGrad();
+  drawSource(0);
+  last = 0;
+  requestAnimationFrame(loop);
   return true;
 }
 
-function drawGL(){
-  gl.uniform1i(glU.tex, 0);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, glTex);
-  gl.uniform2f(glU.res, out.width, out.height);
-  gl.uniform1f(glU.time, t);
-  gl.uniform1f(glU.exp, exp);
-  gl.uniform1f(glU.track, track);
-  gl.uniform1f(glU.jitter, jitter);
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
-}
+/* 翻页过渡 */
+var trans = 0;
 
 function draw2D(){
   var w = out.width, h = out.height;
@@ -474,12 +941,10 @@ function draw2D(){
   ctx2.fillStyle = '#000';
   ctx2.fillRect(0,0,w,h);
 
-  /* 右向拖尾 / 色散：先叠两层偏移副本，再盖主体 */
   ctx2.globalAlpha = 0.20;
   ctx2.drawImage(srcC, d*4, 0, w, h);
   ctx2.globalAlpha = 0.30;
   ctx2.drawImage(srcC, d, 0, w, h);
-
   ctx2.globalAlpha = 1;
   ctx2.drawImage(srcC, 0, 0, w, h);
 
@@ -508,23 +973,39 @@ function draw2D(){
 
   /* tracking 亮带 */
   if (track > -0.1 && track < 1.1){
-    var by = track * h;
     ctx2.globalAlpha = 0.10;
     ctx2.fillStyle = '#c8d0bc';
-    ctx2.fillRect(0, by, w, Math.max(2, h*0.006));
+    ctx2.fillRect(0, track*h, w, Math.max(2, h*0.006));
   }
 
-  /* 曝光：唯一的压暗层 */
+  /* 翻页：信号丢失 */
+  if (trans > 0){
+    var k = trans;
+    ctx2.globalAlpha = 0.30 + k*0.55;
+    ctx2.save();
+    ctx2.translate(-Math.random()*96, -Math.random()*96);
+    ctx2.fillStyle = noisePat;
+    ctx2.fillRect(0,0,w+96,h+96);
+    ctx2.restore();
+
+    ctx2.globalAlpha = k*0.9;
+    ctx2.fillStyle = '#000';
+    for (var i=0;i<7;i++){
+      var yy = Math.random()*h;
+      ctx2.fillRect(0, yy, w, Math.random()*h*0.02);
+    }
+  }
+
+  /* 曝光 */
   ctx2.globalAlpha = 1;
   ctx2.fillStyle = 'rgba(0,0,0,' + Math.max(0, 1 - Math.min(1, exp*1.02)).toFixed(3) + ')';
   ctx2.fillRect(0,0,w,h);
 }
 
 /* ============================================================
-   5. 主循环
+   7. 主循环
    ============================================================ */
-var last = 0, lastSec = -1, frames = 0, fps = 0, fpsT = 0;
-var slowCount = 0, tuned = false;
+var last = 0, lastSec = -1;
 
 function loop(now){
   if (!last) last = now;
@@ -537,76 +1018,84 @@ function loop(now){
   var sec = Math.floor(t);
   if (sec !== lastSec){
     lastSec = sec;
-    drawFrame(t);
-    if (mode === 'gl') uploadGL();
+    drawSource(t);
   }
 
-  if (mode === 'gl'){
-    drawGL();
-  } else if (mode === '2d'){
-    draw2D();
-  }
+  if (trans > 0) trans = Math.max(0, trans - dt*3.2);
 
-  /* 性能统计 */
-  frames++;
-  if (now - fpsT > 1000){
-    fps = Math.round(frames*1000/(now-fpsT));
-    frames = 0; fpsT = now;
-    if (DEBUG) dbgEl.textContent = 'mode=' + mode + ' fps=' + fps + ' exp=' + exp.toFixed(2)
-      + ' expErr=' + ERRORS.length + '\n' + dbgEl.textContent.split('\n').slice(0,6).join('\n');
-  }
-
-  /* 降档 */
-  if (mode === 'gl' && !tuned){
-    if (dt > 0.024) slowCount++; else slowCount = Math.max(0, slowCount-1);
-    if (slowCount > 50 && quality > 0.55){ quality -= 0.22; slowCount = 0; resize(); }
-    if (quality <= 0.55) tuned = true;
-  }
-
+  draw2D();
   requestAnimationFrame(loop);
 }
 
 /* ============================================================
-   6. 启动
+   8. 翻页交互
    ============================================================ */
-function start(){
-  layout();
-  drawFrame(0);
-
-  var m = (location.search.match(/[?&]mode=(gl|2d)/) || [])[1];
-
-  if (m === 'gl'){
-    if (initGL()){
-      mode = 'gl';
-      resize();
-      uploadGL();
-      last = 0;
-      requestAnimationFrame(loop);
-      return;
-    }
-    say('gl 不可用 → 回落 2d');
-  }
-
-  /* 默认 2D：不依赖 WebGL，任何内置浏览器都能出图 */
-  if (init2D()){
-    mode = '2d';
-  } else {
-    say('FATAL: no renderer');
-  }
-
-  last = 0;
-  requestAnimationFrame(loop);
+function goNext(){
+  if (trans > 0.35 || cur >= PAGES.length-1) return;
+  trans = 1;
+  setTimeout(function(){
+    cur++; pageEnter = t;
+    drawSource(t);
+  }, 140);
 }
 
-/* 立即启动，不等字体；字体到了再重画一次 */
-start();
+function goPrev(){
+  if (trans > 0.35 || cur <= 0) return;
+  trans = 1;
+  setTimeout(function(){
+    cur--; pageEnter = t;
+    drawSource(t);
+  }, 140);
+}
+
+var sy0 = 0, sx0 = 0, moved = false;
+
+function onDown(x, y){ sx0 = x; sy0 = y; moved = false; }
+function onMove(x, y){
+  if (Math.abs(x-sx0) > 12 || Math.abs(y-sy0) > 12) moved = true;
+}
+function onUp(x, y){
+  var dy = y - sy0, dx = x - sx0;
+  if (Math.abs(dy) > 46 && Math.abs(dy) > Math.abs(dx)){
+    if (dy < 0) goNext(); else goPrev();
+  } else if (!moved && Math.abs(dy) < 12 && Math.abs(dx) < 12){
+    goNext();
+  }
+}
+
+document.addEventListener('touchstart', function(e){
+  var tp = e.touches[0]; onDown(tp.clientX, tp.clientY);
+}, {passive:true});
+document.addEventListener('touchmove', function(e){
+  var tp = e.touches[0]; onMove(tp.clientX, tp.clientY);
+}, {passive:true});
+document.addEventListener('touchend', function(e){
+  var tp = e.changedTouches[0]; onUp(tp.clientX, tp.clientY);
+}, {passive:true});
+
+var mDown = false, mx0 = 0, my0 = 0;
+document.addEventListener('mousedown', function(e){ mDown = true; onDown(e.clientX, e.clientY); });
+document.addEventListener('mousemove', function(e){ if (mDown) onMove(e.clientX, e.clientY); });
+document.addEventListener('mouseup', function(e){
+  if (!mDown) return;
+  mDown = false; onUp(e.clientX, e.clientY);
+});
+window.addEventListener('keydown', function(e){
+  if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') goNext();
+  if (e.key === 'ArrowUp' || e.key === 'PageUp') goPrev();
+});
+
+/* ============================================================
+   9. 启动
+   ============================================================ */
+try {
+  boot();
+} catch(err){
+  say('BOOT FAIL: ' + err.message);
+}
 
 if (document.fonts && document.fonts.ready && document.fonts.ready.then){
-  document.fonts.ready.then(function(){
-    layout();
-    drawFrame(t);
-    if (mode === 'gl') uploadGL();
-  })['catch'](function(){});
+  document.fonts.ready.then(function(){ drawSource(t); })['catch'](function(){});
 }
 
 })();
