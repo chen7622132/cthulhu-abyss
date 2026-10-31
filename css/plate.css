@@ -1,0 +1,512 @@
+/* ============================================================
+   plate.css — 图版系统（第一步样张）
+   三层：图版图 / 文字 / 描边
+   ============================================================ */
+
+:root{
+  --f-song:"SimSun","Songti SC","STSong","宋体",serif;
+  --f-kai:"KaiTi","STKaiti","楷体",serif;
+  --f-type:"Courier New",Courier,monospace;
+}
+
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  background:#050807;
+  color:#1a140e;
+  font-family:var(--f-song);
+  overflow-x:hidden;
+}
+
+/* ---------- 一屏一图版 ---------- */
+.plate{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+}
+
+/* 图版本体：保持 16:9，不裁不拉 */
+.plate-inner{
+  position:relative;
+  width:min(100vw, calc(100vh * 16 / 9));
+  height:min(100vh, calc(100vw * 9 / 16));
+  box-shadow:
+    0 40px 80px -30px rgba(0,0,0,.9),
+    0 0 90px rgba(40,90,76,.12);
+}
+
+.plate-img{
+  position:absolute;
+  inset:0;
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  background-position:center;
+}
+
+/* ---------- 文字层 ---------- */
+.plate-text{
+  position:absolute;
+  color:#221a12;
+  /* 浅色外发光把字从纸纹里"拔出"来 */
+  text-shadow:
+    0 0 1px rgba(255,252,242,.92),
+    0 0 2.5px rgba(255,250,236,.55),
+    0 .5px 0 rgba(255,255,248,.35);
+}
+
+/* 封面：文字压在左侧标签上 */
+.cover-text{
+  left:14%;
+  top:26%;
+  width:34%;
+}
+
+/* 内页：左照片右文字 */
+.doc-text{
+  left:50%;
+  right:8.5%;
+  top:15%;
+  bottom:15%;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ---------- 排版 ---------- */
+.plate-org{
+  margin:0 0 10px;
+  font-size:12px;
+  letter-spacing:.42em;
+  color:#4a3a26;
+}
+.plate-title{
+  margin:0 0 16px;
+  font-size:30px;
+  font-weight:400;
+  letter-spacing:.3em;
+  line-height:1.5;
+}
+.plate-sub{
+  margin:0 0 6px;
+  font-size:13px;
+  letter-spacing:.3em;
+  color:#4a3a26;
+}
+.plate-rule{
+  width:100%;height:1px;margin:16px 0 18px;
+  background:linear-gradient(90deg, rgba(90,70,42,.55), rgba(90,70,42,.12));
+}
+
+.ex-name{
+  margin:0 0 4px;
+  font-size:13px;
+  letter-spacing:.34em;
+  color:#5a4428;
+}
+.ex-title{
+  margin:0 0 14px;
+  font-size:22px;
+  font-weight:400;
+  letter-spacing:.2em;
+}
+.ex-body{
+  flex:1;
+  overflow:auto;
+  font-size:15.5px;
+  line-height:2.05;
+  letter-spacing:.02em;
+  padding-right:6px;
+}
+.ex-body p{margin:0 0 .95em;text-indent:2em;}
+.ex-body p.noindent{text-indent:0;}
+.ex-body b{color:#8f2318;font-weight:400;}
+
+/* 滚动条：细到几乎看不见 */
+.ex-body::-webkit-scrollbar{width:3px;}
+.ex-body::-webkit-scrollbar-thumb{background:rgba(90,70,42,.28);}
+
+/* ---------- 页码 & 提示 ---------- */
+.plate-foot{
+  position:absolute;
+  left:0;right:0;bottom:2.5vh;
+  text-align:center;
+  font-size:10.5px;letter-spacing:.3em;
+  color:rgba(150,160,146,.42);
+  font-family:var(--f-type);
+}
+.hint{
+  position:absolute;
+  left:50%;bottom:6vh;transform:translateX(-50%);
+  font-size:11px;letter-spacing:.28em;
+  color:rgba(170,180,166,.5);
+  animation:pulseHint 3.2s ease-in-out infinite;
+}
+@keyframes pulseHint{0%,100%{opacity:.35;}50%{opacity:.8;}}
+
+/* ---------- 修正：红字做旧，别再像警告框 ---------- */
+.warn{
+  color:rgba(126,32,22,.70);
+  letter-spacing:.32em;
+  filter:blur(.28px);
+  text-shadow:
+    0 0 2.5px rgba(126,32,22,.20),
+    0 .5px 0 rgba(255,246,238,.28),
+    0 0 1px rgba(255,250,240,.5);
+  mix-blend-mode:multiply;
+}
+
+/* ---------- 修正：正文区留出呼吸，提对比 ---------- */
+.doc-text{
+  left:53.5%;
+  right:11%;
+  top:13.5%;
+  bottom:14%;
+  padding:10px 14px 10px 10px;
+}
+.ex-body{
+  font-size:15.5px;
+  line-height:2.08;
+  color:#1c150e;
+  text-shadow:
+    0 0 1px rgba(255,252,244,.95),
+    0 0 3px rgba(255,250,238,.55),
+    0 .5px 0 rgba(255,255,250,.4);
+}
+/* 极淡的米白衬底：只把字从纸纹里托起来，不改变观感 */
+.ex-body::before{
+  content:"";
+  position:absolute;
+  left:-18px;right:-18px;top:-14px;bottom:-14px;
+  background:radial-gradient(ellipse 90% 80% at 50% 50%, rgba(255,250,236,.16), transparent 78%);
+  pointer-events:none;
+  z-index:-1;
+}
+.ex-body{position:relative;}
+.ex-title{
+  font-size:23px;
+  margin-bottom:12px;
+  color:#20180f;
+  text-shadow:
+    0 0 1px rgba(255,252,244,.95),
+    0 0 3px rgba(255,250,238,.5);
+}
+.ex-name{color:#4e3a22;}
+.plate-rule{
+  background:linear-gradient(90deg, rgba(90,70,42,.62), rgba(90,70,42,.10));
+  margin:14px 0 16px;
+}
+
+/* ---------- 再修：不要描边，深墨直压纸面 ---------- */
+.ex-body{
+  color:#150f08 !important;
+  text-shadow:none !important;
+  font-size:15px;
+  line-height:2.12;
+  padding:0;
+}
+.ex-body::before{display:none !important;}
+.ex-title{
+  color:#171009 !important;
+  text-shadow:none !important;
+}
+.ex-name{color:#3c2c18 !important;}
+.doc-text{
+  left:55%;
+  right:13%;
+  top:15%;
+  bottom:16%;
+  padding:0;
+}
+.plate-rule{
+  background:linear-gradient(90deg, rgba(70,54,32,.50), rgba(70,54,32,.08));
+  margin:12px 0 15px;
+}
+/* 段落之间再多一口气 */
+.ex-body p{margin-bottom:1.05em;}
+
+/* ---------- 给文字区打一盏灯：柔和的暖光落在纸上 ---------- */
+.doc-text{isolation:isolate;}
+.doc-text::before{
+  content:"";
+  position:absolute;
+  left:-7%;right:-7%;top:-5%;bottom:-5%;
+  background:
+    radial-gradient(ellipse 66% 58% at 46% 42%,
+      rgba(253,247,232,.62) 0%,
+      rgba(251,245,229,.40) 46%,
+      rgba(249,243,227,.18) 70%,
+      transparent 88%);
+  filter:blur(26px);
+  pointer-events:none;
+  z-index:-1;
+}
+/* 字再深一档，压在提亮后的纸上 */
+.ex-body{color:#0f0a05 !important;}
+.ex-title{color:#100a05 !important;}
+
+/* ---------- 撤掉光斑，改成整体均匀提亮 ---------- */
+.doc-text::before{display:none !important;}
+.plate-img{filter:brightness(1.06) contrast(1.02) saturate(.98);}
+.plate-foot{color:rgba(190,200,186,.55) !important;}
+
+/* 右侧留够，别再裁字 */
+.doc-text{right:15.5%;}
+.ex-body{
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-right:2px;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* ============================================================
+   修正：封面是深色布，文字必须做"烫印"而不是黑墨
+   ============================================================ */
+.cover-text{
+  left:16%;
+  top:24%;
+  width:30%;
+}
+.plate-org{
+  color:#a3926c !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.75), 0 0 1px rgba(255,226,170,.22);
+  letter-spacing:.4em;
+}
+.plate-title{
+  color:#c9a870 !important;
+  text-shadow:
+    0 1px 1px rgba(0,0,0,.85),
+    0 -1px 0 rgba(255,232,180,.18),
+    0 0 12px rgba(200,168,112,.22);
+  letter-spacing:.34em;
+}
+.cover-text .plate-sub{
+  color:#9c8a66 !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.7);
+}
+.plate-rule{
+  background:linear-gradient(90deg, rgba(201,168,112,.55), rgba(201,168,112,.05)) !important;
+}
+.warn{
+  color:#8e4436 !important;
+  opacity:.86;
+  filter:none;
+  mix-blend-mode:normal;
+  text-shadow:0 1px 0 rgba(0,0,0,.7), 0 0 6px rgba(142,68,54,.28);
+}
+
+/* ============================================================
+   修正：内页文字区收窄，四周留出余量
+   ============================================================ */
+.doc-text{
+  left:56% !important;
+  right:20% !important;
+  top:16% !important;
+  bottom:19% !important;
+}
+.ex-body{
+  font-size:14.5px;
+  line-height:2.15;
+  letter-spacing:.03em;
+}
+.ex-title{font-size:21px !important;letter-spacing:.16em;}
+.ex-name{font-size:12px !important;letter-spacing:.34em;}
+
+/* ============================================================
+   按实测边界重定位（照片 x10.5-24，中缝 x27；封面标签 x18-41 y27-68）
+   ============================================================ */
+.doc-text{
+  left:30% !important;
+  right:9% !important;
+  top:11% !important;
+  bottom:13% !important;
+  padding:0 !important;
+}
+.ex-body{
+  font-size:15px !important;
+  line-height:2.05 !important;
+}
+
+/* 封面：文字收回标签纸上，避开左下角红印(y57-65) */
+.cover-text{
+  left:19.2% !important;
+  top:28.5% !important;
+  width:21% !important;
+  text-align:center !important;
+}
+.plate-title{font-size:30px !important;}
+.cover-text .plate-sub{font-size:11px !important;letter-spacing:.22em !important;}
+.plate-org{font-size:10px !important;letter-spacing:.3em !important;}
+.warn{font-size:9.5px !important;}
+
+/* ============================================================
+   修正第三轮：双栏（行长压到25字）、墨渗、金属烫金
+   ============================================================ */
+.doc-text{
+  left:31% !important;
+  right:8.5% !important;
+  top:10.5% !important;
+  bottom:12% !important;
+}
+.ex-body{
+  font-size:15px !important;
+  line-height:1.98 !important;
+  column-count:2;
+  column-gap:5.2%;
+  column-rule:0.5px solid rgba(80,62,38,.10);
+  text-align:justify;
+  color:#150e07 !important;
+  filter:blur(.12px);
+  opacity:.97;
+  overflow:visible !important;
+  height:auto !important;
+}
+.ex-body p{margin:0 0 .9em !important;text-indent:1.9em;}
+.ex-body p.noindent{text-indent:0;}
+/* 段落里的字别被分栏切断 */
+.ex-body p{break-inside:avoid;}
+
+/* 烫金：横向金属渐变 + 微噪 */
+.plate-title{
+  background:linear-gradient(102deg,
+    #6d5329 0%, #b8935a 14%, #e8d3a4 26%, #fff0cd 33%,
+    #c9a465 44%, #8a6c3c 56%, #a98449 70%, #e3ca97 82%, #7d5f33 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent !important;
+  text-shadow:none !important;
+  filter:contrast(1.05) saturate(1.06);
+}
+
+/* ============================================================
+   封面：放弃烫金（CSS做不出金属反射），改深墨压印在标签纸
+   ============================================================ */
+.plate-title{
+  background:none !important;
+  -webkit-background-clip:border-box !important;
+  background-clip:border-box !important;
+  -webkit-text-fill-color:#231707 !important;
+  color:#231707 !important;
+  filter:none !important;
+  text-shadow:
+    0 .6px 0 rgba(255,249,232,.30),
+    0 0 1px rgba(35,23,7,.22);
+  opacity:.96;
+}
+.plate-org{color:#4a3418 !important;-webkit-text-fill-color:#4a3418 !important;text-shadow:0 .5px 0 rgba(255,248,230,.28) !important;}
+.cover-text .plate-sub{color:#3c2a10 !important;-webkit-text-fill-color:#3c2a10 !important;text-shadow:0 .5px 0 rgba(255,248,230,.25) !important;}
+.warn{color:#8c3623 !important;-webkit-text-fill-color:#8c3623 !important;opacity:.9;}
+
+/* 底部馆藏编号：像后人铅笔补的，淡到几乎不见 */
+.plate-foot{
+  color:rgba(122,132,118,.42) !important;
+  font-size:9px !important;
+  letter-spacing:.16em !important;
+}
+
+/* ============================================================
+   七份证物的版式性格（Pentiment 原则：每种文书自己的笔迹）
+   ============================================================ */
+.ex-body.cols1{column-count:1 !important;}
+.ex-body.cols2{column-count:2 !important;}
+.ex-body.hand{
+  font-family:'Kaiti SC','STKaiti','KaiTi','Songti SC',serif;
+  font-size:15.5px !important;
+  line-height:2.0 !important;
+  letter-spacing:.02em;
+  column-count:2 !important;
+}
+.ex-body.hand p{text-indent:1.6em;}
+.ex-body.hand .key{font-weight:600;letter-spacing:.04em;}
+.ex-body.hand .broken{opacity:.92;}
+.ex-body.hand .broken2{opacity:.86;letter-spacing:.03em;}
+
+.small{font-size:12.5px;opacity:.75;line-height:1.7;}
+.seg{
+  margin:1.25em 0 .55em !important;font-size:13px;letter-spacing:.18em;
+  opacity:.8;border-bottom:.5px solid rgba(80,62,38,.16);padding-bottom:.3em;
+  break-after:avoid;
+}
+
+/* ---------- 笔录 ---------- */
+.depo{
+  width:100%;border-collapse:collapse;margin:0 0 1em;
+  font-size:12.8px;line-height:1.72;
+  border-top:.5px solid rgba(80,62,38,.28);
+  break-inside:avoid;
+}
+.depo th{
+  width:2.4em;font-weight:400;text-align:center;vertical-align:top;
+  opacity:.72;padding:.16em .1em;letter-spacing:.05em;
+}
+.depo td{padding:.16em .3em .16em .1em;vertical-align:top;text-align:justify;}
+.depo .rec-note{font-size:11.5px;opacity:.66;padding-top:.28em;}
+.dialect{letter-spacing:.05em;}
+
+/* ---------- 回收物清单 ---------- */
+.carbon{
+  width:100%;border-collapse:collapse;margin:.9em 0 0;
+  font-size:12.8px;line-height:1.78;break-inside:avoid;
+  border-top:.5px solid rgba(80,62,38,.28);
+}
+.carbon td{padding:.14em .3em .14em .1em;vertical-align:top;}
+.carbon td:nth-child(1){width:2.6em;opacity:.72;}
+.carbon td:nth-child(3){width:4.4em;opacity:.86;}
+.carbon td:nth-child(4){opacity:.86;}
+.carbon .gap td{opacity:.55;font-style:italic;}
+
+/* ---------- 船牌存根 ---------- */
+.shipcard{
+  display:grid;grid-template-columns:4.6em 1fr;
+  gap:.42em .9em;margin:0;font-size:14px;line-height:1.75;
+}
+.shipcard dt{opacity:.72;letter-spacing:.24em;}
+.shipcard dd{margin:0;letter-spacing:.1em;}
+.shipcard .ship-name{font-size:17px;letter-spacing:.4em;font-weight:600;}
+
+/* ---------- 涂名 / 手印 ---------- */
+.redact{
+  color:#120c05;-webkit-text-fill-color:#120c05;
+  letter-spacing:-.08em;filter:blur(.35px);opacity:.88;
+}
+.thumb{
+  color:rgba(122,34,26,.55);letter-spacing:-.1em;
+  filter:blur(.5px);
+}
+
+/* ---------- 底部馆藏编号 ---------- */
+.plate-foot{
+  font-size:9px !important;letter-spacing:.16em !important;
+  color:rgba(122,132,118,.42) !important;
+}
+
+/* 清单单栏时收窄，别拉到整页宽 */
+.ex-body.cols1 .carbon{width:86%;font-size:13.4px;line-height:1.9;}
+.ex-body.cols1 .carbon td:nth-child(1){width:3em;}
+.ex-body.cols1 .carbon td:nth-child(3){width:5em;}
+
+/* 每张图版自己的左边界（物证宽度不同） */
+.doc-text{left:var(--pl,31%) !important;right:var(--pr,8.5%) !important;}
+
+/* 02 现场照片：内容稀少，单栏稀疏大字，留白即压迫 */
+.ex-body.cols1.big{
+  font-size:16.5px !important;line-height:2.45 !important;
+  letter-spacing:.06em;
+}
+.ex-body.cols1.big p{margin-bottom:1.35em !important;}
+/* 02 首行日期条 & 分隔线间距放宽 */
+.ex-body.big .noindent[style*="border-top"]{margin:1.4em 0 1.6em !important;}
+
+/* 05 日期分组：加粗、加深、拉开 */
+.ex-body .seg{
+  font-weight:600 !important;
+  color:#3a2a12 !important;
+  letter-spacing:.26em !important;
+  border-bottom:.8px solid rgba(80,62,38,.30) !important;
+  margin-top:1.6em !important;
+}
+.ex-body .seg:first-of-type{margin-top:.4em !important;}
