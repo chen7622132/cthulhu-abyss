@@ -580,3 +580,108 @@ body{
   text-shadow:0 0 .5px rgba(143,35,24,.4), 0 0 3px rgba(143,35,24,.12);
   mix-blend-mode:multiply;
 }
+
+/* ============================================================
+   R1：让文字真的"吃进纸里"（墨渗 + 颗粒 + 亮度收敛）
+   ============================================================ */
+.ex-body, .ex-title, .ex-name{
+  color:#1a1208 !important;
+  -webkit-text-fill-color:#1a1208 !important;
+  mix-blend-mode:multiply;
+  filter:blur(.16px) contrast(.94) brightness(1.02);
+  text-shadow:none !important;
+}
+.cover-text .plate-title{filter:none;}
+.doc-text .plate-rule{opacity:.55;}
+
+/* 颗粒层：让文字和纸共享同一层噪声 */
+.doc-text::after{
+  content:"";position:absolute;inset:-2% -1%;
+  pointer-events:none;z-index:9;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.55'/></svg>");
+  opacity:.20;
+  mix-blend-mode:overlay;
+}
+
+/* R2：墨扩散——笔画边缘洇开进纤维，加字形微变形 */
+.ex-body, .ex-title, .ex-name{
+  text-shadow:
+    0 0 .55px rgba(26,18,8,.88),
+    0 0 1.3px rgba(26,18,8,.42),
+    0 0 2.6px rgba(26,18,8,.15) !important;
+  filter:contrast(.93) brightness(1.02) !important;
+}
+.plate-text.doc-text{
+  filter:url(#inkwarp);
+}
+
+/* ============================================================
+   R3：时间残留——墨色不均（印刷压力不同）+ 水渍压字
+   ============================================================ */
+.ex-body p:nth-child(3n){opacity:.93;}
+.ex-body p:nth-child(4n+1){opacity:.965;}
+.ex-body p:nth-child(7n){opacity:.90;}
+.ex-body table tr:nth-child(2n) td{opacity:.95;}
+
+/* 三处旧水渍，压在字上（真实水渍不会绕开文字） */
+.doc-text::before{
+  display:block !important;
+  content:"";position:absolute;inset:-7% -4%;
+  pointer-events:none;z-index:10;
+  background:
+    radial-gradient(ellipse 17% 11% at 21% 78%, rgba(98,70,34,.17), rgba(98,70,34,.05) 62%, transparent 76%),
+    radial-gradient(ellipse 24% 8% at 69% 31%, rgba(106,76,38,.13), transparent 74%),
+    radial-gradient(ellipse 11% 15% at 87% 84%, rgba(90,62,30,.15), transparent 72%),
+    radial-gradient(ellipse 30% 6% at 48% 8%, rgba(112,84,46,.09), transparent 76%);
+  mix-blend-mode:multiply;
+  filter:blur(.4px);
+}
+/* 边缘氧化：文字区靠外一圈更暗 */
+.doc-text::after{
+  background-image:
+    radial-gradient(ellipse 108% 104% at 50% 50%, transparent 58%, rgba(86,58,24,.10) 88%, rgba(70,46,18,.16) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.55'/></svg>");
+  background-blend-mode:multiply;
+  opacity:.26;
+}
+
+/* ============================================================
+   R4：把 R3 的过度做旧收回来——可读性优先
+   ============================================================ */
+.ex-body p:nth-child(3n){opacity:.975 !important;}
+.ex-body p:nth-child(4n+1){opacity:.99 !important;}
+.ex-body p:nth-child(7n){opacity:.955 !important;}
+.ex-body table tr:nth-child(2n) td{opacity:.985 !important;}
+
+/* 文字加深一档，保证对比 */
+.ex-body, .ex-title, .ex-name{
+  color:#120c04 !important;
+  -webkit-text-fill-color:#120c04 !important;
+  filter:contrast(.97) brightness(1.0) !important;
+  text-shadow:
+    0 0 .5px rgba(18,12,4,.85),
+    0 0 1.2px rgba(18,12,4,.34),
+    0 0 2.4px rgba(18,12,4,.11) !important;
+}
+
+/* 水渍减淡到若有若无，只做气氛不抢字 */
+.doc-text::before{
+  background:
+    radial-gradient(ellipse 17% 11% at 21% 78%, rgba(98,70,34,.085), rgba(98,70,34,.025) 62%, transparent 78%),
+    radial-gradient(ellipse 24% 8% at 69% 31%, rgba(106,76,38,.065), transparent 76%),
+    radial-gradient(ellipse 11% 15% at 87% 84%, rgba(90,62,30,.075), transparent 74%),
+    radial-gradient(ellipse 30% 6% at 48% 8%, rgba(112,84,46,.05), transparent 78%) !important;
+  filter:blur(.9px) !important;
+}
+
+/* ============================================================
+   R5：用噪声遮罩调制墨的附着——墨不是均匀印上的
+   ============================================================ */
+.ex-body, .ex-title, .ex-name, .cover-text .plate-sub, .plate-org{
+  -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' seed='11'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncR type='linear' slope='0.34' intercept='0.66'/><feFuncG type='linear' slope='0.34' intercept='0.66'/><feFuncB type='linear' slope='0.34' intercept='0.66'/><feFuncA type='linear' slope='0' intercept='1'/></feComponentTransfer></filter><rect width='240' height='240' filter='url(%23m)'/></svg>");
+  mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' seed='11'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncR type='linear' slope='0.34' intercept='0.66'/><feFuncG type='linear' slope='0.34' intercept='0.66'/><feFuncB type='linear' slope='0.34' intercept='0.66'/><feFuncA type='linear' slope='0' intercept='1'/></feComponentTransfer></filter><rect width='240' height='240' filter='url(%23m)'/></svg>");
+  -webkit-mask-size:240px 240px;
+  mask-size:240px 240px;
+  mask-mode:luminance;
+  -webkit-mask-mode:luminance;
+}
