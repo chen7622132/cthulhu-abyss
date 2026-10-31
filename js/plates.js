@@ -28,14 +28,18 @@ var PLATES = [
     <p class="noindent" style="letter-spacing:.14em;">三沙灣　　順發船　　民國十七年十月　　共三張</p>
     <p class="noindent small" style="margin-top:.6em;">攝影：本關稽查員，借澳中照相館鏡箱。</p>
     <p class="noindent" style="border-top:.5px solid rgba(80,62,38,.22);margin:1em 0 1.2em;"></p>
-    <p>一、船首殘舵一段，長約四尺，木質，有嚙痕。</p>
-    <p>二、網具一具，網目盡破，破口整齊。</p>
-    <p>三、澳口灘上足印，自水際起，止於社廟階前。</p>
-    <p>以上照片三張，附袋移送。</p>
-    <p class="noindent" style="margin-top:1.1em;"><b>袋中實存二張。</b></p>
+    <table class="photo-log">
+      <tr><td>第一張</td><td>船首殘舵一段，長約四尺，木質，有嚙痕。</td><td>存</td></tr>
+      <tr><td>第二張</td><td>網具一具，網目盡破，破口整齊。</td><td>存</td></tr>
+      <tr class="miss"><td>第三張</td><td>澳口灘上足印，自水際起，止於社廟階前。</td><td>缺</td></tr>
+    </table>
+    <p class="noindent" style="margin-top:1.2em;">以上照片三張，附袋移送。</p>
+    <p class="noindent red-pen" style="margin-top:.5em;">袋中實存二張。</p>
     <p class="noindent" style="margin-top:2em;font-size:12.5px;opacity:.72;">（袋上浮簽）第三張　沖印於十月十六</p>
     <p class="noindent" style="font-size:12.5px;opacity:.72;">晚於案發兩日。</p>
-    <p class="noindent" style="margin-top:2.2em;font-size:13px;opacity:.8;">（批註）第三張底片，袋中無。<br>尋三日。得於礁石上，已沖。</p>
+    <p class="noindent pencil" style="margin-top:2em;">〔鉛筆〕第三張底片無著落。<br>已問照相館，云未收此片。</p>
+    <p class="noindent" style="margin-top:1.4em;font-size:12.5px;opacity:.82;">（批註）尋三日。得於礁石上，已沖。</p>
+    <p class="noindent" style="font-size:12.5px;opacity:.82;">沖者不識字，云：片上有人。</p>
   `
 },
 
