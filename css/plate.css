@@ -510,3 +510,63 @@ body{
   margin-top:1.6em !important;
 }
 .ex-body .seg:first-of-type{margin-top:.4em !important;}
+
+/* ============================================================
+   修正：朱笔不能内联混排（红黑交错=糊），只给独立成段的批注
+   ============================================================ */
+.ex-body b{color:inherit !important;font-weight:600 !important;}
+.red-pen{
+  color:#8f2318 !important;-webkit-text-fill-color:#8f2318 !important;
+  font-weight:600;letter-spacing:.08em;
+  text-shadow:0 0 .3px rgba(143,35,24,.4);
+}
+
+/* 02 照片著录表：把"少一张"变成看得见的空位 */
+.photo-log{
+  width:100%;border-collapse:collapse;margin:1.3em 0 1.1em;
+  font-size:15px;line-height:1.95;
+  border-top:.6px solid rgba(80,62,38,.30);
+}
+.photo-log td{padding:.52em .5em .52em .1em;border-bottom:.5px solid rgba(80,62,38,.16);vertical-align:top;}
+.photo-log td:nth-child(1){width:4.6em;letter-spacing:.18em;opacity:.86;}
+.photo-log td:nth-child(3){width:2.4em;text-align:center;letter-spacing:.1em;}
+.photo-log .miss td{opacity:.5;}
+.photo-log .miss td:nth-child(3){opacity:1;color:#8f2318;-webkit-text-fill-color:#8f2318;font-weight:600;}
+
+/* ============================================================
+   色彩分级：从"干净扫描件"压到"发暗赭色的旧物"
+   ============================================================ */
+.plate-img{filter:brightness(.93) contrast(1.13) sepia(.13) saturate(.88) !important;}
+.plate-inner{position:relative;}
+.plate-inner::after{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:5;
+  box-shadow:
+    inset 0 0 190px rgba(16,10,3,.52),
+    inset 0 0 46px rgba(16,10,3,.26);
+  background:
+    radial-gradient(ellipse 120% 100% at 50% 45%, rgba(255,238,205,.05), rgba(24,14,4,.16));
+}
+.plate-text{z-index:6;}
+
+/* ---------- 铅笔批注 ---------- */
+.pencil{
+  font-size:12.5px;color:#4f4940 !important;-webkit-text-fill-color:#4f4940 !important;
+  opacity:.78;letter-spacing:.03em;line-height:1.85;
+  text-shadow:none;
+}
+
+/* ---------- 馆藏章：压在最左上，像骑缝 ---------- */
+.stamp-plate{
+  position:absolute;left:4%;top:5.5%;z-index:7;
+  padding:.55em .8em;
+  border:1.6px solid rgba(146,42,30,.34);
+  color:rgba(146,42,30,.44);-webkit-text-fill-color:rgba(146,42,30,.44);
+  font-size:10.5px;line-height:1.35;letter-spacing:.3em;text-align:center;
+  transform:rotate(-7deg);
+  mix-blend-mode:multiply;
+  pointer-events:none;
+  box-shadow:inset 0 0 6px rgba(146,42,30,.10);
+}
+
+/* "缺"改赭红，别用现代正红 */
+.photo-log .miss td:nth-child(3){color:#8c3f26 !important;-webkit-text-fill-color:#8c3f26 !important;}
