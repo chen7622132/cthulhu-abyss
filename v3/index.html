@@ -26,6 +26,7 @@
 <body>
 <canvas id="out"></canvas>
 <div id="dbg"></div>
+<script src="assets.js"></script>
 <script>
 (function(){
 'use strict';
@@ -52,7 +53,7 @@ var W = 480, H = 854, PAD = 40;
 var CW = W - PAD*2;
 
 var C_BG   = '#0c0e0b';
-var C_TXT  = '#c4c2b2';
+var C_TXT  = '#d4d2c0';
 var C_DIM  = '#78806f';
 var C_FAINT= '#454c41';
 var C_RED  = '#9a2b18';
@@ -217,6 +218,24 @@ var srcC = document.createElement('canvas');
 srcC.width = W; srcC.height = H;
 var sx = srcC.getContext('2d');
 
+/* 照片资产 */
+var IMGS = {};
+var ASSET_READY = false;
+
+function loadAssets(){
+  var keys = (window.ASSETS && Object.keys(window.ASSETS)) || [];
+  if (!keys.length){ ASSET_READY = true; return; }
+  var left = keys.length;
+  keys.forEach(function(k){
+    var im = new Image();
+    im.onload = im.onerror = function(){
+      if (--left <= 0){ ASSET_READY = true; drawSource(t); }
+    };
+    im.src = window.ASSETS[k];
+    IMGS[k] = im;
+  });
+}
+
 function pad2(n){ n = Math.floor(n); return n<10 ? '0'+n : ''+n; }
 function srnd(i){
   var x = Math.sin(i*127.1 + 311.7) * 43758.5453;
@@ -290,15 +309,16 @@ function rDoc(p){
   sx.beginPath(); sx.moveTo(PAD, y+11); sx.lineTo(PAD+82, y+11); sx.stroke();
 
   y = 186;
-  var F = '15px ' + SERIF;
   for (var i=0;i<p.paras.length;i++){
-    var ls = wrapText(p.paras[i], CW, F);
+    var fs = 15 + (srnd(i*13+7) > 0.60 ? 0.85 : 0);   /* 某一段略大一点，说不出但感觉得到 */
+    var fnt = fs + 'px ' + SERIF;
+    var ls = wrapText(p.paras[i], CW, fnt);
     for (var j=0;j<ls.length;j++){
       if (y > H-146) break;
-      sx.font = F;
-      sx.fillStyle = 'rgba(196,194,178,' + (0.84+srnd(i*9+j)*0.16).toFixed(2) + ')';
-      sx.fillText(ls[j], PAD + (srnd(i*9+j+500)-0.5)*1.0, y + (srnd(i*9+j)-0.5)*1.2);
-      y += 26;
+      sx.font = fnt;
+      sx.fillStyle = 'rgba(212,210,192,' + (0.86+srnd(i*9+j)*0.14).toFixed(2) + ')';
+      sx.fillText(ls[j], PAD + (srnd(i*9+j+500)-0.5)*1.1, y + (srnd(i*9+j)-0.5)*1.5);
+      y += 26 + (srnd(i*7+3) > 0.86 ? 1.6 : 0);       /* 偶尔某行多一点点 */
     }
     y += 11;
   }
@@ -314,7 +334,15 @@ function rDoc(p){
   sx.save();
   sx.strokeStyle = 'rgba(154,43,24,.40)';
   sx.lineWidth = 2;
-  sx.strokeRect(W-PAD-70, sy-26, 70, 70);
+  /* 不是矩形：四角加起来不是 360 度，但你说不出差在哪 */
+  var bx = W-PAD-70, by = sy-26;
+  sx.beginPath();
+  sx.moveTo(bx+1, by+2);
+  sx.lineTo(bx+69, by-1);
+  sx.lineTo(bx+71, by+68);
+  sx.lineTo(bx-1, by+71);
+  sx.closePath();
+  sx.stroke();
   sx.globalAlpha = .55;
   sx.font = '14px ' + SERIF;
   sx.fillStyle = 'rgba(154,43,24,.9)';
@@ -324,86 +352,105 @@ function rDoc(p){
 }
 
 /* ---------- 02 照片 ---------- */
+function drawPhoto(key, x, y, w, h, rot){
+  var im = IMGS[key];
+  sx.save();
+  sx.translate(x+w/2, y+h/2);
+  sx.rotate(rot);
+
+  /* 相纸白边 */
+  sx.fillStyle = 'rgba(186,182,166,.72)';
+  sx.fillRect(-w/2-6, -h/2-6, w+12, h+12);
+
+  if (im && im.complete && im.naturalWidth){
+    sx.drawImage(im, -w/2, -h/2, w, h);
+  } else {
+    sx.fillStyle = 'rgba(28,32,28,.9)';
+    sx.fillRect(-w/2, -h/2, w, h);
+  }
+
+  /* 压进页面：降亮 + 一抹病绿 */
+  sx.fillStyle = 'rgba(8,10,8,.32)';
+  sx.fillRect(-w/2, -h/2, w, h);
+  sx.fillStyle = 'rgba(34,46,30,.08)';
+  sx.fillRect(-w/2, -h/2, w, h);
+
+  sx.strokeStyle = 'rgba(0,0,0,.5)';
+  sx.lineWidth = 1;
+  sx.strokeRect(-w/2-0.5, -h/2-0.5, w+1, h+1);
+
+  sx.restore();
+}
+
 function rPhoto(p){
-  var y = 96;
-  sx.font = '20px ' + SERIF;
+  var y = 92;
+  sx.font = '19px ' + SERIF;
   sx.fillStyle = C_TXT;
   sx.fillText(p.title, PAD, y);
 
-  /* 底片袋 */
-  var by = 126, bh = 250;
-  sx.strokeStyle = 'rgba(120,130,112,.34)';
-  sx.lineWidth = 1;
-  sx.strokeRect(PAD, by, CW, bh);
+  /* 主图 */
+  drawPhoto('photo1', PAD, 112, 314, 236, -0.011);
 
-  sx.font = '12px ' + MONO;
-  sx.fillStyle = C_DIM;
-  sx.fillText(p.bag[0], PAD+12, by+22);
+  /* 右侧标签 */
+  sx.font = '10px ' + MONO;
   sx.fillStyle = C_FAINT;
-  sx.fillText(p.bag[1], PAD+12, by+40);
+  sx.fillText('第一張', PAD+328, 130);
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(120,130,112,.64)';
+  var cap1 = ['船首殘舵','一段，長約','四尺。'];
+  for (var c=0;c<cap1.length;c++) sx.fillText(cap1[c], PAD+328, 148+c*14);
 
-  /* 三个格子 */
-  var fw = (CW-24-16)/3, fh = 150, fy = by+58;
-  for (var i=0;i<3;i++){
-    var fx = PAD+12 + i*(fw+8);
-    var f = p.frames[i];
+  /* 手绘箭头指咬痕 */
+  sx.strokeStyle = 'rgba(154,43,24,.5)';
+  sx.lineWidth = 0.9;
+  sx.beginPath();
+  sx.moveTo(PAD+330, 214);
+  sx.lineTo(PAD+296, 238);
+  sx.lineTo(PAD+290, 231);
+  sx.stroke();
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(154,43,24,.72)';
+  sx.fillText('嚙痕', PAD+332, 228);
 
-    sx.strokeStyle = f.mark ? 'rgba(154,43,24,.55)' : 'rgba(120,130,112,.30)';
-    sx.setLineDash(f.mark ? [4,3] : []);
-    sx.strokeRect(fx, fy, fw, fh);
-    sx.setLineDash([]);
+  /* 两张小图 */
+  drawPhoto('photo2', PAD, 366, 186, 140,  0.015);
+  drawPhoto('photo3', PAD+200, 366, 186, 140, -0.023);
 
-    /* 空洞的角标 */
-    sx.strokeStyle = 'rgba(120,130,112,.18)';
-    sx.beginPath();
-    sx.moveTo(fx+6, fy+6); sx.lineTo(fx+18, fy+6);
-    sx.moveTo(fx+6, fy+6); sx.lineTo(fx+6, fy+18);
-    sx.moveTo(fx+fw-6, fy+fh-6); sx.lineTo(fx+fw-18, fy+fh-6);
-    sx.moveTo(fx+fw-6, fy+fh-6); sx.lineTo(fx+fw-6, fy+fh-18);
-    sx.stroke();
-
-    sx.font = '11px ' + MONO;
-    sx.fillStyle = f.mark ? 'rgba(154,43,24,.75)' : C_FAINT;
-    sx.textAlign = 'center';
-    sx.fillText(f.label, fx+fw/2, fy+16);
-    if (f.sub){
-      sx.font = '9px ' + KAI;
-      sx.fillStyle = f.mark ? 'rgba(154,43,24,.68)' : 'rgba(120,130,112,.55)';
-      sx.fillText(f.sub, fx+fw/2, fy+32);
-    }
-    sx.textAlign = 'left';
-  }
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(120,130,112,.64)';
+  sx.fillText('第二張　網具', PAD, 522);
+  sx.fillStyle = 'rgba(154,43,24,.78)';
+  sx.fillText('第三張　另　寄', PAD+200, 522);
 
   /* 说明 */
-  y = by+bh+26;
-  sx.font = '13px ' + SERIF;
+  y = 550;
+  sx.font = '12px ' + SERIF;
   for (var k=0;k<p.notes.length;k++){
-    var ls = wrapText(p.notes[k], CW, '13px ' + SERIF);
+    var ls = wrapText(p.notes[k], CW-6, '12px ' + SERIF);
     for (var j=0;j<ls.length;j++){
-      sx.fillStyle = 'rgba(196,194,178,.82)';
+      sx.fillStyle = 'rgba(196,194,178,.80)';
       sx.fillText(ls[j], PAD, y);
-      y += 21;
+      y += 19;
     }
-    y += 3;
+    y += 2;
   }
 
-  y += 12;
-  sx.font = '14px ' + SERIF;
+  y += 10;
+  sx.font = '13px ' + SERIF;
   sx.fillStyle = C_TXT;
   sx.fillText(p.tail, PAD, y);
-  y += 26;
-  sx.font = '15px ' + SERIF;
+  y += 22;
+  sx.font = '14px ' + SERIF;
   sx.fillStyle = C_RED;
   sx.fillText(p.tailStrong, PAD, y);
 
   /* 边注 */
-  var my = H-150;
-  sx.font = '11px ' + KAI;
-  sx.fillStyle = 'rgba(154,43,24,.62)';
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = 'rgba(154,43,24,.6)';
   var ml = p.margin.split('\n');
-  for (var m=0;m<ml.length;m++) sx.fillText(ml[m], W-PAD-136, my + m*18);
-  sx.strokeStyle = 'rgba(154,43,24,.25)';
-  sx.beginPath(); sx.moveTo(W-PAD-140, my-14); sx.lineTo(W-PAD-140, my+18*ml.length); sx.stroke();
+  sx.textAlign = 'right';
+  for (var m=0;m<ml.length;m++) sx.fillText(ml[m], W-PAD, H-92 + m*16);
+  sx.textAlign = 'left';
 }
 
 /* ---------- 03 笔录 ---------- */
@@ -633,7 +680,11 @@ function rTable(p){
   /* 竖线 */
   sx.strokeStyle = 'rgba(120,130,112,.14)';
   for (var v=1;v<cols.length;v++){
-    sx.beginPath(); sx.moveTo(xs[v], ty); sx.lineTo(xs[v], ty+26+rh*p.rows.length); sx.stroke();
+    var sk = (srnd(v*7+3)-0.5)*2.6;
+    sx.beginPath();
+    sx.moveTo(xs[v], ty);
+    sx.lineTo(xs[v]+sk, ty+26+rh*p.rows.length);
+    sx.stroke();
   }
 
   /* 行 */
@@ -648,7 +699,8 @@ function rTable(p){
     }
 
     sx.strokeStyle = 'rgba(120,130,112,.10)';
-    sx.beginPath(); sx.moveTo(PAD, ry+rh); sx.lineTo(PAD+CW, ry+rh); sx.stroke();
+    var hk = (srnd(r*11+5)-0.5)*1.6;
+    sx.beginPath(); sx.moveTo(PAD, ry+rh); sx.lineTo(PAD+CW, ry+rh+hk); sx.stroke();
 
     for (var c=0;c<row.length;c++){
       var isLast = (r === p.rows.length-1);
@@ -753,40 +805,87 @@ function rNote(p){
   sx.fillText(p.foot, PAD, H-108);
 }
 
-/* ---------- 07 空白 ---------- */
+/* ---------- 07 空白 · 眼 ---------- */
+var eyeC = document.createElement('canvas');
+eyeC.width = W; eyeC.height = H;
+var ec = eyeC.getContext('2d');
+
 function rBlank(p){
   var el = t - pageEnter;
+  var im = IMGS.eye;
 
-  /* 第一段：只有一句话 */
-  if (el < 13){
+  /* 阶段一：只有一行字 */
+  if (el < 6){
     sx.font = '15px ' + SERIF;
-    sx.fillStyle = 'rgba(196,194,178,0.62)';
+    sx.fillStyle = 'rgba(196,194,178,0.66)';
     sx.textAlign = 'center';
-    sx.fillText(p.line, W/2, 320);
+    sx.fillText(p.line, W/2, 344);
+    sx.textAlign = 'left';
+    return;
   }
 
-  /* 第二段：六秒后才浮出来的归档说明 */
-  if (el >= 6 && el < 13){
-    var a2 = Math.min(1, (el-6)/2.2);
-    sx.font = '11px ' + KAI;
-    sx.fillStyle = 'rgba(120,130,112,' + (0.42*a2).toFixed(2) + ')';
-    var ls = wrapText(p.faint, CW-40, '11px ' + KAI);
-    for (var i=0;i<ls.length;i++){ sx.fillText(ls[i], W/2, 470 + i*19); }
+  /* 阶段二：眼睛从暗里浮出来 */
+  var a    = Math.min(1, (el-6)/4.5);            /* 淡入 */
+  var prog = Math.min(1, Math.max(0, (el-10)/12)); /* 游移进度 */
+  var locked = el >= 22;
 
-    sx.font = '12px ' + KAI;
-    sx.fillStyle = 'rgba(154,43,24,' + (0.42*a2).toFixed(2) + ')';
-    sx.fillText(p.by, W/2, 470 + ls.length*19 + 48);
+  var sc = 1 + prog*0.11;
+  var dx = locked ? 0 : Math.sin(el*1.12)*9*(1-prog*0.55);
+  var dy = locked ? 0 : Math.cos(el*0.81)*6*(1-prog*0.55);
+
+  var iw = 540*sc;
+  var ih = iw * 0.625;
+  var ix = W/2 - iw/2 + dx;
+  var iy = 336 - ih/2 + dy;
+
+  if (im && im.complete && a > 0){
+    /* 在离屏画布上做遮罩，别伤到主画布 */
+    ec.setTransform(1,0,0,1,0,0);
+    ec.globalCompositeOperation = 'source-over';
+    ec.clearRect(0,0,W,H);
+    ec.globalAlpha = 1;
+    ec.filter = 'brightness(1.95) contrast(1.22)';
+    ec.drawImage(im, ix, iy, iw, ih);
+    ec.filter = 'none';
+
+    /* 上下融进黑：只给中间一段看得见 */
+    var vis = (el >= 28) ? 0.15 : 0.78;
+    var g = ec.createLinearGradient(0, iy, 0, iy+ih);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(Math.max(0, 0.5-vis), 'rgba(0,0,0,1)');
+    g.addColorStop(Math.min(1, 0.5+vis), 'rgba(0,0,0,1)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ec.globalCompositeOperation = 'destination-in';
+    ec.fillStyle = g;
+    ec.fillRect(0,0,W,H);
+
+    /* 这一屏里，它是唯一的光源 —— 不再压暗 */
+    ec.globalCompositeOperation = 'source-atop';
+    ec.fillStyle = 'rgba(128,148,116,0.05)';
+    ec.fillRect(0,0,W,H);
+
+    /* 它把周围照亮一点 */
+    var hx = ix+iw/2, hy = iy+ih*0.5;
+    var halo = sx.createRadialGradient(hx, hy, 0, hx, hy, iw*0.60);
+    halo.addColorStop(0, 'rgba(92,116,80,' + (0.11*a).toFixed(3) + ')');
+    halo.addColorStop(1, 'rgba(92,116,80,0)');
+    sx.fillStyle = halo;
+    sx.fillRect(0,0,W,H);
+
+    sx.globalAlpha = a;
+    sx.drawImage(eyeC, 0, 0);
+    sx.globalAlpha = 1;
   }
 
-  /* 第三段：十三秒后，全部抹掉，只剩一句 */
-  if (el >= 13){
-    var a3 = Math.min(1, (el-13)/3.0);
-    sx.font = '13px ' + SERIF;
-    sx.fillStyle = 'rgba(196,194,178,' + (0.50*a3).toFixed(2) + ')';
-    sx.fillText('本卷已歸還。', W/2, 420);
+  /* 阶段三：定住之后，只剩一句 */
+  if (el >= 26){
+    var a3 = Math.min(1, (el-26)/2.5);
+    sx.font = '12px ' + SERIF;
+    sx.fillStyle = 'rgba(196,194,178,' + (0.46*a3).toFixed(2) + ')';
+    sx.textAlign = 'center';
+    sx.fillText('本卷已歸還。', W/2, H-96);
+    sx.textAlign = 'left';
   }
-
-  sx.textAlign = 'left';
 }
 
 /* ============================================================
@@ -834,35 +933,45 @@ var track = -1, trackV = 0;
 var FROZEN = null;
 
 window.__freezeExp = function(v){ FROZEN = v; };
-window.__goPage = function(i){ cur = i; drawSource(t); };
+window.__goPage = function(i){ cur = i; pageEnter = t; drawSource(t); };
+window.__setEnter = function(off){ pageEnter = t - off; drawSource(t); };
+window.__src = function(){ return srcC; };
+window.__eyeC = function(){ return eyeC; };
+window.__imgs = function(){
+  var o = {}; for (var k in IMGS) o[k] = {c: IMGS[k].complete, w: IMGS[k].naturalWidth};
+  return {ready: ASSET_READY, list: o};
+};
 
 /* 每屏底色强度不同：越往后越暗 */
-var PAGE_EXP = [0.32, 0.30, 0.27, 0.25, 0.23, 0.20, 0.19];
+var PAGE_LEVEL = [0.96, 0.94, 0.92, 0.90, 0.88, 0.84, 0.74];
+var waveLeft = 0, nextWave = 9;
 
 function updateExposure(dt){
   clock += dt;
-  var base = PAGE_EXP[cur] || 0.28;
 
-  if (surgeLeft <= 0 && clock >= nextSurge){
-    surgeLeft = 0.28 + Math.random()*0.5;
-    flick = 0;
-    clock = 0;
-    nextSurge = 5.0 + Math.random()*9.5;
-    track = 1.15;
-    trackV = 0.55 + Math.random()*0.6;
-  }
+  var lvl = PAGE_LEVEL[cur];
+  if (lvl === undefined) lvl = 0.74;
 
+  var el = t - pageEnter;
   var target;
-  if (surgeLeft > 0){
-    surgeLeft -= dt;
-    if (Math.random() < 0.10) flick = 0.06;
-    target = (flick > 0) ? base*1.5 : 1.02;
-    flick -= dt;
+
+  /* 进入本页最初 1.4 秒：从黑升起，像灯管启动 */
+  if (el < 1.4){
+    target = lvl * Math.min(1, Math.pow(el/1.4, 1.7));
   } else {
-    target = base + Math.sin(clock*1.15) * base*0.16;
+    /* 偶发的信号波动：短暂掉下来，然后回升 */
+    if (waveLeft <= 0 && clock > nextWave){
+      waveLeft = 0.52 + Math.random()*0.34;
+      clock = 0;
+      nextWave = 9 + Math.random()*9;
+      track = 1.15;
+      trackV = 0.6;
+    }
+    target = (waveLeft > 0) ? lvl * 0.42 : lvl;
+    if (waveLeft > 0) waveLeft -= dt;
   }
 
-  var k = (surgeLeft > 0) ? 22.0 : 1.6;
+  var k = (target > exp) ? 2.4 : 4.4;
   exp += (target - exp) * Math.min(1, dt*k);
 
   if (track > -0.2) track -= dt * trackV;
@@ -923,6 +1032,7 @@ function boot(){
   makePatterns();
   rebuildGrad();
   drawSource(0);
+  loadAssets();
   last = 0;
   requestAnimationFrame(loop);
   return true;
@@ -966,9 +1076,15 @@ function draw2D(){
   ctx2.fillStyle = vigGrad;
   ctx2.fillRect(0,0,w,h);
 
-  /* 绿调 */
-  ctx2.globalAlpha = 0.05;
-  ctx2.fillStyle = '#2a3a22';
+  /* 不该存在的绿光：找不到光源，缓慢漂移 —— “错”比“暗”更快被感知 */
+  var gx = w*(0.30 + Math.sin(t*0.11)*0.20);
+  var gy = h*(0.32 + Math.cos(t*0.075)*0.15);
+  var rg = ctx2.createRadialGradient(gx, gy, 0, gx, gy, Math.max(w,h)*0.55);
+  rg.addColorStop(0,   'rgba(92,132,68,0.105)');
+  rg.addColorStop(0.55,'rgba(74,110,56,0.042)');
+  rg.addColorStop(1,   'rgba(70,104,54,0)');
+  ctx2.globalAlpha = 1;
+  ctx2.fillStyle = rg;
   ctx2.fillRect(0,0,w,h);
 
   /* tracking 亮带 */
@@ -1009,7 +1125,7 @@ var last = 0, lastSec = -1;
 
 function loop(now){
   if (!last) last = now;
-  var dt = Math.min((now - last)/1000, 0.1);
+  var dt = Math.min((now - last)/1000, 0.25);
   last = now;
   t += dt;
 
