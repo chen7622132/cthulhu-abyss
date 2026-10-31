@@ -826,15 +826,71 @@ function rNote(p){
   sx.fillText(p.foot, PAD, H-108);
 }
 
-/* ---------- 07 归档 · 眼睛从纸里长出来 ---------- */
-var eyeC = document.createElement('canvas');
-eyeC.width = W; eyeC.height = H;
-var ec = eyeC.getContext('2d');
+/* ---------- 07 归档 · 程序化眼球（虹膜/瞳孔/眼白分层） ---------- */
+var irisTex = null;
+
+function makeIris(size){
+  var c = document.createElement('canvas');
+  c.width = c.height = size;
+  var g = c.getContext('2d');
+  var R = size/2;
+
+  /* 基底：中心到边缘的虹膜色阶，最外圈透明以便无缝融进眼白 */
+  var rg = g.createRadialGradient(R, R, R*0.10, R, R, R);
+  rg.addColorStop(0,    'rgba(30,34,29,1)');
+  rg.addColorStop(0.30, 'rgba(62,68,56,1)');
+  rg.addColorStop(0.52, 'rgba(96,104,86,1)');
+  rg.addColorStop(0.70, 'rgba(74,82,66,1)');
+  rg.addColorStop(0.86, 'rgba(36,40,33,1)');
+  rg.addColorStop(0.95, 'rgba(14,16,12,1)');
+  rg.addColorStop(1,    'rgba(0,0,0,0)');
+  g.fillStyle = rg;
+  g.beginPath(); g.arc(R,R,R,0,Math.PI*2); g.fill();
+
+  /* 放射纤维 */
+  for (var i=0;i<1300;i++){
+    var ang = Math.random()*Math.PI*2;
+    var r0 = R*(0.16 + Math.random()*0.18);
+    var r1 = R*(0.62 + Math.random()*0.34);
+    var br = 80 + Math.random()*110;
+    g.strokeStyle = 'rgba(' + (br|0) + ',' + ((br*1.04)|0) + ',' + ((br*0.84)|0) + ',' + (0.02+Math.random()*0.11).toFixed(3) + ')';
+    g.lineWidth = 0.4 + Math.random()*1.6;
+    g.beginPath();
+    g.moveTo(R+Math.cos(ang)*r0, R+Math.sin(ang)*r0);
+    g.lineTo(R+Math.cos(ang+0.03)*r1, R+Math.sin(ang+0.03)*r1);
+    g.stroke();
+  }
+
+  /* 隐窝：不规则的暗斑，让它像活的 */
+  for (var j=0;j<110;j++){
+    var aa = Math.random()*Math.PI*2;
+    var rr = R*(0.26 + Math.random()*0.46);
+    var rad = R*(0.010 + Math.random()*0.048);
+    g.fillStyle = 'rgba(8,10,8,' + (0.08+Math.random()*0.36).toFixed(3) + ')';
+    g.beginPath();
+    g.ellipse(R+Math.cos(aa)*rr, R+Math.sin(aa)*rr, rad, rad*(1.1+Math.random()*1.4), aa, 0, Math.PI*2);
+    g.fill();
+  }
+
+  /* 一圈更亮的纤维（瞳孔外缘） */
+  for (var k=0;k<220;k++){
+    var a2 = Math.random()*Math.PI*2;
+    var rr2 = R*(0.28 + Math.random()*0.10);
+    g.strokeStyle = 'rgba(170,180,152,' + (0.03+Math.random()*0.07).toFixed(3) + ')';
+    g.lineWidth = 0.5 + Math.random();
+    g.beginPath();
+    g.moveTo(R+Math.cos(a2)*rr2, R+Math.sin(a2)*rr2);
+    g.lineTo(R+Math.cos(a2)*R*0.62, R+Math.sin(a2)*R*0.62);
+    g.stroke();
+  }
+
+  return c;
+}
 
 function rArchive(p){
   var el = t - pageEnter;
 
-  /* 标题 */
+  /* ---------- 正文 ---------- */
   sx.font = '22px ' + SERIF;
   sx.fillStyle = C_TXT;
   sx.fillText(p.title, PAD, 96);
@@ -846,14 +902,12 @@ function rArchive(p){
   sx.strokeStyle = 'rgba(120,130,112,.16)';
   sx.beginPath(); sx.moveTo(PAD, 136); sx.lineTo(W-PAD, 136); sx.stroke();
 
-  /* 逐行浮现 —— 用节奏控制阅读速度 */
   for (var i=0;i<p.lines.length;i++){
     var L = p.lines[i];
     if (el < L.at) continue;
     var a = Math.min(1, (el - L.at) / 0.7);
 
     if (L.k === 'c'){
-      /* 「他們在等」——单独一行，字距拉开，居中 */
       sx.font = '21px ' + SERIF;
       sx.textAlign = 'center';
       var total = 0, ws = [];
@@ -861,11 +915,11 @@ function rArchive(p){
         var w = sx.measureText(L.t[m]).width + 7;
         ws.push(w); total += w;
       }
-      var cx = W/2 - total/2;
+      var cxw = W/2 - total/2;
       for (var n=0;n<L.t.length;n++){
         sx.fillStyle = 'rgba(212,210,192,' + (a*0.95).toFixed(2) + ')';
-        sx.fillText(L.t[n], cx + ws[n]/2, L.y);
-        cx += ws[n];
+        sx.fillText(L.t[n], cxw + ws[n]/2, L.y);
+        cxw += ws[n];
       }
       sx.textAlign = 'left';
       if (a >= 1){
@@ -885,114 +939,102 @@ function rArchive(p){
     sx.fillText(L.t, PAD + (L.k === 'l' ? 12 : 0), L.y);
   }
 
-  /* ---------- 信号被掐断 ---------- */
-  if (el > 14.9 && el < 15.8){
-    var blk = Math.min(1, (el-14.9)/0.42);
-    sx.fillStyle = 'rgba(4,5,4,' + (blk*0.985).toFixed(3) + ')';
-    sx.fillRect(0, 0, W, H);
+  /* ---------- 掐断 ---------- */
+  if (el > 14.9 && el < 15.7){
+    var blk = Math.min(1, (el-14.9)/0.40);
+    sx.fillStyle = 'rgba(4,5,4,' + (blk*0.99).toFixed(3) + ')';
+    sx.fillRect(0,0,W,H);
   }
 
-  /* ---------- 突脸 · 球体眼睛，突破屏幕 ---------- */
-  var im = IMGS.eye;
-  if (im && im.complete && el > 15.5){
-    var tIn = el - 15.5;
-
-    var a2 = Math.min(1, tIn/0.22);
-    var pop = Math.max(0, 1 - tIn/0.45);          /* 扑过来 */
+  /* ---------- 眼球：原图质感 + 可动的瞳孔贴片 ---------- */
+  var imC = IMGS.eyeClean;
+  var imP = IMGS.pupil;
+  if (imC && imC.complete && el > 15.4){
+    var tIn = el - 15.4;
+    var a2 = Math.min(1, tIn/0.20);
+    var pop = Math.max(0, 1 - tIn/0.48);
     var prog = Math.min(1, Math.max(0, (el-16)/8.0));
-    var locked = el >= 24;
+    var locked = el >= 23.5;
+    var push = locked ? Math.min(1, (el-23.5)/9.0) : 0;
 
-    /* 逼近：锁定后还在往前顶，直到超出屏幕 */
-    var pushUp = locked ? Math.min(1, (el-24)/9.0) : 0;
-
-    var k = Math.max(W/540, H/960) * (1.0 + pop*0.85 + prog*0.05 + pushUp*0.42);
+    /* 整体缩放（凑近 + 锁定后继续顶） */
+    var k = Math.max(W/540, H/960) * (1.0 + pop*0.95 + prog*0.05 + push*0.50);
     var w2 = 540*k, h2 = 960*k;
     var x2 = (W-w2)/2, y2 = (H-h2)/2;
 
     var cx0 = x2 + 270*k, cy0 = y2 + 468*k;
 
     /* 转动量 */
-    var th = (el-16) * 0.85;
-    var ox = Math.cos(th) * 30 * (1-prog*0.45);
-    var oy = Math.sin(th) * 20 * (1-prog*0.45);
+    var th = (el-15.4) * 0.82;
+    var ox = Math.cos(th) * 46 * (1-prog*0.5);
+    var oy = Math.sin(th) * 28 * (1-prog*0.5);
     if (locked){
-      var lk = Math.min(1, (el-24)/0.16);
+      var lk = Math.min(1, (el-23.5)/0.15);
       ox *= (1-lk); oy *= (1-lk);
     }
 
-    /* 膨胀强度：锁定那一下猛地凸出来 */
-    var bulge = 0.34 + pop*0.55 + (locked ? 0.30 : 0) + Math.sin(el*0.8)*0.035;
-
     sx.globalAlpha = a2;
-    sx.filter = 'brightness(1.40) contrast(1.10)';
+    sx.filter = 'brightness(1.85) contrast(1.10)';
 
-    /* 8 层同心圆，越靠中心放得越大 —— 球形，从屏幕里凸出来 */
-    var maxR = Math.sqrt(W*W + H*H) * 0.5;
-    var RINGS = 8;
-    for (var i=0;i<RINGS;i++){
-      var f = 1 - i/RINGS;
-      var rr = maxR * f;
-      var sc = 1 + bulge * (1-f) * (1-f) * 1.8;
-      var dw = w2*sc, dh = h2*sc;
-      sx.save();
-      sx.beginPath();
-      sx.arc(cx0, cy0, rr + 1, 0, Math.PI*2);
-      sx.clip();
-      sx.drawImage(im, cx0 - dw/2 + ox, cy0 - dh/2 + oy, dw, dh);
-      sx.restore();
-    }
+    /* ① 底图：原图质感，整张随视线平移（眼球转动） */
+    sx.drawImage(imC, x2 + ox, y2 + oy, w2, h2);
+
     sx.filter = 'none';
 
-    /* 球体光照：中心被照到，边缘坠进黑暗 —— 平面才变球 */
-    var maxR2 = Math.sqrt(W*W + H*H) * 0.5;
-    var lt = sx.createRadialGradient(cx0, cy0, maxR2*0.06, cx0, cy0, maxR2*0.86);
-    lt.addColorStop(0,    'rgba(226,232,214,0.13)');
-    lt.addColorStop(0.30, 'rgba(200,210,188,0.05)');
-    lt.addColorStop(0.62, 'rgba(0,0,0,0.28)');
-    lt.addColorStop(1,    'rgba(0,0,0,0.88)');
+    /* ② 瞳孔贴片：从原图裁的，独立移动 + 独立收缩 */
+    if (imP && imP.complete){
+      var ps = 1 + Math.sin(el*1.1)*0.045;
+      if (locked){
+        var lk3 = Math.min(1, (el-23.5)/0.42);
+        ps = ps*(1-lk3) + 0.70*lk3;      /* 锁定后瞳孔猛地一缩 */
+      }
+      var tw = 140*k*ps, thh = 600*k*ps;
+      var px = cx0 + ox + Math.cos(th*1.3)*9*k*(1-prog*0.6);
+      var py = cy0 + oy + Math.sin(th*0.9)*7*k*(1-prog*0.6);
+
+      sx.drawImage(imP, px - tw/2, py - thh/2, tw, thh);
+    }
+
+    /* ③ 球体光照：中心亮、边缘坠黑 */
+    var Rg = 470*k;
+    var lt = sx.createRadialGradient(cx0, cy0, Rg*0.10, cx0, cy0, Rg*1.05);
+    lt.addColorStop(0,    'rgba(222,230,210,0.14)');
+    lt.addColorStop(0.34, 'rgba(200,210,188,0.05)');
+    lt.addColorStop(0.66, 'rgba(0,0,0,0.22)');
+    lt.addColorStop(1,    'rgba(0,0,0,0.76)');
     sx.fillStyle = lt;
     sx.fillRect(0,0,W,H);
 
-    /* 角膜反光：一道弧形高光，球体才有“湿”的感觉 */
-    var hgx = cx0 + ox - 70*k, hgy = cy0 + oy - 150*k;
-    var hg = sx.createRadialGradient(hgx, hgy, 0, hgx, hgy, 120*k);
-    hg.addColorStop(0,   'rgba(214,222,204,' + (0.30*a2).toFixed(3) + ')');
-    hg.addColorStop(0.40,'rgba(214,222,204,' + (0.09*a2).toFixed(3) + ')');
-    hg.addColorStop(1,   'rgba(214,222,204,0)');
+    /* ④ 角膜反光 */
+    var hgx = cx0 + ox*1.2 - 66*k, hgy = cy0 + oy*1.2 - 104*k;
+    var hg = sx.createRadialGradient(hgx, hgy, 0, hgx, hgy, 96*k);
+    hg.addColorStop(0,   'rgba(226,232,212,' + (0.42*a2).toFixed(3) + ')');
+    hg.addColorStop(0.38,'rgba(226,232,212,' + (0.13*a2).toFixed(3) + ')');
+    hg.addColorStop(1,   'rgba(226,232,212,0)');
     sx.fillStyle = hg;
     sx.beginPath();
-    sx.ellipse(hgx, hgy, 120*k, 34*k, -0.16, 0, Math.PI*2);
+    sx.ellipse(hgx, hgy, 96*k, 27*k, -0.18, 0, Math.PI*2);
     sx.fill();
 
-    /* 瞳孔深处：无底的黑 */
-    var pg = sx.createRadialGradient(cx0+ox, cy0+oy, 0, cx0+ox, cy0+oy, 84*k);
-    pg.addColorStop(0,   'rgba(0,0,0,' + (0.72*a2).toFixed(3) + ')');
-    pg.addColorStop(0.62,'rgba(0,0,0,' + (0.34*a2).toFixed(3) + ')');
-    pg.addColorStop(1,   'rgba(0,0,0,0)');
-    sx.fillStyle = pg;
-    sx.beginPath();
-    sx.ellipse(cx0+ox, cy0+oy, 84*k, 190*k, 0, 0, Math.PI*2);
-    sx.fill();
-
-    /* 锁定的一瞬：过曝 */
+    /* ⑤ 锁定：过曝 */
     if (locked){
-      var fl = Math.max(0, 1 - (el-24)/0.38);
+      var fl = Math.max(0, 1 - (el-23.5)/0.36);
       if (fl > 0){
-        sx.globalAlpha = fl*0.26;
+        sx.globalAlpha = fl*0.24;
         sx.fillStyle = '#cdd6c4';
         sx.fillRect(0,0,W,H);
       }
     }
 
-    /* 眨眼：在两个不该眨的时刻各眨一下 */
-    var blinks = [27.4, 31.8];
+    /* ⑥ 眨眼 */
+    var blinks = [27.2, 31.6];
     for (var bi=0; bi<blinks.length; bi++){
       var dt2 = el - blinks[bi];
-      if (dt2 > -0.16 && dt2 < 0.16){
-        var lid = 1 - Math.abs(dt2)/0.16;       /* 0→1→0 */
-        var lidH = H*0.52*lid;
-        sx.globalAlpha = 0.97;
-        sx.fillStyle = '#050605';
+      if (dt2 > -0.15 && dt2 < 0.15){
+        var lid = 1 - Math.abs(dt2)/0.15;
+        var lidH = H*0.54*lid;
+        sx.globalAlpha = 0.98;
+        sx.fillStyle = '#040504';
         sx.fillRect(0, 0, W, lidH);
         sx.fillRect(0, H-lidH, W, lidH);
       }
@@ -1002,19 +1044,19 @@ function rArchive(p){
   }
 
   /* ---------- 收尾 ---------- */
-  if (el >= 36){
-    var a3 = Math.min(1, (el-36)/2.5);
+  if (el >= 34){
+    var a3 = Math.min(1, (el-34)/2.2);
     sx.font = '13px ' + SERIF;
-    sx.fillStyle = 'rgba(212,210,192,' + (0.62*a3).toFixed(2) + ')';
+    sx.fillStyle = 'rgba(212,210,192,' + (0.60*a3).toFixed(2) + ')';
     sx.textAlign = 'center';
     sx.fillText('余不能記。', W/2, H-150);
     sx.textAlign = 'left';
   }
 
-  if (el >= 42){
-    var a4 = Math.min(1, (el-42)/3);
+  if (el >= 40){
+    var a4 = Math.min(1, (el-40)/2.5);
     sx.font = '11px ' + SERIF;
-    sx.fillStyle = 'rgba(154,43,24,' + (0.50*a4).toFixed(2) + ')';
+    sx.fillStyle = 'rgba(154,43,24,' + (0.46*a4).toFixed(2) + ')';
     sx.textAlign = 'center';
     sx.fillText('本卷已歸還。', W/2, H-100);
     sx.textAlign = 'left';
