@@ -946,92 +946,133 @@ function rArchive(p){
     sx.fillRect(0,0,W,H);
   }
 
-  /* ---------- 眼球：原图质感 + 可动的瞳孔贴片 ---------- */
+  /* ---------- 眼球：底图死定，瞳孔按真实眼动模型走 ---------- */
   var imC = IMGS.eyeClean;
   var imP = IMGS.pupil;
   if (imC && imC.complete && el > 15.4){
     var tIn = el - 15.4;
     var a2 = Math.min(1, tIn/0.20);
     var pop = Math.max(0, 1 - tIn/0.48);
-    var prog = Math.min(1, Math.max(0, (el-16)/8.0));
-    var locked = el >= 23.5;
-    var push = locked ? Math.min(1, (el-23.5)/9.0) : 0;
+    var locked = el >= 22.6;
+    var push = locked ? Math.min(1, (el-22.6)/9.0) : 0;
 
-    /* 整体缩放（凑近 + 锁定后继续顶） */
-    var k = Math.max(W/540, H/960) * (1.0 + pop*0.95 + prog*0.05 + push*0.50);
+    /* 整屏凑近（不是平移，是缩放） */
+    var k = Math.max(W/540, H/960) * (1.0 + pop*0.85 + push*0.46);
     var w2 = 540*k, h2 = 960*k;
     var x2 = (W-w2)/2, y2 = (H-h2)/2;
-
     var cx0 = x2 + 270*k, cy0 = y2 + 468*k;
 
-    /* 转动量 */
-    var th = (el-15.4) * 0.82;
-    var ox = Math.cos(th) * 46 * (1-prog*0.5);
-    var oy = Math.sin(th) * 28 * (1-prog*0.5);
-    if (locked){
-      var lk = Math.min(1, (el-23.5)/0.15);
-      ox *= (1-lk); oy *= (1-lk);
-    }
-
+    /* 底图：一像素都不动 */
     sx.globalAlpha = a2;
-    sx.filter = 'brightness(1.85) contrast(1.10)';
-
-    /* ① 底图：原图质感，整张随视线平移（眼球转动） */
-    sx.drawImage(imC, x2 + ox, y2 + oy, w2, h2);
-
+    sx.filter = 'brightness(1.52) contrast(1.12)';
+    sx.drawImage(imC, x2, y2, w2, h2);
     sx.filter = 'none';
 
-    /* ② 瞳孔贴片：从原图裁的，独立移动 + 独立收缩 */
+    /* ---- 眼动模型：saccade / fixation(drift+tremor+microsaccade) ---- */
+    var dt = Math.min(0.06, Math.max(0.001, t - (window.__lastT || t)));
+    window.__lastT = t;
+
+    if (!window.__gaze) window.__gaze = { x:0, y:0, tx:22, ty:-12, mode:'fix', mt:0, hold:0.35, sx:0, sy:0, dur:0.08 };
+
+    var G = window.__gaze;
+    var GSTILL = (el > 22.0 && el < 22.62);   /* 突然彻底静止 */
+    var SNAP  = (el >= 22.62 && el < 23.4);  /* 猛地转正 */
+
+    if (SNAP){
+      /* 锁定：0.08 秒弹道式转到正中 */
+      var sp = Math.min(1, (el - 22.62)/0.08);
+      G.x = G.x * (1-sp);
+      G.y = G.y * (1-sp);
+      G.mode = 'fix'; G.mt = 0; G.tx = 0; G.ty = 0; G.sx = 0; G.sy = 0;
+    } else if (GSTILL){
+      /* 先收回中心，然后连微颤一起冻住 */
+      G.x *= 0.55; G.y *= 0.55;
+      if (Math.abs(G.x) < 0.4) G.x = 0;
+      if (Math.abs(G.y) < 0.4) G.y = 0;
+      G.mode = 'fix'; G.mt = 0;
+    } else if (!locked){
+      G.mt += dt;
+      if (G.mode === 'fix'){
+        /* 注视期：drift 慢漂 + tremor 高频微颤 */
+        G.x += (G.tx - G.x) * 0.9 * dt;
+        G.y += (G.ty - G.y) * 0.9 * dt;
+        G.x += (Math.random()-0.5) * 1.5;
+        G.y += (Math.random()-0.5) * 1.2;
+        if (G.mt > G.hold){
+          /* 该跳了 */
+          G.sx = G.x; G.sy = G.y;
+          var ang = Math.random()*Math.PI*2;
+          var rad = 10 + Math.random()*20;
+          G.tx = Math.cos(ang)*rad;
+          G.ty = Math.sin(ang)*rad*0.62;
+          G.dur = 0.05 + Math.random()*0.07;
+          G.mode = 'sac'; G.mt = 0;
+        }
+      } else {
+        /* 扫视：弹道式，不插值不缓动 */
+        var pz = Math.min(1, G.mt/G.dur);
+        G.x = G.sx + (G.tx-G.sx)*pz;
+        G.y = G.sy + (G.ty-G.sy)*pz;
+        if (pz >= 1){
+          G.mode = 'fix'; G.mt = 0;
+          G.hold = 0.5 + Math.random()*1.9;
+        }
+      }
+    } else {
+      /* 锁定后：只剩下极弱的 tremor，证明它还活着 */
+      G.x += (Math.random()-0.5) * 0.30;
+      G.y += (Math.random()-0.5) * 0.26;
+      G.x *= 0.94; G.y *= 0.94;
+    }
+
+    /* 瞳孔贴片 */
     if (imP && imP.complete){
-      var ps = 1 + Math.sin(el*1.1)*0.045;
+      var ps = 1;
       if (locked){
-        var lk3 = Math.min(1, (el-23.5)/0.42);
-        ps = ps*(1-lk3) + 0.70*lk3;      /* 锁定后瞳孔猛地一缩 */
+        var lk3 = Math.min(1, (el-23.4)/0.45);
+        ps = 1*(1-lk3) + 0.70*lk3;     /* 锁定后猛地收缩 */
+      } else {
+        ps = 1 + Math.sin(el*1.1)*0.035;
       }
       var tw = 140*k*ps, thh = 600*k*ps;
-      var px = cx0 + ox + Math.cos(th*1.3)*9*k*(1-prog*0.6);
-      var py = cy0 + oy + Math.sin(th*0.9)*7*k*(1-prog*0.6);
-
+      var px = cx0 + G.x*k, py = cy0 + G.y*k;
       sx.drawImage(imP, px - tw/2, py - thh/2, tw, thh);
     }
 
-    /* ③ 球体光照：中心亮、边缘坠黑 */
+    /* 球体压暗（只压边缘，不动中心） */
     var Rg = 470*k;
-    var lt = sx.createRadialGradient(cx0, cy0, Rg*0.10, cx0, cy0, Rg*1.05);
-    lt.addColorStop(0,    'rgba(222,230,210,0.14)');
-    lt.addColorStop(0.34, 'rgba(200,210,188,0.05)');
-    lt.addColorStop(0.66, 'rgba(0,0,0,0.22)');
-    lt.addColorStop(1,    'rgba(0,0,0,0.76)');
+    var lt = sx.createRadialGradient(cx0, cy0, Rg*0.30, cx0, cy0, Rg*1.02);
+    lt.addColorStop(0,   'rgba(0,0,0,0)');
+    lt.addColorStop(0.62,'rgba(0,0,0,0.20)');
+    lt.addColorStop(1,   'rgba(0,0,0,0.86)');
     sx.fillStyle = lt;
     sx.fillRect(0,0,W,H);
 
-    /* ④ 角膜反光 */
-    var hgx = cx0 + ox*1.2 - 66*k, hgy = cy0 + oy*1.2 - 104*k;
+    /* 角膜反光（固定于眼，不随瞳孔动） */
+    var hgx = cx0 - 66*k, hgy = cy0 - 104*k;
     var hg = sx.createRadialGradient(hgx, hgy, 0, hgx, hgy, 96*k);
-    hg.addColorStop(0,   'rgba(226,232,212,' + (0.42*a2).toFixed(3) + ')');
-    hg.addColorStop(0.38,'rgba(226,232,212,' + (0.13*a2).toFixed(3) + ')');
-    hg.addColorStop(1,   'rgba(226,232,212,0)');
+    hg.addColorStop(0,   'rgba(232,238,218,' + (0.50*a2).toFixed(3) + ')');
+    hg.addColorStop(0.38,'rgba(232,238,218,' + (0.15*a2).toFixed(3) + ')');
+    hg.addColorStop(1,   'rgba(228,234,214,0)');
     sx.fillStyle = hg;
     sx.beginPath();
     sx.ellipse(hgx, hgy, 96*k, 27*k, -0.18, 0, Math.PI*2);
     sx.fill();
 
-    /* ⑤ 锁定：过曝 */
-    if (locked){
-      var fl = Math.max(0, 1 - (el-23.5)/0.36);
-      if (fl > 0){
-        sx.globalAlpha = fl*0.24;
-        sx.fillStyle = '#cdd6c4';
-        sx.fillRect(0,0,W,H);
-      }
+    /* 锁定过曝 */
+    if (el > 22.62 && el < 23.05){
+      var fl = 1 - (el-22.62)/0.43;
+      sx.globalAlpha = fl*0.20;
+      sx.fillStyle = '#cdd6c4';
+      sx.fillRect(0,0,W,H);
     }
 
-    /* ⑥ 眨眼 */
-    var blinks = [27.2, 31.6];
+    /* 眨眼 */
+    var blinks = [26.4, 30.8];
     for (var bi=0; bi<blinks.length; bi++){
       var dt2 = el - blinks[bi];
-      if (dt2 > -0.15 && dt2 < 0.15){
-        var lid = 1 - Math.abs(dt2)/0.15;
+      if (dt2 > -0.14 && dt2 < 0.14){
+        var lid = 1 - Math.abs(dt2)/0.14;
         var lidH = H*0.54*lid;
         sx.globalAlpha = 0.98;
         sx.fillStyle = '#040504';
@@ -1044,8 +1085,8 @@ function rArchive(p){
   }
 
   /* ---------- 收尾 ---------- */
-  if (el >= 34){
-    var a3 = Math.min(1, (el-34)/2.2);
+  if (el >= 31){
+    var a3 = Math.min(1, (el-31)/2.2);
     sx.font = '13px ' + SERIF;
     sx.fillStyle = 'rgba(212,210,192,' + (0.60*a3).toFixed(2) + ')';
     sx.textAlign = 'center';
@@ -1053,8 +1094,8 @@ function rArchive(p){
     sx.textAlign = 'left';
   }
 
-  if (el >= 40){
-    var a4 = Math.min(1, (el-40)/2.5);
+  if (el >= 37){
+    var a4 = Math.min(1, (el-37)/2.5);
     sx.font = '11px ' + SERIF;
     sx.fillStyle = 'rgba(154,43,24,' + (0.46*a4).toFixed(2) + ')';
     sx.textAlign = 'center';
@@ -1311,7 +1352,9 @@ function loop(now){
   updateExposure(dt);
 
   var sec = Math.floor(t);
-  if (sec !== lastSec){
+  /* 第七屏眼睛出现后，必须每帧重绘，否则瞳孔一秒才动一次，像卡住 */
+  var eyeLive = (cur === 6 && (t - pageEnter) > 15.0);
+  if (sec !== lastSec || eyeLive){
     lastSec = sec;
     drawSource(t);
   }
