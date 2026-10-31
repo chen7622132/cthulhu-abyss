@@ -887,6 +887,58 @@ function makeIris(size){
   return c;
 }
 
+/* ---------- 预渲染 8 帧：每帧瞳孔在不同位置 ---------- */
+function buildEyeFrames(){
+  var imC = IMGS.eyeClean, imP = IMGS.pupil;
+  if (!imC || !imC.complete || !imP || !imP.complete){ window.__eyeFrames = null; return; }
+
+  var PTS = [[0,0],[44,-36],[50,6],[28,38],[-14,42],[-46,24],[-50,-10],[-32,-38]];
+  var base = Math.max(W/540, H/960);
+  var w2 = 540*base, h2 = 960*base;
+  var x2 = (W-w2)/2, y2 = (H-h2)/2;
+  var cx0 = x2 + 270*base, cy0 = y2 + 468*base;
+  var tw = 140*base, thh = 600*base;
+
+  var frames = [];
+  for (var i=0;i<PTS.length;i++){
+    var c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var g = c.getContext('2d');
+
+    g.filter = 'brightness(1.52) contrast(1.12)';
+    g.drawImage(imC, x2, y2, w2, h2);
+    g.filter = 'none';
+
+    var px = cx0 + PTS[i][0]*base, py = cy0 + PTS[i][1]*base;
+    /* 每帧瞳孔大小略有差异：模拟光线与情绪 */
+    var sc = 1 + (i%3)*0.035 - 0.02;
+    g.drawImage(imP, px - tw*sc/2, py - thh*sc/2, tw*sc, thh*sc);
+
+    /* 球体压暗 */
+    var Rg = 470*base;
+    var lt = g.createRadialGradient(cx0, cy0, Rg*0.30, cx0, cy0, Rg*1.02);
+    lt.addColorStop(0,   'rgba(0,0,0,0)');
+    lt.addColorStop(0.62,'rgba(0,0,0,0.20)');
+    lt.addColorStop(1,   'rgba(0,0,0,0.86)');
+    g.fillStyle = lt;
+    g.fillRect(0,0,W,H);
+
+    /* 角膜反光 */
+    var hgx = cx0 - 66*base, hgy = cy0 - 104*base;
+    var hg = g.createRadialGradient(hgx, hgy, 0, hgx, hgy, 96*base);
+    hg.addColorStop(0,   'rgba(232,238,218,0.50)');
+    hg.addColorStop(0.38,'rgba(232,238,218,0.15)');
+    hg.addColorStop(1,   'rgba(232,238,218,0)');
+    g.fillStyle = hg;
+    g.beginPath();
+    g.ellipse(hgx, hgy, 96*base, 27*base, -0.18, 0, Math.PI*2);
+    g.fill();
+
+    frames.push(c);
+  }
+  window.__eyeFrames = frames;
+}
+
 function rArchive(p){
   var el = t - pageEnter;
 
@@ -946,110 +998,67 @@ function rArchive(p){
     sx.fillRect(0,0,W,H);
   }
 
-  /* ---------- 眼球：底图死定，瞳孔按真实眼动模型走 ---------- */
-  var imC = IMGS.eyeClean;
-  var imP = IMGS.pupil;
-  if (imC && imC.complete && el > 15.4){
+  /* ---------- 眼球：预渲染帧 + 硬切（不插值，不做平移） ---------- */
+  if (el > 15.4){
+    if (!window.__eyeFrames) buildEyeFrames();
+
     var tIn = el - 15.4;
-    var a2 = Math.min(1, tIn/0.20);
-    var pop = Math.max(0, 1 - tIn/0.48);
+    var a2 = Math.min(1, tIn/0.18);
+    var pop = Math.max(0, 1 - tIn/0.45);
 
-    /* 整屏凑近（不是平移，是缩放） */
-    var k = Math.max(W/540, H/960) * (1.0 + pop*0.85);
-    var w2 = 540*k, h2 = 960*k;
+    /* 突脸那一下整体放大，之后就定死 */
+    var k = 1.0 + pop*0.85;
+    var w2 = W*k, h2 = H*k;
     var x2 = (W-w2)/2, y2 = (H-h2)/2;
-    var cx0 = x2 + 270*k, cy0 = y2 + 468*k;
 
-    /* 底图：一像素都不动 */
+    /* ---- 帧序列：不规律的停留，偶尔回头 ---- */
+    var SEQ = [
+      [16.00, 1], [16.42, 2], [16.86, 4], [17.22, 3],
+      [17.70, 1], [18.05, 5], [18.48, 6], [18.86, 7],
+      [19.28, 5], [19.62, 2], [19.95, 4], [20.22, 6],
+      [20.48, 0]
+    ];
+    var fi = 0;
+    for (var q=0;q<SEQ.length;q++){ if (el >= SEQ[q][0]) fi = SEQ[q][1]; }
+
+    /* 20.55–21.05 快速连切，像在急扫 */
+    if (el >= 20.55 && el < 21.05){
+      var step = Math.floor((el-20.55)/0.075);
+      var FAST = [1,4,6,2,7,5,0];
+      fi = FAST[step % FAST.length];
+    }
+
+    /* 21.05 之后彻底定格在正中，不再动 */
+    if (el >= 21.05) fi = 0;
+
     sx.globalAlpha = a2;
-    sx.filter = 'brightness(1.52) contrast(1.12)';
-    sx.drawImage(imC, x2, y2, w2, h2);
-    sx.filter = 'none';
+    var fr = window.__eyeFrames[fi];
+    if (fr) sx.drawImage(fr, x2, y2, w2, h2);
 
-    /* ---- 眼动：按固定路线把四周看一遍，每点停住 + 微颤 ---- */
-    var TOUR = [[42,-34],[48,6],[26,36],[-16,40],[-44,22],[-48,-10],[-30,-36],[0,0]];
-    var T0 = 16.0, TD = 0.55;      /* 每点 0.55 秒 */
-
-    var GX = 0, GY = 0;
-    var locked = el >= 21.8;
-    var frozen = (el > 21.05 && el < 21.75);
-
-    if (el < 20.4){
-      var idx = Math.floor((el - T0) / TD);
-      if (idx < 0) idx = 0;
-      if (idx > TOUR.length-1) idx = TOUR.length-1;
-      var frac = (el - T0 - idx*TD) / TD;
-      var tr = Math.min(1, frac * TD / 0.085);   /* 0.085 秒跳到位，其余时间停住 */
-      var prev = idx > 0 ? TOUR[idx-1] : [0,0];
-      var tgt = TOUR[idx];
-      GX = prev[0] + (tgt[0]-prev[0]) * tr;
-      GY = prev[1] + (tgt[1]-prev[1]) * tr;
-      if (tr >= 1){
-        /* 停住的时候也不完全静止：高频微颤 */
-        GX += (Math.random()-0.5) * 0.95;
-        GY += (Math.random()-0.5) * 0.85;
-      }
-    } else if (el >= 20.4 && el < 21.05){
-      /* 回到中心，准备定格 */
-      var hb = Math.min(1, (el-20.4)/0.22);
-      GX = TOUR[7][0] * (1-hb);
-      GY = TOUR[7][1] * (1-hb);
-    } else if (frozen){
-      GX = 0; GY = 0;              /* 彻底冻住，连微颤都没有 */
-    } else {
-      /* 锁定之后：只剩极弱的存在感 */
-      GX = (Math.random()-0.5) * 0.30;
-      GY = (Math.random()-0.5) * 0.26;
+    /* 定格之后：极弱的亮度呼吸，证明它还活着（但不是位移） */
+    if (el >= 21.05){
+      var br = 0.5 + 0.5*Math.sin((el-21.05)*2.2);
+      sx.globalAlpha = a2 * (0.05 + br*0.05);
+      sx.fillStyle = '#cfd8c0';
+      sx.fillRect(0,0,W,H);
+      sx.globalAlpha = a2;
     }
-
-    /* 瞳孔贴片 */
-    if (imP && imP.complete){
-      var ps = 1 + Math.sin(el*1.1)*0.030;
-      if (locked){
-        /* 恐惧 → 散瞳。0.2 秒启动，1.8 秒到位，不是猛缩 */
-        var lk3 = Math.min(1, Math.max(0, (el-21.9)/1.8));
-        ps = ps*(1-lk3) + 1.17*lk3;
-      }
-      var tw = 140*k*ps, thh = 600*k*ps;
-      var px = cx0 + GX*k, py = cy0 + GY*k;
-      sx.drawImage(imP, px - tw/2, py - thh/2, tw, thh);
-    }
-
-    /* 球体压暗（只压边缘，不动中心） */
-    var Rg = 470*k;
-    var lt = sx.createRadialGradient(cx0, cy0, Rg*0.30, cx0, cy0, Rg*1.02);
-    lt.addColorStop(0,   'rgba(0,0,0,0)');
-    lt.addColorStop(0.62,'rgba(0,0,0,0.20)');
-    lt.addColorStop(1,   'rgba(0,0,0,0.86)');
-    sx.fillStyle = lt;
-    sx.fillRect(0,0,W,H);
-
-    /* 角膜反光（固定于眼，不随瞳孔动） */
-    var hgx = cx0 - 66*k, hgy = cy0 - 104*k;
-    var hg = sx.createRadialGradient(hgx, hgy, 0, hgx, hgy, 96*k);
-    hg.addColorStop(0,   'rgba(232,238,218,' + (0.50*a2).toFixed(3) + ')');
-    hg.addColorStop(0.38,'rgba(232,238,218,' + (0.15*a2).toFixed(3) + ')');
-    hg.addColorStop(1,   'rgba(228,234,214,0)');
-    sx.fillStyle = hg;
-    sx.beginPath();
-    sx.ellipse(hgx, hgy, 96*k, 27*k, -0.18, 0, Math.PI*2);
-    sx.fill();
 
     /* 锁定过曝 */
-    if (el > 21.8 && el < 22.23){
-      var fl = 1 - (el-21.8)/0.43;
+    if (el > 21.4 && el < 21.85){
+      var fl = 1 - (el-21.4)/0.45;
       sx.globalAlpha = fl*0.20;
       sx.fillStyle = '#cdd6c4';
       sx.fillRect(0,0,W,H);
     }
 
     /* 眨眼 */
-    var blinks = [25.4, 29.6];
+    var blinks = [24.6, 28.8, 33.2];
     for (var bi=0; bi<blinks.length; bi++){
       var dt2 = el - blinks[bi];
-      if (dt2 > -0.14 && dt2 < 0.14){
-        var lid = 1 - Math.abs(dt2)/0.14;
-        var lidH = H*0.54*lid;
+      if (dt2 > -0.13 && dt2 < 0.13){
+        var lid = 1 - Math.abs(dt2)/0.13;
+        var lidH = H*0.56*lid;
         sx.globalAlpha = 0.98;
         sx.fillStyle = '#040504';
         sx.fillRect(0, 0, W, lidH);
