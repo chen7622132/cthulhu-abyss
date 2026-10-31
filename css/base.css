@@ -362,3 +362,25 @@ body.stage-cover #hud{opacity:0;}
       rgba(2,4,6,.34) 86%,
       rgba(2,4,6,.52) 100%);
 }
+
+/* 灯：再让一步，文字必须清楚 */
+#lamp{
+  background:radial-gradient(
+      circle var(--lamp-r) at var(--mx) var(--my),
+      rgba(2,4,6,0) 0%,
+      rgba(2,4,6,0) 55%,
+      rgba(2,4,6,.10) 74%,
+      rgba(2,4,6,.24) 89%,
+      rgba(2,4,6,.38) 100%);
+}
+
+/* 灯再让一步 */
+#lamp{
+  background:radial-gradient(
+      circle var(--lamp-r) at var(--mx) var(--my),
+      rgba(2,4,6,0) 0%,
+      rgba(2,4,6,0) 62%,
+      rgba(2,4,6,.07) 80%,
+      rgba(2,4,6,.18) 92%,
+      rgba(2,4,6,.28) 100%);
+}
