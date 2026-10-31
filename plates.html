@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>尘封档案 · 图版</title>
+<link rel="stylesheet" href="css/plate.css">
+</head>
+<body>
+
+<!-- ============ 封面 ============ -->
+<section class="plate">
+  <div class="plate-inner">
+    <div class="plate-img" style="background-image:url(assets/plate-cover.webp)"></div>
+    <div class="plate-text cover-text">
+      <p class="plate-org">閩海關 · 霞浦縣公署</p>
+      <h1 class="plate-title">聯合調查<br>卷　宗</h1>
+      <p class="plate-sub">民 國 十 七 年</p>
+      <p class="plate-sub">第 叁 柒 號</p>
+      <div class="plate-rule"></div>
+      <p class="plate-sub warn">非授權人員不得開啟</p>
+    </div>
+  </div>
+  <p class="hint">向 下 滾 動 · 解 封</p>
+</section>
+
+<div id="plates"></div>
+
+<script src="js/plates.js"></script>
+<script>
+(function(){
+  var host = document.getElementById('plates');
+  host.innerHTML = PLATES.map(function(p){
+    return ''
+      + '<section class="plate" id="'+p.id+'">'
+      +   '<div class="plate-inner">'
+      +     '<div class="plate-img" style="background-image:url('+p.img+')"></div>'
+      +     '<div class="plate-text doc-text" style="--pl:'+p.pl+'%;--pr:'+p.pr+'%">'
+      +       '<p class="ex-name">'+p.name+'</p>'
+      +       '<h2 class="ex-title">'+p.title+'</h2>'
+      +       '<div class="plate-rule"></div>'
+      +       '<div class="ex-body '+p.layout+'">'+p.body+'</div>'
+      +     '</div>'
+      +   '</div>'
+      +   '<p class="plate-foot">PLATE '+p.roman+'　·　全宗 閩海關·十七·〇〇七</p>'
+      + '</section>';
+  }).join('');
+})();
+</script>
+
+</body>
+</html>
