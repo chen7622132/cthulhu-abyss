@@ -22,7 +22,7 @@ var PLATES = [
 
 /* ---------------- 02 现场照片 ---------------- */
 {
-  id:'p02', pl:35, pr:9, roman:'II', no:'02', img:'assets/plate-02.webp',
+  id:'p02', pl:48, pr:6, anno:'袋中實存二張。', ax:33.5, ay:63, roman:'II', no:'02', img:'assets/plate-02.webp',
   name:'證 物 二', title:'現 場 照 片', layout:'cols1 big',
   body:`
     <p class="noindent" style="letter-spacing:.14em;">三沙灣　　順發船　　民國十七年十月　　共三張</p>
@@ -34,7 +34,6 @@ var PLATES = [
       <tr class="miss"><td>第三張</td><td>澳口灘上足印，自水際起，止於社廟階前。</td><td>缺</td></tr>
     </table>
     <p class="noindent" style="margin-top:1.2em;">以上照片三張，附袋移送。</p>
-    <p class="noindent red-pen" style="margin-top:.5em;">袋中實存二張。</p>
     <p class="noindent" style="margin-top:2em;font-size:12.5px;opacity:.72;">（袋上浮簽）第三張　沖印於十月十六</p>
     <p class="noindent" style="font-size:12.5px;opacity:.72;">晚於案發兩日。</p>
     <p class="noindent pencil" style="margin-top:2em;">〔鉛筆〕第三張底片無著落。<br>已問照相館，云未收此片。</p>
