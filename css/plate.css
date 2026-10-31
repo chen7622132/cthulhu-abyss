@@ -685,3 +685,124 @@ body{
   mask-mode:luminance;
   -webkit-mask-mode:luminance;
 }
+
+/* ============================================================
+   移动端：竖版布局（图在上，文字在下自然流）
+   16:9 画框在竖屏会压到 219px，必须换布局
+   ============================================================ */
+@media (max-width: 900px), (max-width: 1024px) and (orientation: portrait){
+
+  body{overflow-x:hidden;}
+
+  .plate{
+    height:auto !important;
+    min-height:100vh;
+    display:block !important;
+    padding:0 0 10vw !important;
+  }
+
+  .plate-inner{
+    width:100% !important;
+    height:auto !important;
+    max-width:none !important;
+    aspect-ratio:auto !important;
+    margin:0 !important;
+  }
+
+  /* 图片占上方 44vh，铺满宽度 */
+  .plate-img{
+    position:relative !important;
+    inset:auto !important;
+    width:100% !important;
+    height:44vh !important;
+    background-size:cover !important;
+    background-position:center !important;
+  }
+
+  /* 文字改成自然文档流 */
+  .plate-text.doc-text{
+    position:static !important;
+    left:auto !important;right:auto !important;
+    top:auto !important;bottom:auto !important;
+    width:auto !important;
+    padding:7vw 6.5vw 0 !important;
+    filter:none !important;
+  }
+  .doc-text::before, .doc-text::after{display:none !important;}
+
+  .ex-name{font-size:11px !important;letter-spacing:.4em !important;margin-bottom:.6em !important;}
+  .ex-title{font-size:27px !important;letter-spacing:.12em !important;line-height:1.35 !important;}
+  .plate-rule{margin:1em 0 1.2em !important;}
+
+  .ex-body{
+    column-count:1 !important;
+    font-size:16.5px !important;
+    line-height:2.0 !important;
+    letter-spacing:.02em !important;
+    -webkit-mask-image:none !important;
+    mask-image:none !important;
+    filter:none !important;
+    opacity:1 !important;
+  }
+  .ex-body p{opacity:1 !important;margin-bottom:1.1em !important;}
+  .ex-body table{font-size:14.5px !important;}
+
+  /* 印章与骑缝批注改回流内，避免压字 */
+  .stamp-plate{
+    position:static !important;
+    display:inline-block;
+    margin:2.4em 0 0 !important;
+    transform:rotate(-3deg);
+    font-size:10px;
+  }
+  .anno{
+    position:static !important;
+    display:block;
+    margin:1.4em 0 0 !important;
+    transform:none !important;
+    font-size:15px;
+  }
+  .plate-foot{
+    position:static !important;
+    margin:4vw 0 0 !important;
+    font-size:9px !important;
+  }
+  .hint{display:none !important;}
+
+  /* 封面在竖屏也别压字 */
+  .cover-text{
+    position:static !important;
+    width:auto !important;
+    text-align:center !important;
+    padding:6vw !important;
+  }
+  .cover-text .plate-title{font-size:34px !important;}
+}
+
+/* 移动端：文字区必须有纸色底板，否则深字落在深底上看不见 */
+@media (max-width: 900px), (max-width: 1024px) and (orientation: portrait){
+  .plate{
+    background:#ded2b6 !important;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.35'/></svg>") !important;
+    background-blend-mode:multiply !important;
+  }
+  .plate-img{
+    box-shadow:0 14px 22px -12px rgba(18,10,3,.55) !important;
+  }
+  .plate-text.doc-text{
+    background:transparent !important;
+    padding-top:8vw !important;
+  }
+  /* 文字在浅底上要够深 */
+  .ex-body, .ex-title, .ex-name{
+    color:#1b1208 !important;
+    -webkit-text-fill-color:#1b1208 !important;
+    filter:none !important;
+  }
+  .ex-body{font-size:17px !important;}
+  .plate-org{color:#3f2d14 !important;-webkit-text-fill-color:#3f2d14 !important;}
+  .cover-text .plate-sub{color:#3a2810 !important;-webkit-text-fill-color:#3a2810 !important;}
+  .cover-text .plate-title{color:#1e1408 !important;-webkit-text-fill-color:#1e1408 !important;background:none !important;}
+  .red-pen, .anno{color:#8c3a24 !important;-webkit-text-fill-color:#8c3a24 !important;}
+  .photo-log .miss td:nth-child(3){color:#8c3a24 !important;-webkit-text-fill-color:#8c3a24 !important;}
+}
