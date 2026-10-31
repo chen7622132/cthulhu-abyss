@@ -24,22 +24,32 @@ body{
 }
 html{scroll-snap-type:y proximity;}
 .dark-plate{
-  position:absolute;inset:0;
+  position:absolute;inset:-3%;z-index:0;
   background-size:cover;background-position:center;
-  transform:scale(1.05);
+  transform:scale(1.06) translate3d(calc(var(--px,0) * -7px), calc(var(--py,0) * -7px), 0);
+  will-change:transform;
   filter:brightness(1.12) contrast(1.02) sepia(.14) saturate(1.06);
 }
 
 /* ---------- 文字：只在光斑内存在 ---------- */
 .doc{
   position:absolute;left:31%;right:8.5%;top:14%;bottom:12%;
-  z-index:3;display:flex;flex-direction:column;justify-content:center;
+  z-index:4;display:flex;flex-direction:column;justify-content:center;
+  isolation:isolate;
+  transform:translate3d(calc(var(--px,0) * 5px), calc(var(--py,0) * 5px), 0);
+  will-change:transform;
   -webkit-mask-image:radial-gradient(ellipse calc(var(--r)*0.96) calc(var(--r)*1.14) at var(--lx) var(--ly),
       rgba(0,0,0,1) 0%, rgba(0,0,0,1) 52%, rgba(0,0,0,.94) 68%,
       rgba(0,0,0,.42) 77%, rgba(0,0,0,.06) 89%, rgba(0,0,0,0) 96%);
   mask-image:radial-gradient(ellipse calc(var(--r)*0.96) calc(var(--r)*1.14) at var(--lx) var(--ly),
       rgba(0,0,0,1) 0%, rgba(0,0,0,1) 52%, rgba(0,0,0,.94) 68%,
       rgba(0,0,0,.42) 77%, rgba(0,0,0,.06) 89%, rgba(0,0,0,0) 96%);
+}
+.doc::after{
+  content:"";position:absolute;inset:-4%;
+  background:radial-gradient(ellipse calc(var(--r)*0.80) calc(var(--r)*0.66) at var(--lx) var(--ly),
+      rgba(255,214,150,.55) 0%, rgba(255,196,120,.30) 40%, transparent 76%);
+  mix-blend-mode:screen;pointer-events:none;z-index:-1;
 }
 .ex-name{font-size:11px;letter-spacing:.42em;color:#cdbf9c;opacity:.86;margin-bottom:.8em;}
 .ex-title{
@@ -51,8 +61,13 @@ html{scroll-snap-type:y proximity;}
 .body{
   font-size:16.5px;line-height:2.0;letter-spacing:.028em;color:#fff9ea;
   text-align:justify;
-  text-shadow:0 0 1px rgba(255,250,235,.85),0 0 2px rgba(255,244,220,.55),
-              0 0 18px rgba(255,232,186,.30),0 0 40px rgba(255,220,160,.13);
+  text-shadow:
+    0 0 1px rgba(255,250,235,.85),
+    0 0 2px rgba(255,244,220,.55),
+    0 0 18px rgba(255,232,186,.30),
+    0 0 40px rgba(255,220,160,.13),
+    0 1.2px 0 rgba(0,0,0,.42),
+    0 -0.6px 0 rgba(255,248,226,.16);
 }
 .body p{margin-bottom:.95em;text-indent:1.9em;}
 .body p.noindent{text-indent:0;}
@@ -65,7 +80,7 @@ html{scroll-snap-type:y proximity;}
 
 /* ---------- 全局光照层（fixed，一份，跟着人走） ---------- */
 .glow{
-  position:fixed;inset:0;z-index:20;pointer-events:none;
+  display:none;position:fixed;inset:0;z-index:20;pointer-events:none;
   background:
     radial-gradient(ellipse calc(var(--r)*0.86) calc(var(--r)*0.70) at var(--lx) var(--ly),
       rgba(255,204,140,.66) 0%, rgba(255,192,118,.38) 26%, rgba(246,182,112,.20) 44%,
@@ -73,13 +88,44 @@ html{scroll-snap-type:y proximity;}
     radial-gradient(ellipse calc(var(--r)*1.5) calc(var(--r)*1.2) at var(--lx) var(--ly),
       rgba(255,186,112,.20) 0%, rgba(226,170,104,.10) 44%, rgba(160,140,100,.04) 64%, transparent 82%),
     radial-gradient(ellipse calc(var(--r)*2.6) calc(var(--r)*2.0) at var(--lx) var(--ly),
-      rgba(255,170,96,.10) 0%, rgba(150,132,92,.035) 50%, transparent 76%);
+      rgba(255,170,96,.10) 0%, rgba(150,132,92,.035) 50%, transparent 76%),
+    conic-gradient(from 0deg at var(--lx) var(--ly),
+      transparent 0deg, rgba(255,214,160,.020) 35deg, transparent 70deg,
+      transparent 180deg, rgba(255,214,160,.016) 215deg, transparent 250deg);
   mix-blend-mode:screen;filter:blur(7px);
 }
+.rake{
+  display:none;position:fixed;inset:0;z-index:21;pointer-events:none;
+  background:radial-gradient(ellipse calc(var(--r)*1.02) calc(var(--r)*0.80)
+      at calc(var(--lx) + 22px) calc(var(--ly) + 26px),
+      rgba(10,14,12,.34) 0%, rgba(10,14,12,.16) 46%, transparent 74%);
+  mix-blend-mode:multiply;filter:blur(18px);
+}
 .vignette{
-  position:fixed;inset:0;z-index:21;pointer-events:none;
+  display:none;position:fixed;inset:0;z-index:21;pointer-events:none;
   background:radial-gradient(circle calc(var(--r)*1.9) at var(--lx) var(--ly),
       rgba(4,8,9,0) 0%, rgba(4,8,9,.55) 52%, rgba(4,8,9,.84) 78%, rgba(4,8,9,.93) 100%);
+}
+.lit-grain{
+  position:fixed;inset:0;z-index:19;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.62' numOctaves='4' seed='5'/><feColorMatrix type='saturate' values='0'/></filter><rect width='300' height='300' filter='url(%23f)'/></svg>");
+  background-size:300px 300px;
+  background-position:calc(var(--px,0) * -22px) calc(var(--py,0) * -22px);
+  -webkit-mask-image:radial-gradient(ellipse calc(var(--r)*0.98) calc(var(--r)*0.84) at var(--lx) var(--ly),
+      rgba(0,0,0,.92) 0%, rgba(0,0,0,.80) 42%, rgba(0,0,0,.34) 68%, transparent 88%);
+  mask-image:radial-gradient(ellipse calc(var(--r)*0.98) calc(var(--r)*0.84) at var(--lx) var(--ly),
+      rgba(0,0,0,.92) 0%, rgba(0,0,0,.80) 42%, rgba(0,0,0,.34) 68%, transparent 88%);
+  mix-blend-mode:overlay;opacity:.72;
+  will-change:background-position;
+}
+.glcanvas{
+  position:fixed;inset:0;z-index:1;pointer-events:none;display:block;
+  width:100vw;height:100vh;
+}
+body.no-gl .glcanvas{display:none;}
+.dust{
+  position:fixed;inset:0;z-index:23;pointer-events:none;
+  mix-blend-mode:screen;opacity:.9;
 }
 .grain{
   position:fixed;inset:0;z-index:22;pointer-events:none;opacity:.10;
@@ -253,12 +299,16 @@ html{scroll-snap-type:y proximity;}
   </div>
 </section>
 
+<div class="lit-grain"></div>
+<canvas id="gl" class="glcanvas"></canvas>
+<canvas class="dust" id="dust"></canvas>
 <div class="glow"></div>
 <div class="vignette"></div>
 <div class="grain"></div>
 <p class="hint" id="hint">移 動 光 源 · 向 下 滾</p>
 <div class="pager" id="pager"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 
+<script src="js/gl-paper.js"></script>
 <script>
 (function(){
   var root=document.documentElement;
@@ -291,10 +341,61 @@ html{scroll-snap-type:y proximity;}
       if(auto){ lx+=Math.sin(ts*0.00042)*0.0022; ly+=Math.cos(ts*0.00061)*0.0018; }
       root.style.setProperty('--lx',(lx*100).toFixed(2)+'%');
       root.style.setProperty('--ly',(ly*100).toFixed(2)+'%');
+      root.style.setProperty('--px',(lx*2-1).toFixed(3));
+      root.style.setProperty('--py',(ly*2-1).toFixed(3));
+      if(window.PAPER){
+        window.PAPER.light(lx, ly);
+        window.PAPER.page(scrollY / innerHeight);
+      }
+      drawDust();
     }
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
+
+  /* ---------- 尘埃：光柱里的浮尘，是"有体积"的证据 ---------- */
+  var cv=document.getElementById('dust'), cx=cv.getContext('2d');
+  function fit(){ cv.width=innerWidth; cv.height=innerHeight; }
+  fit(); addEventListener('resize', fit);
+
+  var N = innerWidth<900 ? 42 : 110, P=[];
+  function seed(){
+    P=[];
+    for(var i=0;i<N;i++){
+      P.push({
+        x:Math.random(), y:Math.random(),
+        r:Math.random()*1.15+0.35,
+        vx:(Math.random()-0.5)*0.00018,
+        vy:(Math.random()-0.5)*0.00018-0.00006,
+        ph:Math.random()*6.28
+      });
+    }
+  }
+  seed();
+
+  function drawDust(){
+    if(!cv.width) return;
+    cx.clearRect(0,0,cv.width,cv.height);
+    var lxpx=lx*cv.width, lypx=ly*cv.height;
+    var R=Math.max(cv.width,cv.height)*0.45;
+    var t=performance.now()*0.001;
+    for(var i=0;i<P.length;i++){
+      var p=P[i];
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<-0.05) p.x=1.05; if(p.x>1.05) p.x=-0.05;
+      if(p.y<-0.05) p.y=1.05; if(p.y>1.05) p.y=-0.05;
+      var px=p.x*cv.width + Math.sin(t*0.5+p.ph)*7;
+      var py=p.y*cv.height + Math.cos(t*0.4+p.ph)*7;
+      var dx=px-lxpx, dy=py-lypx;
+      var d=Math.sqrt(dx*dx+dy*dy);
+      if(d>R) continue;
+      var a=1-d/R; a=a*a;
+      var tw=0.65+0.35*Math.sin(t*1.7+p.ph);   // 闪烁
+      cx.beginPath(); cx.arc(px,py,p.r,0,6.2832);
+      cx.fillStyle='rgba(255,238,206,'+(a*0.5*tw).toFixed(3)+')';
+      cx.fill();
+    }
+  }
 
   // 进度点
   function up(){
