@@ -17,14 +17,21 @@ window.ABYSS = window.ABYSS || {};
 
     /* 阅读次数 */
     var rc = document.getElementById('readCount');
-    if (rc) {
+    if (rc && rc.parentNode) {
       var cn = ['', '一', '二', '三', '四', '五'];
       rc.textContent = count >= 6 ? '多次' : (cn[count] || count);
       if (count >= 3) {
-        rc.parentNode.innerHTML = '本卷已是<strong>最後一份副本</strong>。';
-        rc.parentNode.style.color = '#9d2b20';
+        /* 先抱住父节点，禁止在 innerHTML 之后再用 rc.parentNode（会变 null） */
+        var noteEl = rc.parentNode;
+        noteEl.innerHTML = '本卷已是<strong>最後一份副本</strong>。';
+        noteEl.style.color = '#9d2b20';
       }
     }
+
+    /* 调试／重置：地址加 ?reset=1 可清空"已阅次数" */
+    try {
+      if (/[?&]reset=1/.test(location.search)) localStorage.removeItem('abyss.v1');
+    } catch (e) { }
 
     /* 颗粒噪点 */
     initGrain();
