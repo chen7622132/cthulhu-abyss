@@ -433,9 +433,15 @@ function makePatterns(){
 }
 
 function init2D(){
+  /* 关键：一个 canvas 拿过 webgl 就永远拿不到 2d，必须换一个新的 */
+  var nc = document.createElement('canvas');
+  nc.id = 'out';
+  if (out.parentNode) out.parentNode.replaceChild(nc, out);
+  out = nc;
+  mode = '2d';
+  resize();
   ctx2 = out.getContext('2d');
   if (!ctx2) { say('no canvas2d'); return false; }
-  resize();
   makePatterns();
   vigGrad = ctx2.createRadialGradient(
     out.width/2, out.height/2, Math.min(out.width,out.height)*0.18,
@@ -460,12 +466,20 @@ function drawGL(){
 
 function draw2D(){
   var w = out.width, h = out.height;
+  var d = Math.round(w * 0.0026);
+
   ctx2.setTransform(1,0,0,1,0,0);
+  ctx2.globalCompositeOperation = 'source-over';
   ctx2.globalAlpha = 1;
   ctx2.fillStyle = '#000';
   ctx2.fillRect(0,0,w,h);
 
-  /* 先全亮画出，最后由黑幕统一压曝光 —— 只压一次，避免叠乘变全黑 */
+  /* 右向拖尾 / 色散：先叠两层偏移副本，再盖主体 */
+  ctx2.globalAlpha = 0.20;
+  ctx2.drawImage(srcC, d*4, 0, w, h);
+  ctx2.globalAlpha = 0.30;
+  ctx2.drawImage(srcC, d, 0, w, h);
+
   ctx2.globalAlpha = 1;
   ctx2.drawImage(srcC, 0, 0, w, h);
 
@@ -491,6 +505,14 @@ function draw2D(){
   ctx2.globalAlpha = 0.05;
   ctx2.fillStyle = '#2a3a22';
   ctx2.fillRect(0,0,w,h);
+
+  /* tracking 亮带 */
+  if (track > -0.1 && track < 1.1){
+    var by = track * h;
+    ctx2.globalAlpha = 0.10;
+    ctx2.fillStyle = '#c8d0bc';
+    ctx2.fillRect(0, by, w, Math.max(2, h*0.006));
+  }
 
   /* 曝光：唯一的压暗层 */
   ctx2.globalAlpha = 1;
@@ -551,25 +573,25 @@ function start(){
   layout();
   drawFrame(0);
 
-  if (initGL()){
-    mode = 'gl';
-    resize();
-    uploadGL();
-    /* 首帧探针：如果画面全黑，说明 GPU 路径有问题，切降级 */
-    setTimeout(function(){
-      try {
-        gl.bindTexture(gl.TEXTURE_2D, glTex);
-        var probe = new Uint8Array(4);
-        gl.readPixels(Math.floor(out.width/2), Math.floor(out.height/3), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, probe);
-        if (probe[0] + probe[1] + probe[2] < 2){
-          say('gl probe black (' + probe[0] + ',' + probe[1] + ',' + probe[2] + ') -> 2d');
-          init2D(); mode = '2d';
-        }
-      } catch(e){ say('probe fail -> 2d'); init2D(); mode = '2d'; }
-    }, 900);
+  var m = (location.search.match(/[?&]mode=(gl|2d)/) || [])[1];
+
+  if (m === 'gl'){
+    if (initGL()){
+      mode = 'gl';
+      resize();
+      uploadGL();
+      last = 0;
+      requestAnimationFrame(loop);
+      return;
+    }
+    say('gl 不可用 → 回落 2d');
+  }
+
+  /* 默认 2D：不依赖 WebGL，任何内置浏览器都能出图 */
+  if (init2D()){
+    mode = '2d';
   } else {
-    if (init2D()) mode = '2d';
-    else say('FATAL: no renderer');
+    say('FATAL: no renderer');
   }
 
   last = 0;
