@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>記錄 01</title>
+<style>
+  html,body{
+    margin:0;padding:0;height:100%;background:#000;overflow:hidden;
+    -webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #out{position:fixed;inset:0;width:100%;height:100%;display:block;}
+  #src{display:none;}
+</style>
+</head>
+<body>
+<canvas id="out"></canvas>
+<canvas id="src" width="480" height="854"></canvas>
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   配置
+   ============================================================ */
+var W = 480, H = 854;
+var PAD = 40;
+var COL_BG   = '#0c0e0b';
+var COL_TXT  = '#c4c2b2';
+var COL_DIM  = '#6b7264';
+var COL_RED  = '#9a2b18';
+var COL_FAINT= '#3a4038';
+
+var MONO = '"Noto Sans Mono CJK SC","Noto Sans Mono",monospace';
+var SERIF= '"Noto Serif CJK SC","Noto Serif SC","Songti SC",serif';
+
+/* ============================================================
+   正文内容
+   ============================================================ */
+var HEAD_NO = '第 三七 號';
+var HEAD_ORG= '閩海關稅務司公署';
+var TITLE   = '公　函';
+var BODY = [
+  '逕啟者：',
+  '本年十月十四日，據本口緝私艇報稱，霞浦縣屬三沙灣外，有漁船一艘，名「順發」，船牌閩霞字第〇四七號，自十月十一日出港後，迄今未歸。',
+  '查該船船主林阿水，年四十一歲，三沙澳人。船員五名：林阿火、陳水來、王番薯、許乞食、鄭炎生。均係本澳漁戶。',
+  '本關已飭沿海各汛口一體查訪。相應函請　貴公署查照，派員查勘，並取具該船船主族鄰保結，以備核銷。',
+  '又查：該船係民國十五年三月初二領牌，牌載「煙囪式硬帆一副」，於十六年換。本年十月十一日清晨出港，未經汛口掛驗。據澳甲稱，該船並未報關。',
+  '按現行船政法，漁船出港須報澳甲、掛汛口，違者以走私論。惟近年海上不靖，各澳多有未報即出者，積習已久，本關亦難盡究。'
+];
+var SIGN = '此致　霞浦縣公署';
+var DATE = '民國十七年十月十四日';
+
+/* ============================================================
+   Canvas 2D —— 把整页画成一张 480×854 的位图
+   ============================================================ */
+var srcC = document.getElementById('src');
+var sx = srcC.getContext('2d', { alpha:false });
+
+function wrapText(text, maxW, font){
+  sx.font = font;
+  var out = [], cur = '';
+  for (var i=0;i<text.length;i++){
+    var ch = text[i];
+    var t = cur + ch;
+    if (sx.measureText(t).width > maxW && cur.length){
+      out.push(cur); cur = ch;
+    } else {
+      cur = t;
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+var LINES = [];   // 预先算好，画的时候直接用
+
+function layout(){
+  LINES = [];
+  var font = '18px ' + SERIF;
+  var maxW = W - PAD*2;
+  for (var i=0;i<BODY.length;i++){
+    if (i>0) LINES.push({ t:'', gap:true });
+    var ls = wrapText(BODY[i], maxW, font);
+    for (var j=0;j<ls.length;j++) LINES.push({ t:ls[j] });
+  }
+}
+
+function pad2(n){ n = Math.floor(n); return n<10 ? '0'+n : ''+n; }
+
+/* 固定种子随机：同一行每次画出来位置一致，不会闪 */
+function srnd(i){
+  var x = Math.sin(i*127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function drawFrame(tc){
+  /* 底 */
+  sx.fillStyle = COL_BG;
+  sx.fillRect(0,0,W,H);
+
+  /* 极微弱的纸/带噪底 —— 静态，不闪 */
+  sx.save();
+  sx.globalAlpha = 0.05;
+  for (var i=0;i<1400;i++){
+    var rx = Math.random()*W, ry = Math.random()*H;
+    sx.fillStyle = Math.random()<0.5 ? '#2b322a' : '#1b211a';
+    sx.fillRect(rx, ry, 1, 1);
+  }
+  sx.restore();
+
+  /* ---------- 顶部 OSD ---------- */
+  sx.font = '12px ' + MONO;
+  sx.fillStyle = COL_DIM;
+  sx.fillText('REC', PAD, 46);
+
+  /* 红点 */
+  sx.beginPath();
+  sx.arc(PAD+34, 42, 3.2, 0, Math.PI*2);
+  sx.fillStyle = COL_RED;
+  sx.fill();
+
+  sx.fillText('CH-03', PAD+50, 46);
+
+  /* 右：时间码 */
+  var tcStr = '00:' + pad2(Math.floor(tc/60)) + ':' + pad2(tc%60) + ':' + pad2(Math.floor((tc%1)*24));
+  sx.textAlign = 'right';
+  sx.fillStyle = COL_DIM;
+  sx.fillText(tcStr, W-PAD, 46);
+  sx.textAlign = 'left';
+
+  /* 分隔线 */
+  sx.strokeStyle = 'rgba(120,130,112,.22)';
+  sx.lineWidth = 1;
+  sx.beginPath(); sx.moveTo(PAD, 66); sx.lineTo(W-PAD, 66); sx.stroke();
+
+  /* ---------- 文件头 ---------- */
+  var y = 100;
+  sx.font = '13px ' + MONO;
+  sx.fillStyle = COL_FAINT;
+  sx.fillText(HEAD_ORG, PAD, y);
+
+  sx.textAlign = 'right';
+  sx.fillText(HEAD_NO, W-PAD, y);
+  sx.textAlign = 'left';
+
+  /* ---------- 标题 ---------- */
+  y = 148;
+  sx.font = '26px ' + SERIF;
+  sx.fillStyle = COL_RED;
+  sx.fillText(TITLE, PAD, y);
+
+  /* 标题下短横 */
+  sx.strokeStyle = 'rgba(154,43,24,.55)';
+  sx.beginPath(); sx.moveTo(PAD, y+12); sx.lineTo(PAD+96, y+12); sx.stroke();
+
+  /* ---------- 正文 ---------- */
+  var bodyFont = '18px ' + SERIF;
+  sx.font = bodyFont;
+
+  var ly = 200;
+  var LH = 33;
+
+  for (var k=0;k<LINES.length;k++){
+    var L = LINES[k];
+    if (L.gap){ ly += 12; continue; }
+    if (ly > H - 150) break;
+    /* 打字机的不齐：每行上下偏一点点，墨色略不匀 */
+    sx.fillStyle = 'rgba(196,194,178,' + (0.80 + srnd(k)*0.20).toFixed(2) + ')';
+    sx.fillText(L.t, PAD + (srnd(k+900)-0.5)*1.2, ly + (srnd(k)-0.5)*1.5);
+    ly += LH;
+  }
+
+  /* ---------- 落款 ---------- */
+  var sy = H - 132;
+  sx.font = '17px ' + SERIF;
+  sx.fillStyle = COL_TXT;
+  sx.fillText(SIGN, PAD, sy);
+
+  sx.font = '16px ' + SERIF;
+  sx.fillStyle = COL_DIM;
+  sx.fillText(DATE, PAD, sy + 36);
+
+  /* 红色方印 残片 */
+  sx.save();
+  sx.strokeStyle = 'rgba(154,43,24,.42)';
+  sx.lineWidth = 2;
+  sx.strokeRect(W-PAD-78, sy-24, 78, 78);
+  sx.globalAlpha = 0.55;
+  sx.font = '15px ' + SERIF;
+  sx.fillStyle = 'rgba(154,43,24,.9)';
+  sx.fillText('收', W-PAD-64, sy+4);
+  sx.fillText('文', W-PAD-64, sy+26);
+  sx.restore();
+
+  /* ---------- 底部：还有更多 ---------- */
+  sx.font = '12px ' + MONO;
+  sx.fillStyle = COL_FAINT;
+  sx.fillText('記錄 01 / 07', PAD, H-38);
+
+  sx.textAlign = 'right';
+  sx.fillText('↓', W-PAD, H-38);
+  sx.textAlign = 'left';
+}
+
+/* ============================================================
+   WebGL 后处理 —— 整张图过同一条劣化通道
+   ============================================================ */
+var out = document.getElementById('out');
+var gl = out.getContext('webgl', {
+  antialias:false, alpha:false, depth:false, stencil:false,
+  powerPreference:'high-performance', preserveDrawingBuffer:true
+});
+
+if (!gl){
+  document.body.innerHTML = '<p style="color:#888;font:14px monospace;padding:24px">此設備不支持 WebGL。</p>';
+  return;
+}
+
+var VERT = [
+  'attribute vec2 aPos;',
+  'varying vec2 vUv;',
+  'void main(){',
+  '  vUv = vec2(aPos.x*0.5+0.5, 0.5-aPos.y*0.5);',
+  '  gl_Position = vec4(aPos,0.0,1.0);',
+  '}'
+].join('\n');
+
+var FRAG = [
+  'precision mediump float;',
+  'varying vec2 vUv;',
+  'uniform sampler2D uTex;',
+  'uniform vec2  uRes;',
+  'uniform float uTime;',
+  'uniform float uExp;',
+  'uniform float uTrack;',
+  'uniform float uJitter;',
+
+  'float hash(vec2 p){',
+  '  p = fract(p*vec2(123.34, 456.21));',
+  '  p += dot(p, p+45.32);',
+  '  return fract(p.x*p.y);',
+  '}',
+  'float vnoise(vec2 p){',
+  '  vec2 i = floor(p), f = fract(p);',
+  '  f = f*f*(3.0-2.0*f);',
+  '  float a = hash(i);',
+  '  float b = hash(i+vec2(1.0,0.0));',
+  '  float c = hash(i+vec2(0.0,1.0));',
+  '  float d = hash(i+vec2(1.0,1.0));',
+  '  return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);',
+  '}',
+
+  'void main(){',
+  '  vec2 uv = vUv;',
+
+  /* CRT 轻微桶形 */
+  '  vec2 c = uv - 0.5;',
+  '  uv += c * dot(c,c) * 0.045;',
+
+  /* 低频场：整幅画面的“信号状态”。不均匀感全靠它 */
+  '  float field  = vnoise(uv*vec2(3.5,5.0) + vec2(uTime*0.021, uTime*0.034));',
+  '  float field2 = vnoise(uv*vec2(9.0,18.0) - uTime*0.048);',
+
+  /* 行相位不稳 —— VHS 每一行的水平位置都在抖 */
+  '  float rowJit = (hash(vec2(floor(uv.y*480.0), floor(uTime*26.0))) - 0.5) * 0.0012 * (0.4 + field);',
+  '  uv.x += rowJit;',
+  '  uv.x += uJitter;',
+
+  /* tracking 带 */
+  '  float band = smoothstep(0.035, 0.0, abs(uv.y - uTrack));',
+  '  uv.x += band * (hash(vec2(floor(uv.y*90.0), floor(uTime*18.0))) - 0.5) * 0.06;',
+
+  /* VHS 右向拖尾 —— 信号延迟造成的鬼影 */
+  '  vec3 smear = vec3(0.0);',
+  '  float wsum = 0.0;',
+  '  for (int i=1;i<=6;i++){',
+  '    float k = float(i)/6.0;',
+  '    float w = pow(1.0-k, 2.2);',
+  '    smear += texture2D(uTex, uv + vec2(k*0.030*(0.3+field*0.95), 0.0)).rgb * w;',
+  '    wsum += w;',
+  '  }',
+  '  smear /= wsum;',
+
+  '  vec3 base = texture2D(uTex, uv).rgb;',
+  '  base = mix(base, smear, 0.24 + field*0.46);',
+
+  /* 带宽损失 */
+  '  vec3 bl = texture2D(uTex, uv + vec2(0.0016,0.0)).rgb',
+  '          + texture2D(uTex, uv - vec2(0.0016,0.0)).rgb',
+  '          + texture2D(uTex, uv + vec2(0.0,0.0016)).rgb',
+  '          + texture2D(uTex, uv - vec2(0.0,0.0016)).rgb;',
+  '  base = mix(base, bl*0.25, 0.45);',
+
+  /* 色散：强度局部不同 */
+  '  float ab = (0.0010 + abs(uv.x-0.5)*0.0034 + band*0.004) * (0.45 + field*1.45);',
+  '  vec3 col;',
+  '  col.r = mix(base.r, texture2D(uTex, uv + vec2( ab,0.0)).r, 0.85);',
+  '  col.g = base.g;',
+  '  col.b = mix(base.b, texture2D(uTex, uv + vec2(-ab,0.0)).b, 0.85);',
+
+  /* 扫描线（按 480 行算） */
+  '  float scan = 0.84 + 0.16 * sin(uv.y * 480.0 * 3.14159265);',
+  '  col *= scan;',
+
+  /* 颗粒：块状、密度随场变化、暗部更重 */
+  '  float g = hash(floor(uv*uRes*0.5/2.0) + floor(uTime*13.0)*17.0);',
+  '  col += (g - 0.5) * (0.028 + field2*0.080) * max(0.0, 1.0 - col.g*1.7);',
+
+  /* 磁粉脱落白点 */
+  '  float sp = hash(floor(uv*uRes*0.25) + floor(uTime*11.0)*31.0);',
+  '  col += step(0.9988, sp) * 0.45;',
+
+  /* 局部亮度不均 —— 磁带老化的区域性衰减 */
+  '  col *= (0.86 + field*0.30);',
+
+  /* 暗角 */
+  '  vec2 v = uv - 0.5;',
+  '  float vig = smoothstep(1.02, 0.34, length(v*vec2(1.15,1.0)));',
+  '  col *= mix(0.42, 1.0, vig);',
+
+  /* 病态荧光绿 tint */
+  '  col *= vec3(0.93, 1.0, 0.90);',
+
+  /* tracking 亮带 */
+  '  col += band * 0.10;',
+
+  /* 曝光 */
+  '  col *= uExp;',
+  '  col += smoothstep(0.85, 1.25, uExp) * 0.05;',
+
+  /* 轻微 gamma */
+  '  col = pow(max(col, 0.0), vec3(0.94));',
+
+  '  gl_FragColor = vec4(col, 1.0);',
+  '}'
+].join('\n');
+
+function sh(type, src){
+  var s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+    console.error(gl.getShaderInfoLog(s));
+  }
+  return s;
+}
+
+var prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
+gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+var buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+  -1,-1,  1,-1, -1,1,
+  -1, 1,  1,-1,  1,1
+]), gl.STATIC_DRAW);
+
+var aPos = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+var tex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, tex);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+var uTex    = gl.getUniformLocation(prog, 'uTex');
+var uRes    = gl.getUniformLocation(prog, 'uRes');
+var uTime   = gl.getUniformLocation(prog, 'uTime');
+var uExp    = gl.getUniformLocation(prog, 'uExp');
+var uTrack  = gl.getUniformLocation(prog, 'uTrack');
+var uJitter = gl.getUniformLocation(prog, 'uJitter');
+
+function upload(){
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, srcC);
+}
+
+/* ============================================================
+   尺寸
+   ============================================================ */
+var quality = 1.0;
+function resize(){
+  var dpr = Math.min(window.devicePixelRatio || 1, 2) * quality;
+  var w = Math.floor(window.innerWidth  * dpr);
+  var h = Math.floor(window.innerHeight * dpr);
+  if (out.width !== w || out.height !== h){
+    out.width = w; out.height = h;
+  }
+  gl.viewport(0,0,w,h);
+}
+window.addEventListener('resize', resize);
+
+/* 低端机降档：连续多帧过慢就降低渲染分辨率 */
+var slowCount = 0, tuned = false;
+function autoQuality(dt){
+  if (tuned) return;
+  if (dt > 0.024) slowCount++; else slowCount = Math.max(0, slowCount-1);
+  if (slowCount > 45 && quality > 0.55){
+    quality -= 0.22;
+    slowCount = 0;
+    resize();
+  }
+}
+
+/* ============================================================
+   曝光节律：大部分时间暗，偶尔一瞬全亮
+   ============================================================ */
+var t = 0;
+var exp = 0.0;
+var clock = 0;
+var nextSurge = 4.0;
+var surgeLeft = 0;
+var surgeHold = 0;
+var flick = 0;
+var track = -1;
+var trackV = 0;
+var jitter = 0;
+var lastSec = -1;
+
+function updateExposure(dt){
+  clock += dt;
+
+  /* 触发 */
+  if (surgeLeft <= 0 && clock >= nextSurge){
+    surgeLeft = 0.30 + Math.random()*0.55;
+    surgeHold = surgeLeft;
+    flick = 0;
+    clock = 0;
+    nextSurge = 5.5 + Math.random()*10.0;
+    /* 伴生一条 tracking 带 */
+    track = 1.15;
+    trackV = 0.55 + Math.random()*0.6;
+  }
+
+  var target;
+  if (surgeLeft > 0){
+    surgeLeft -= dt;
+    /* 亮的时候也不稳：偶尔掉一下 */
+    if (Math.random() < 0.10) flick = 0.06;
+    target = (flick > 0) ? 0.42 : 1.02;
+    flick -= dt;
+  } else {
+    target = 0.30 + Math.sin(clock*1.15) * 0.05;
+  }
+
+  var k = (surgeLeft > 0) ? 22.0 : 1.6;
+  var a = Math.min(1, dt * k);
+  exp += (target - exp) * a;
+
+  /* tracking 带移动 */
+  if (track > -0.2){
+    track -= dt * trackV;
+  }
+
+  /* 抖动 */
+  jitter = (Math.random() - 0.5) * 0.0016;
+  if (surgeLeft > 0 && Math.random() < 0.25) jitter += (Math.random()-0.5)*0.004;
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+var last = performance.now();
+
+function loop(now){
+  var dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  t += dt;
+
+  autoQuality(dt);
+
+  updateExposure(dt);
+  if (FROZEN !== null) exp = FROZEN;
+
+  /* 每秒重绘一次文字层（时间码跳） */
+  var sec = Math.floor(t);
+  if (sec !== lastSec){
+    lastSec = sec;
+    drawFrame(t);
+    upload();
+  }
+
+  gl.uniform1i(uTex, 0);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+
+  gl.uniform2f(uRes, out.width, out.height);
+  gl.uniform1f(uTime, t);
+  gl.uniform1f(uExp, exp);
+  gl.uniform1f(uTrack, track);
+  gl.uniform1f(uJitter, jitter);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+  /* 定格：长时间无变化时给一点提示 */
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   启动
+   ============================================================ */
+/* 调试钩子：__freezeExp(v) 固定曝光用于截图 */
+var FROZEN = null;
+window.__freezeExp = function(v){ FROZEN = v; };
+window.__release = function(){ FROZEN = null; };
+
+function boot(){
+  layout();
+  resize();
+  drawFrame(0);
+  upload();
+  last = performance.now();
+  requestAnimationFrame(loop);
+}
+
+if (document.fonts && document.fonts.ready){
+  document.fonts.ready.then(boot).catch(boot);
+} else {
+  setTimeout(boot, 120);
+}
+
+})();
+</script>
+</body>
+</html>
