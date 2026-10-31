@@ -570,3 +570,13 @@ body{
 
 /* "缺"改赭红，别用现代正红 */
 .photo-log .miss td:nth-child(3){color:#8c3f26 !important;-webkit-text-fill-color:#8c3f26 !important;}
+
+/* 骑缝朱批：直接写在物证上，不在正文流里 */
+.anno{
+  position:absolute;z-index:7;pointer-events:none;
+  color:#8f2318;-webkit-text-fill-color:#8f2318;
+  font-size:14.5px;font-weight:600;letter-spacing:.1em;line-height:1.55;
+  transform:rotate(-4deg);
+  text-shadow:0 0 .5px rgba(143,35,24,.4), 0 0 3px rgba(143,35,24,.12);
+  mix-blend-mode:multiply;
+}
