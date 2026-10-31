@@ -100,9 +100,22 @@ window.ABYSS = window.ABYSS || {};
 
   var RUNNERS = { echo: runEcho, swap: runSwap, shape: runShape, row: runRow };
 
+  /* 节奏控制：安静越久，越该出事了 */
+  var lastScroll = Date.now();
+  var lastBuzz = Date.now();
   function tick() {
     var now = Date.now();
-    if (now - lastFire < 3200) return;   /* 冷却，避免连着爆 */
+
+    /* 读者停下来读的时候更容易出事（scroll 后静置 4 秒以上） */
+    var idleScroll = now - lastScroll;
+    var quiet = idleScroll > 4000;
+
+    /* 冷却：随机 8–17 秒，不可预测 */
+    var cooldown = quiet ? 6000 : 12000;
+    if (now - lastFire < cooldown) return;
+
+    /* 安静超过 26 秒，强制触发下一条（不能一直太平） */
+    var force = (now - lastBuzz > 26000);
 
     for (var i = 0; i < A.GLITCHES.length; i++) {
       var g = A.GLITCHES[i];
@@ -110,9 +123,13 @@ window.ABYSS = window.ABYSS || {};
       var host = document.getElementById('ex0' + g.ex);
       if (!host) continue;
       var p = exProgress(host);
-      if (p >= g.at) {
+      var near = p >= g.at;
+      var near2 = p >= g.at - .18;
+
+      if (near || (force && near2) || (quiet && near2 && Math.random() < .5)) {
         fired[i] = true;
         lastFire = now;
+        lastBuzz = now;
         window.__glitchFired = (window.__glitchFired || 0) + 1;
         var fn = RUNNERS[g.type];
         if (fn) fn(g);
@@ -123,7 +140,7 @@ window.ABYSS = window.ABYSS || {};
 
   A.glitch = {
     init: function () {
-      /* 补充样式：重影元素需要 data-echo */
+      window.addEventListener('scroll', function () { lastScroll = Date.now(); }, { passive: true });
       setInterval(tick, 220);
     },
     reset: function () { fired = {}; }

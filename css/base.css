@@ -350,3 +350,15 @@ body.stage-cover #hud{opacity:0;}
     radial-gradient(ellipse 34% 8% at 50% 96%, rgba(78,58,30,.22), transparent 76%);
   mix-blend-mode:multiply;
 }
+
+/* ---------- 灯：给阅读让路，只保留方向感 ---------- */
+:root{--lamp-r:660px;}
+#lamp{
+  background:radial-gradient(
+      circle var(--lamp-r) at var(--mx) var(--my),
+      rgba(2,4,6,0) 0%,
+      rgba(2,4,6,0) 46%,
+      rgba(2,4,6,.16) 68%,
+      rgba(2,4,6,.34) 86%,
+      rgba(2,4,6,.52) 100%);
+}

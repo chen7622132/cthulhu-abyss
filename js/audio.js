@@ -221,4 +221,99 @@ window.ABYSS = window.ABYSS || {};
     }
   };
 
+  /* ============================================================
+     第 7 轮：声音
+     ============================================================ */
+
+  /* 程序生成的混响 impulse：让所有声音都像在湿的空间里 */
+  function makeImpulse(c, dur, decay) {
+    var len = Math.floor(c.sampleRate * dur);
+    var buf = c.createBuffer(2, len, c.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = buf.getChannelData(ch);
+      for (var i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+    }
+    return buf;
+  }
+
+  var verb = null, verbGain = null;
+  function initReverb() {
+    if (!ctx || verb) return;
+    verb = ctx.createConvolver();
+    verb.buffer = makeImpulse(ctx, 3.4, 2.6);
+    verbGain = ctx.createGain();
+    verbGain.gain.value = .30;
+    verb.connect(verbGain);
+    verbGain.connect(master);
+    if (droneGain) droneGain.connect(verb);
+    if (noiseGain) noiseGain.connect(verb);
+  }
+
+  /* 呼吸：节奏和正常人不同步（4.3 秒一圈，不是整数） */
+  var breathGain = null, breathSrc = null;
+  function breathOn() {
+    if (!ctx || breathGain) return;
+    var src = ctx.createBufferSource();
+    src.buffer = makeNoiseBuffer(ctx);
+    src.loop = true;
+    var bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 460;
+    bp.Q.value = 1.3;
+    breathGain = ctx.createGain();
+    breathGain.gain.value = 0;
+    src.connect(bp); bp.connect(breathGain);
+    breathGain.connect(verb || master);
+    src.start();
+    breathSrc = src;
+
+    var cycle = function () {
+      if (!breathGain || !ctx) return;
+      var n = ctx.currentTime;
+      breathGain.gain.cancelScheduledValues(n);
+      breathGain.gain.setValueAtTime(0, n);
+      breathGain.gain.linearRampToValueAtTime(.020, n + 1.5);
+      breathGain.gain.linearRampToValueAtTime(0, n + 3.2);
+      setTimeout(cycle, 4300);
+    };
+    cycle();
+  }
+  function breathOff() {
+    if (!breathGain) return;
+    var g = breathGain, s = breathSrc;
+    breathGain = null; breathSrc = null;
+    try {
+      g.gain.setTargetAtTime(0, ctx.currentTime, .6);
+      setTimeout(function () { try { s.stop(); s.disconnect(); g.disconnect(); } catch (e) { } }, 2200);
+    } catch (e) { }
+  }
+
+  /* 接管 start：先建混响 */
+  var _start = A.audio.start;
+  A.audio.start = function () {
+    var ok = _start.apply(this, arguments);
+    try { initReverb(); } catch (e) { }
+    return ok;
+  };
+
+  /* 憋气时，呼吸声出来 */
+  var _setBreath = A.audio.setBreath;
+  A.audio.setBreath = function (hold) {
+    _setBreath.apply(this, arguments);
+    if (hold) breathOn(); else breathOff();
+  };
+
+  /* 声音晚一拍消失：画面已经没了，声音还在 */
+  A.audio.lateFade = function (ms) {
+    if (!ctx) return;
+    setTimeout(function () { fade(0, .5); }, ms || 220);
+  };
+
+  A.audio.reverb = function (on) {
+    if (!verbGain) return;
+    verbGain.gain.setTargetAtTime(on ? .30 : 0, ctx.currentTime, .8);
+  };
+
 })(window.ABYSS);

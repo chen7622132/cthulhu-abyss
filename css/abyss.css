@@ -412,3 +412,26 @@ body::before{
 .depo tr:nth-child(5) td,.depo tr:nth-child(5) th{transform:translateY(.3px);}
 .depo td,.depo th{will-change:transform;}
 .depo{border-spacing:0;}
+
+/* ⑫ 两张纸交替，打散重复感 */
+.paper-wrap.alt .paper-bg{
+  background-image:url("assets/paper-b.png");
+  background-size:112% 110%;
+  background-position:48% 52%;
+}
+/* ⑬ 霉斑加深（照片上再压一层可控的霉） */
+.paper-bg .mold{opacity:.38;}
+.mold{
+  background:
+    radial-gradient(circle at 4% 95%, rgba(18,38,26,.85) 0%, rgba(18,38,26,.42) 6%, transparent 16%),
+    radial-gradient(circle at 11% 99%, rgba(14,32,24,.72) 0%, transparent 12%),
+    radial-gradient(circle at 19% 92%, rgba(24,44,32,.50) 0%, transparent 9%),
+    radial-gradient(circle at 97% 8%, rgba(18,36,26,.70) 0%, transparent 14%),
+    radial-gradient(circle at 90% 21%, rgba(22,42,30,.50) 0%, transparent 11%),
+    radial-gradient(circle at 68% 2%, rgba(16,34,24,.44) 0%, transparent 12%),
+    radial-gradient(circle at 38% 101%, rgba(18,38,28,.46) 0%, transparent 12%);
+}
+
+/* ⑭ 试验页：两页并排 */
+body{gap:13vh;padding-top:10vh;padding-bottom:12vh;}
+@media (min-width:1400px){ body{grid-template-columns:1fr 1fr;gap:4vw;place-items:center;} }

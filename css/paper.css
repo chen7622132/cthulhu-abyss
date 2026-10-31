@@ -1,0 +1,449 @@
+/* ============================================================
+   paper.css — 全站材质层（第 2 轮 · 性能修正版）
+   边缘已烘焙进图片 alpha 通道，不用滤镜 → 不卡
+   ============================================================ */
+
+.sheet{
+  position:relative;
+  background:none !important;
+  box-shadow:none !important;
+  isolation:isolate;
+  /* 只留两层阴影，跟随 alpha 轮廓 */
+  filter:drop-shadow(0 38px 78px rgba(0,0,0,.90))
+         drop-shadow(0 0 40px rgba(80,180,152,.26));
+}
+.sheet > .paper-bg{position:absolute;inset:0;z-index:0;}
+.sheet > *:not(.paper-bg){position:relative;z-index:2;}
+.sheet .margin-note{z-index:3;}
+
+/* ---------- 纸本体：一张照片，形状在 alpha 里 ---------- */
+.paper-bg{
+  background-image:url("../assets/paper-a.webp");
+  background-size:100% 100%;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+
+/* 七页交替 A / B 两张不同的纸 */
+#ex02 .paper-bg,
+#ex04 .paper-bg,
+#ex06 .paper-bg{background-image:url("../assets/paper-ab.webp");}
+
+/* ---------- 附着物（静态图层，不耗 GPU） ---------- */
+.paper-bg .mold{
+  position:absolute;inset:0;
+  pointer-events:none;z-index:1;
+  mix-blend-mode:multiply;
+  opacity:.28;
+  background:
+    radial-gradient(circle at 4% 95%, rgba(18,38,26,.85) 0%, rgba(18,38,26,.42) 6%, transparent 16%),
+    radial-gradient(circle at 11% 99%, rgba(14,32,24,.72) 0%, transparent 12%),
+    radial-gradient(circle at 97% 8%, rgba(18,36,26,.70) 0%, transparent 14%),
+    radial-gradient(circle at 90% 21%, rgba(22,42,30,.50) 0%, transparent 11%);
+  filter:blur(.9px);
+}
+.paper-bg .water{
+  position:absolute;right:-8%;bottom:-6%;
+  width:76%;height:64%;
+  pointer-events:none;z-index:1;
+  mix-blend-mode:multiply;opacity:.30;
+  background:radial-gradient(ellipse 52% 52% at 52% 48%,
+      rgba(96,84,46,.00) 0%, rgba(96,84,46,.075) 33%,
+      rgba(78,66,34,.032) 40%, rgba(96,84,46,.135) 47%,
+      rgba(78,66,34,.042) 54%, rgba(96,84,46,.095) 61%,
+      rgba(70,60,30,.00) 72%);
+  filter:blur(1.6px);
+  transform:rotate(-6deg);
+}
+.paper-bg .film{
+  position:absolute;inset:0;
+  pointer-events:none;z-index:1;
+  mix-blend-mode:screen;opacity:.14;
+  background:conic-gradient(from 16deg at 64% 28%,
+      rgba(120,190,160,.22), rgba(140,90,170,.18), rgba(80,150,180,.20),
+      rgba(150,170,110,.14), rgba(120,190,160,.22));
+  filter:blur(4px);
+}
+.paper-bg .lightpass{
+  position:absolute;inset:0;
+  pointer-events:none;z-index:1;
+  background:
+    radial-gradient(ellipse 40% 30% at 44% 30%, rgba(255,255,242,.18), transparent 72%),
+    radial-gradient(ellipse 26% 20% at 72% 62%, rgba(255,252,236,.09), transparent 70%);
+  mix-blend-mode:soft-light;
+}
+/* 受光面 / 背光面 */
+.paper-bg::after{
+  content:"";position:absolute;inset:0;
+  pointer-events:none;z-index:1;
+  background:
+    radial-gradient(ellipse 70% 66% at 46% 46%,
+      rgba(0,0,0,0) 52%, rgba(52,70,50,.14) 80%,
+      rgba(34,54,42,.30) 94%, rgba(22,42,32,.46) 100%),
+    linear-gradient(124deg,
+      rgba(255,255,242,.10) 0%, rgba(255,255,242,.02) 32%,
+      rgba(0,0,0,0) 52%, rgba(26,42,34,.09) 78%, rgba(18,34,28,.16) 100%);
+}
+
+/* 静阅／低配：全部关掉重效果 */
+body.quiet .paper-bg .film,
+body.quiet .paper-bg .water{display:none;}
+body.quiet .sheet{filter:none;}
+
+/* ---------- 修正：用同一张图做遮罩，锁死纸的形状 ---------- */
+.paper-bg{
+  -webkit-mask-image:url("../assets/paper-a.webp");
+  mask-image:url("../assets/paper-a.webp");
+  -webkit-mask-size:100% 100%;
+  mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  filter:brightness(1.18) saturate(1.03);
+}
+#ex02 .paper-bg,
+#ex04 .paper-bg,
+#ex06 .paper-bg{
+  -webkit-mask-image:url("../assets/paper-ab.webp");
+  mask-image:url("../assets/paper-ab.webp");
+  filter:brightness(1.14) saturate(.98);
+}
+/* 图片自身已有折痕与卷角，CSS 层不再重复画 */
+.paper-bg .crease,
+.paper-bg .curl{display:none;}
+
+/* 文字加深，拉开与纸的反差 */
+.sheet{color:#0c0a07;}
+.depo td,.form-body p,.photo-caption,.typed,.carbon-table td,.nb-body p{color:#100d09;}
+
+/* ---------- 第 1 轮收尾：厚度 / 接触阴影 / 摆放感 ---------- */
+.sheet{
+  filter:
+    drop-shadow(0 3px 6px rgba(0,0,0,.55))
+    drop-shadow(0 12px 22px rgba(0,0,0,.62))
+    drop-shadow(0 34px 64px rgba(0,0,0,.80))
+    drop-shadow(0 0 34px rgba(86,186,158,.22));
+  transform:rotate(-0.32deg);
+  transform-origin:50% 30%;
+}
+#ex02 .sheet{transform:rotate(0.26deg);}
+#ex03 .sheet{transform:rotate(-0.18deg);}
+#ex04 .sheet{transform:rotate(0.34deg);}
+#ex05 .sheet{transform:rotate(-0.26deg);}
+#ex06 .sheet{transform:rotate(0.14deg);}
+#ex07 .sheet{transform:rotate(-0.38deg);}
+#exBlank .sheet{transform:rotate(0.22deg);}
+
+/* 纸再亮一档，字再深一档 —— 只解决可读性，不改色调 */
+.paper-bg{filter:brightness(1.26) saturate(1.02) contrast(.99);}
+#ex02 .paper-bg,#ex04 .paper-bg,#ex06 .paper-bg{filter:brightness(1.20) saturate(.96) contrast(1.01);}
+.sheet{color:#080705;}
+.depo td,.form-body p,.photo-caption,.typed,.carbon-table td,.nb-body p,.shipcard-list dd{color:#0a0806;}
+.depo th,.shipcard-list dt{color:#3c3828;}
+.ex-title{color:#232014;}
+.rec-note{color:#3a3524 !important;}
+.depo{border-color:rgba(30,44,36,.52);}
+.depo th{border-right-color:rgba(30,44,36,.36);border-bottom-color:rgba(30,44,36,.26);}
+.depo td{border-bottom-color:rgba(30,44,36,.26);}
+
+/* ---------- 第 2 轮：让七页不像同一张模板 ---------- */
+/* ① 档案元信息 */
+.sheet-meta{
+  position:absolute;left:0;right:0;top:14px;
+  text-align:center;
+  font-family:var(--f-type);font-size:10px;letter-spacing:.18em;
+  color:rgba(38,48,38,.55);
+  z-index:2;pointer-events:none;
+  text-shadow:0 0 6px rgba(255,255,250,.25);
+}
+
+/* ② 02 底片袋：横过来、牛皮纸色、比别的纸宽 */
+#ex02{width:calc(100% + 260px);margin-left:-150px;}
+#ex02 .paper-bg{filter:brightness(1.10) sepia(.28) saturate(1.14) contrast(1.02);}
+#ex02 .bill{}
+
+/* ③ 06 复写清单：横向铺开、偏青 */
+#ex06{width:calc(100% + 200px);margin-left:-120px;}
+#ex06 .paper-bg{filter:brightness(1.16) saturate(.52) hue-rotate(168deg) contrast(1.06);}
+
+/* ④ 空白页：留白也参与节奏 */
+#exBlank .paper-bg{filter:brightness(1.28) saturate(.7);}
+
+/* ⑤ 附录：整页最旧、最湿 */
+#ex07 .paper-bg{filter:brightness(.98) saturate(1.12) contrast(1.04) hue-rotate(8deg);}
+
+/* ============================================================
+   第 4 轮：错的光 —— 不是暗，是不属于这个世界的光
+   ============================================================ */
+body{
+  background:
+    radial-gradient(ellipse 82% 58% at 50% 16%, #10231b 0%, #08110e 46%, #000 100%),
+    radial-gradient(ellipse 44% 32% at 80% 78%, rgba(46,28,66,.40), transparent 72%);
+  background-attachment:fixed;
+}
+/* 环境里的两团冷光：一青一紫，都不是灯 */
+body::after{
+  content:"";
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 36% 24% at 20% 86%, rgba(66,146,120,.16), transparent 72%),
+    radial-gradient(ellipse 30% 20% at 86% 20%, rgba(78,44,98,.20), transparent 72%),
+    radial-gradient(ellipse 50% 34% at 50% 50%, rgba(30,80,66,.10), transparent 78%);
+  filter:blur(34px);
+  mix-blend-mode:screen;
+}
+
+/* 每页的光色不一样：黄褐 / 青 / 紫 / 病绿 */
+.sheet{
+  filter:
+    drop-shadow(0 3px 6px rgba(0,0,0,.55))
+    drop-shadow(0 12px 22px rgba(0,0,0,.62))
+    drop-shadow(0 34px 64px rgba(0,0,0,.80))
+    drop-shadow(0 0 30px var(--glow1, rgba(86,186,158,.20)))
+    drop-shadow(0 0 74px var(--glow2, rgba(52,140,120,.14)));
+}
+#ex01{--glow1:rgba(96,190,160,.20); --glow2:rgba(56,146,124,.13);}
+#ex02{--glow1:rgba(176,148,86,.26); --glow2:rgba(140,110,56,.14);}
+#ex03{--glow1:rgba(88,182,156,.20); --glow2:rgba(50,138,118,.13);}
+#ex04{--glow1:rgba(150,170,120,.20); --glow2:rgba(96,130,84,.13);}
+#ex05{--glow1:rgba(120,140,170,.20); --glow2:rgba(70,96,140,.13);}
+#ex06{--glow1:rgba(70,170,168,.26); --glow2:rgba(40,124,124,.16);}
+#ex07{--glow1:rgba(128,70,146,.30); --glow2:rgba(90,40,110,.18);}
+#exBlank{--glow1:rgba(110,190,170,.14); --glow2:rgba(60,140,120,.09);}
+
+/* ---------- 第 4 轮修正：给黑加"脏"，加介质感 ---------- */
+body::before{
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.013' numOctaves='4' seed='29' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23f)' opacity='0.55'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 72% 42% at 50% 106%, rgba(64,132,112,.24), transparent 70%),
+    radial-gradient(ellipse 34% 24% at 14% 18%, rgba(43,27,61,.32), transparent 74%),
+    radial-gradient(ellipse 28% 18% at 88% 76%, rgba(30,64,50,.26), transparent 72%);
+  background-size:420px 420px, 100% 100%, 100% 100%, 100% 100%;
+  background-repeat:repeat, no-repeat, no-repeat, no-repeat;
+  opacity:.85;
+  mix-blend-mode:screen;
+  filter:blur(1.6px);
+  animation:fogdrift 120s linear infinite;
+}
+@keyframes fogdrift{
+  from{background-position:0 0,0 0,0 0,0 0;}
+  to{background-position:420px 300px,0 0,0 0,0 0;}
+}
+
+/* 水下焦散：两团缓慢游动的光斑，贴在纸上 */
+#stack::before{
+  content:"";
+  position:fixed;inset:-10%;
+  z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 18% 12% at 30% 26%, rgba(120,220,190,.10), transparent 70%),
+    radial-gradient(ellipse 24% 14% at 68% 62%, rgba(90,180,170,.08), transparent 72%),
+    radial-gradient(ellipse 12% 9% at 52% 84%, rgba(150,120,200,.07), transparent 70%);
+  filter:blur(30px);
+  mix-blend-mode:screen;
+  animation:caustic 38s ease-in-out infinite alternate;
+}
+@keyframes caustic{
+  0%{transform:translate3d(-2%,1%,0) scale(1);}
+  100%{transform:translate3d(2%,-1.5%,0) scale(1.06);}
+}
+body.quiet #stack::before{display:none;}
+
+/* 第 4 轮收尾：纸从中心亮到边缘沉入黑暗 */
+.paper-bg::after{
+  background:
+    radial-gradient(ellipse 64% 60% at 50% 46%,
+      rgba(0,0,0,0) 42%,
+      rgba(14,34,28,.14) 62%,
+      rgba(10,26,22,.34) 80%,
+      rgba(5,16,14,.58) 94%,
+      rgba(3,10,9,.72) 100%),
+    linear-gradient(124deg,
+      rgba(255,255,242,.08) 0%, rgba(255,255,242,.02) 30%,
+      rgba(0,0,0,0) 50%, rgba(16,32,26,.12) 76%, rgba(10,24,20,.22) 100%);
+}
+.paper-bg{filter:brightness(1.16) saturate(1.04) contrast(1.01);}
+
+/* 目录与环境同处一层：加一点环境光，不再像浮层 */
+#index{
+  filter:drop-shadow(0 0 26px rgba(60,140,120,.10));
+}
+#index::before{
+  content:"";position:absolute;left:-24px;top:-20px;right:-14px;bottom:-20px;
+  background:radial-gradient(ellipse 60% 70% at 40% 40%, rgba(30,80,66,.12), transparent 74%);
+  filter:blur(18px);pointer-events:none;z-index:-1;
+}
+
+/* HUD 退到最暗 */
+#hud{opacity:.22;}
+
+/* ============================================================
+   第 5 轮：墨与笔 —— 字是渗进纤维的，不是印在表面
+   ============================================================ */
+
+/* ① 墨渗：笔画边缘有极细的洇开 */
+.depo td,.form-body p,.photo-caption,.typed,.carbon-table td,
+.nb-body p,.shipcard-list dd,.shipcard-hand,.cover-case,.cover-warn{
+  text-shadow:
+    0 0 .9px rgba(12,10,8,.55),
+    0 0 2.2px rgba(12,10,8,.14);
+}
+/* ② 红色批注：像蘸墨多了一点，边缘发毛 */
+.depo b,.shipcard-hand u,.nb-key,.photo-empty b{
+  text-shadow:
+    0 0 1.1px rgba(143,35,24,.62),
+    0 0 3.4px rgba(143,35,24,.26),
+    0 0 7px rgba(143,35,24,.10);
+}
+/* ③ 印章：渗墨 + 缺角 + 褪色 */
+.stamp,.cover-seal{
+  filter:blur(.55px) contrast(1.05);
+  opacity:.66;
+  -webkit-mask-image:
+    radial-gradient(circle at 72% 26%, transparent 0 6%, #000 9%),
+    radial-gradient(circle at 24% 82%, transparent 0 4%, #000 7%);
+  -webkit-mask-composite:source-in;
+  mask-image:
+    radial-gradient(circle at 72% 26%, transparent 0 6%, #000 9%),
+    radial-gradient(circle at 24% 82%, transparent 0 4%, #000 7%);
+  mask-composite:intersect;
+}
+/* ④ 手写批注：字形被笔压挤过 */
+.nb-body p,.margin-note{
+  letter-spacing:.012em;
+  text-shadow:0 0 .8px rgba(12,10,8,.5), 0 .4px 0 rgba(12,10,8,.18);
+}
+/* ⑤ 打字稿：色带不均，有些字深有些字浅 */
+.typed{
+  text-shadow:0 0 .7px rgba(12,10,8,.7);
+}
+.typed b{text-shadow:0 0 1.4px rgba(143,35,24,.7), 0 0 4px rgba(143,35,24,.22);}
+/* ⑥ 复写纸：蓝墨比普通墨更浮在表面 */
+.carbon-table td{
+  text-shadow:0 0 .8px rgba(28,44,58,.6);
+}
+
+/* 第 5 轮修正：污渍压在字上 */
+.grime{
+  position:absolute;inset:0;
+  z-index:3;
+  pointer-events:none;
+  overflow:hidden;
+}
+.grime .mold{
+  position:absolute;inset:0;
+  mix-blend-mode:multiply;
+  opacity:.22;
+  background:
+    radial-gradient(circle at 5% 96%, rgba(16,34,24,.90) 0%, rgba(16,34,24,.45) 6%, transparent 15%),
+    radial-gradient(circle at 12% 100%, rgba(12,28,20,.78) 0%, transparent 12%),
+    radial-gradient(circle at 96% 7%, rgba(16,32,24,.78) 0%, transparent 14%),
+    radial-gradient(circle at 88% 24%, rgba(20,38,28,.52) 0%, transparent 11%);
+  filter:blur(2.2px);
+}
+.grime .water{
+  position:absolute;right:-8%;bottom:-6%;
+  width:78%;height:66%;
+  mix-blend-mode:multiply;
+  opacity:.20;
+  background:radial-gradient(ellipse 52% 52% at 52% 48%,
+      rgba(90,78,42,.00) 0%, rgba(90,78,42,.10) 33%,
+      rgba(74,62,32,.05) 40%, rgba(90,78,42,.18) 47%,
+      rgba(74,62,32,.06) 54%, rgba(90,78,42,.12) 61%,
+      rgba(68,58,28,.00) 72%);
+  filter:blur(2.4px);
+  transform:rotate(-6deg);
+}
+/* 纸自身的同层污渍减弱，避免重复 */
+.paper-bg .mold{opacity:.16;}
+.paper-bg .water{opacity:.16;}
+
+/* ============================================================
+   第 6 轮：融合与畸变 —— 字不再是字
+   ============================================================ */
+
+/* ① 笔画末端渗出细丝（只在附录后段、以及不肯答的那个字） */
+.nb-corrupt2,.nb-final,.nb-stop,.rec-note{
+  position:relative;
+  display:inline-block;
+}
+.nb-corrupt2::after,.nb-final::after{
+  content:"";
+  position:absolute;left:0;right:0;bottom:-2px;height:9px;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse 2px 6px at 8% 0%, rgba(40,18,30,.55), transparent 70%),
+    radial-gradient(ellipse 1.5px 7px at 23% 0%, rgba(40,18,30,.45), transparent 70%),
+    radial-gradient(ellipse 2px 5px at 41% 0%, rgba(40,18,30,.50), transparent 70%),
+    radial-gradient(ellipse 1.5px 8px at 58% 0%, rgba(40,18,30,.42), transparent 70%),
+    radial-gradient(ellipse 2px 6px at 74% 0%, rgba(40,18,30,.48), transparent 70%),
+    radial-gradient(ellipse 1.5px 5px at 89% 0%, rgba(40,18,30,.40), transparent 70%);
+  filter:blur(.4px);
+  opacity:.85;
+  animation:drip 14s ease-in-out infinite;
+}
+@keyframes drip{
+  0%,88%,100%{transform:scaleY(1);opacity:.85;}
+  94%{transform:scaleY(1.35);opacity:1;}
+}
+
+/* ② 05 那句"他們沒有影子"：字形发虚，像被水泡开 */
+#ex05 .typed b{
+  filter:blur(.28px);
+  letter-spacing:.02em;
+}
+
+/* ③ 不肯答的字：字被反复涂过，墨积成一团 */
+.rec-note{
+  filter:blur(.22px);
+  text-shadow:
+    0 0 1.2px rgba(30,24,16,.7),
+    .6px 0 0 rgba(30,24,16,.30),
+    -.5px 0 0 rgba(30,24,16,.24);
+}
+
+/* ④ 07 末尾三行：基线开始往下坠 */
+.exhibit.wrecked .nb-final{transform:translateY(2.5px) !important;}
+.exhibit.wrecked .nb-stop{
+  transform:translateY(5px) rotate(-.5deg) !important;
+  letter-spacing:.6em !important;
+  text-shadow:
+    0 0 2px rgba(143,35,24,.55),
+    1px 0 0 rgba(60,20,40,.35),
+    -1px 0 0 rgba(30,50,70,.28);
+}
+
+/* ⑤ 整页最后：纸与"不该有的东西"粘连（右下角渗出） */
+#ex07 .paper-bg .film{
+  opacity:.34;
+  background:
+    radial-gradient(ellipse 34% 26% at 88% 84%, rgba(96,40,88,.30), transparent 72%),
+    radial-gradient(ellipse 22% 18% at 12% 90%, rgba(60,90,70,.24), transparent 72%),
+    conic-gradient(from 16deg at 74% 78%, rgba(120,190,160,.16), rgba(140,90,170,.16), rgba(80,150,180,.14), rgba(120,190,160,.16));
+  mix-blend-mode:screen;
+  filter:blur(10px);
+}
+
+/* 第 6 轮收尾：让"别抬头"成为一个已经发生的事实 */
+.nb-stop{
+  transform:translateY(-4px) !important;
+  opacity:.92;
+}
+.last-words{
+  margin:3.4em 0 0 !important;
+  text-align:right;
+  font-family:var(--f-kai) !important;
+  font-size:12.5px !important;
+  letter-spacing:.22em !important;
+  color:rgba(58,48,34,.42) !important;
+  opacity:0;
+  animation:lwIn 6s ease-out 1.2s forwards;
+}
+@keyframes lwIn{
+  0%{opacity:0;filter:blur(3px);transform:translateY(4px);}
+  100%{opacity:1;filter:blur(.2px);transform:none;}
+}
+/* 某一个字是"新写的"：暗红、还没干 */
+.nb-final::first-letter{
+  color:#7a1d14;
+  text-shadow:0 0 3px rgba(143,35,24,.45), 0 1px 0 rgba(120,20,14,.30);
+}

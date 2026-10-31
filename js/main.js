@@ -62,6 +62,7 @@ window.ABYSS = window.ABYSS || {};
     }
     if (archive) archive.hidden = false;
 
+    A.paper.init();
     A.corrupt.init();
     A.glitch.init();
     A.reveal.init(count);

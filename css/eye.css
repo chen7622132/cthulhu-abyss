@@ -291,3 +291,22 @@ body.stage-filed{background:#05090c;}
 .return-hint button:hover{
   color:#e8dcc4;border-color:rgba(157,43,32,.9);background:rgba(20,8,6,.8);
 }
+
+/* 第三轮：阅卷记录改为底部字幕，不再压住瞳孔 */
+#eye-readout{
+  top:auto !important;
+  bottom:4vh;
+  transform:translateX(-50%) !important;
+  width:min(620px,90vw);
+  font-size:12px;
+  line-height:1.7;
+  background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 40%, rgba(0,0,0,.62) 100%);
+  padding:16px 22px 10px;
+  border-radius:2px;
+}
+.ro-line{justify-content:space-between;gap:.6em;text-align:left;}
+.ro-k{font-size:10.5px;}
+.ro-v{font-size:11px;min-width:0;flex:1;text-align:right;}
+.ro-say{margin-top:1.2em;}
+.ro-say p{font-size:13px;}
+.ro-final{font-size:19px !important;letter-spacing:.3em !important;}

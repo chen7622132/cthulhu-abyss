@@ -535,3 +535,45 @@ body.pass2 .loupe{
   .margin-note{right:0;bottom:-58px;width:100%;}
   .stamp-wrap{right:20px;top:140px;}
 }
+
+/* 目录容器不拦截点击，只有链接本身可点 */
+#index{pointer-events:none;}
+#index a{pointer-events:auto;}
+#index::before{pointer-events:none;}
+/* 宽页只向右扩，不许压到目录 */
+#ex02{width:calc(100% + 170px);margin-left:0;}
+#ex06{width:calc(100% + 140px);margin-left:0;}
+
+/* 第 10 轮修补：底片袋不再是三块 UI 方块 */
+.film-slot{
+  position:relative;
+  box-shadow:inset 0 0 0 1px rgba(30,22,12,.45), inset 0 0 26px rgba(0,0,0,.6);
+}
+/* 齿孔：沿两侧排方孔 */
+.film-slot::before{
+  content:"";
+  position:absolute;left:0;right:0;top:0;bottom:0;
+  pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 7px, rgba(232,224,204,.55) 7px 12px) left/6px 100% no-repeat,
+    repeating-linear-gradient(0deg, transparent 0 7px, rgba(232,224,204,.55) 7px 12px) right/6px 100% no-repeat;
+  opacity:.5;
+}
+/* 第三张：不是干净的矩形，是被扯走留下的断面 */
+.film-slot.missing{
+  clip-path:polygon(0 0, 100% 2%, 96% 18%, 100% 34%, 94% 52%, 100% 71%, 95% 88%, 100% 100%,
+                    4% 98%, 0 84%, 5% 66%, 0 47%, 6% 29%, 0 12%);
+  background:
+    repeating-linear-gradient(135deg, rgba(20,14,8,.60) 0 5px, rgba(44,34,20,.44) 5px 11px);
+}
+.film-slot.missing::after{
+  content:"";
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 40% 22% at 30% 8%, rgba(226,218,196,.30), transparent 70%),
+    radial-gradient(ellipse 30% 18% at 72% 94%, rgba(226,218,196,.24), transparent 70%);
+  mix-blend-mode:screen;
+}
+/* 表格字与纸同一光学平面：略降锐度 */
+.depo td,.depo th{filter:blur(.14px);}
+.shipcard-list dd,.shipcard-list dt{filter:blur(.12px);}
