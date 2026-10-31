@@ -199,15 +199,36 @@ var PAGES = [
   foot: '——九月十七夜，燈將盡'
 },
 
-/* -------- 07 空白 -------- */
+/* -------- 07 归档 ---------- */
 {
-  kind: 'blank',
-  stamp: '　',
-  reg: '—',
+  kind: 'archive',
+  stamp: '證物　〇七',
+  reg: '11 · 03',
   num: '07',
-  line: '本卷至此，以下空白。',
-  faint: '本卷所附各件，均已登記。惟本卷正文，自第一頁起，即無一字。',
-  by: '歸檔員　記'
+  title: '歸　　檔',
+  sub: '民國十七年十一月三日　　歸檔員　記',
+  lines: [
+    { y:170, t:'本卷所附，凡六件。',              at:1.0,  k:'b' },
+    { y:198, t:'公函一件、照片三張（實存二張）、',  at:1.8,  k:'l' },
+    { y:222, t:'筆錄六份、海圖一張、勘測表一份、譯稿四頁。', at:2.6, k:'l' },
+    { y:254, t:'均經核對，並無缺漏。',            at:3.5,  k:'b' },
+
+    { y:294, t:'惟有一事，未能歸檔。',            at:4.4,  k:'r' },
+
+    { y:332, t:'十月十四日，譯員王某來見。',      at:5.4,  k:'b' },
+    { y:358, t:'問何事。不語。',                  at:6.0,  k:'b' },
+    { y:384, t:'取紙筆，書四字：',                at:6.6,  k:'b' },
+
+    { y:440, t:'他們在等。',                      at:7.6,  k:'c' },
+
+    { y:486, t:'問：誰在等。',                    at:10.2, k:'b' },
+    { y:512, t:'答：船上的人。',                  at:10.9, k:'b' },
+    { y:538, t:'曰：船上無人，船已失。',          at:11.6, k:'b' },
+    { y:564, t:'答：船在。人在。都在等。',        at:12.3, k:'b' },
+
+    { y:606, t:'言畢，伏案良久，不動。',          at:13.4, k:'b' },
+    { y:632, t:'余視其目，——',                   at:14.2, k:'b' }
+  ]
 }
 ];
 
@@ -805,85 +826,149 @@ function rNote(p){
   sx.fillText(p.foot, PAD, H-108);
 }
 
-/* ---------- 07 空白 · 眼 ---------- */
+/* ---------- 07 归档 · 眼睛从纸里长出来 ---------- */
 var eyeC = document.createElement('canvas');
 eyeC.width = W; eyeC.height = H;
 var ec = eyeC.getContext('2d');
 
-function rBlank(p){
+function rArchive(p){
   var el = t - pageEnter;
-  var im = IMGS.eye;
 
-  /* 阶段一：只有一行字 */
-  if (el < 6){
-    sx.font = '15px ' + SERIF;
-    sx.fillStyle = 'rgba(196,194,178,0.66)';
-    sx.textAlign = 'center';
-    sx.fillText(p.line, W/2, 344);
-    sx.textAlign = 'left';
-    return;
+  /* 标题 */
+  sx.font = '22px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.title, PAD, 96);
+
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = 'rgba(120,130,112,.66)';
+  sx.fillText(p.sub, PAD, 120);
+
+  sx.strokeStyle = 'rgba(120,130,112,.16)';
+  sx.beginPath(); sx.moveTo(PAD, 136); sx.lineTo(W-PAD, 136); sx.stroke();
+
+  /* 逐行浮现 —— 用节奏控制阅读速度 */
+  for (var i=0;i<p.lines.length;i++){
+    var L = p.lines[i];
+    if (el < L.at) continue;
+    var a = Math.min(1, (el - L.at) / 0.7);
+
+    if (L.k === 'c'){
+      /* 「他們在等」——单独一行，字距拉开，居中 */
+      sx.font = '21px ' + SERIF;
+      sx.textAlign = 'center';
+      var total = 0, ws = [];
+      for (var m=0;m<L.t.length;m++){
+        var w = sx.measureText(L.t[m]).width + 7;
+        ws.push(w); total += w;
+      }
+      var cx = W/2 - total/2;
+      for (var n=0;n<L.t.length;n++){
+        sx.fillStyle = 'rgba(212,210,192,' + (a*0.95).toFixed(2) + ')';
+        sx.fillText(L.t[n], cx + ws[n]/2, L.y);
+        cx += ws[n];
+      }
+      sx.textAlign = 'left';
+      if (a >= 1){
+        sx.strokeStyle = 'rgba(154,43,24,.38)';
+        sx.beginPath();
+        sx.moveTo(W/2-86, L.y+12); sx.lineTo(W/2+86, L.y+12);
+        sx.stroke();
+      }
+      continue;
+    }
+
+    var fs2 = (L.k === 'l') ? 12 : 14;
+    sx.font = fs2 + 'px ' + SERIF;
+    if (L.k === 'r') sx.fillStyle = 'rgba(154,43,24,' + (a*0.9).toFixed(2) + ')';
+    else if (L.k === 'l') sx.fillStyle = 'rgba(212,210,192,' + (a*0.70).toFixed(2) + ')';
+    else sx.fillStyle = 'rgba(212,210,192,' + (a*0.92).toFixed(2) + ')';
+    sx.fillText(L.t, PAD + (L.k === 'l' ? 12 : 0), L.y);
   }
 
-  /* 阶段二：眼睛从暗里浮出来 */
-  var a    = Math.min(1, (el-6)/4.5);            /* 淡入 */
-  var prog = Math.min(1, Math.max(0, (el-10)/12)); /* 游移进度 */
-  var locked = el >= 22;
+  /* ---------- 纸在腐烂 ---------- */
+  var ex = W/2, ey = 636;
+  if (el > 15.2){
+    var rot = Math.min(1, (el-15.2)/3.5);        /* 暗斑扩散 */
+    var rad = 40 + rot*236;
 
-  var sc = 1 + prog*0.11;
-  var dx = locked ? 0 : Math.sin(el*1.12)*9*(1-prog*0.55);
-  var dy = locked ? 0 : Math.cos(el*0.81)*6*(1-prog*0.55);
+    var bru = sx.createRadialGradient(ex, ey, rad*0.25, ex, ey, rad);
+    bru.addColorStop(0,   'rgba(6,8,6,' + (0.97*rot).toFixed(3) + ')');
+    bru.addColorStop(0.55,'rgba(6,8,6,' + (0.88*rot).toFixed(3) + ')');
+    bru.addColorStop(0.82,'rgba(6,8,6,' + (0.42*rot).toFixed(3) + ')');
+    bru.addColorStop(1,   'rgba(6,8,6,0)');
+    sx.fillStyle = bru;
+    sx.beginPath();
+    sx.ellipse(ex, ey, rad, rad*0.78, 0, 0, Math.PI*2);
+    sx.fill();
+  }
 
-  var iw = 540*sc;
-  var ih = iw * 0.625;
-  var ix = W/2 - iw/2 + dx;
-  var iy = 336 - ih/2 + dy;
+  /* ---------- 眼睛 ---------- */
+  var im = IMGS.eye;
+  if (im && im.complete && el > 16){
+    var a2 = Math.min(1, (el-16)/5);
+    var prog = Math.min(1, Math.max(0, (el-22)/10));
+    var locked = el >= 32;
 
-  if (im && im.complete && a > 0){
-    /* 在离屏画布上做遮罩，别伤到主画布 */
+    var sc = 0.92 + a2*0.14 + prog*0.06;
+    var dx = locked ? 0 : Math.sin(el*1.08)*10*(1-prog*0.6);
+    var dy = locked ? 0 : Math.cos(el*0.77)*6*(1-prog*0.6);
+
+    var iw = 432*sc, ih = iw*(298/480);
+    var ix = ex - iw/2 + dx, iy = ey - ih/2 + dy;
+
     ec.setTransform(1,0,0,1,0,0);
     ec.globalCompositeOperation = 'source-over';
-    ec.clearRect(0,0,W,H);
     ec.globalAlpha = 1;
-    ec.filter = 'brightness(1.95) contrast(1.22)';
+    ec.clearRect(0,0,W,H);
+
+    ec.filter = 'brightness(2.25) contrast(1.18)';
     ec.drawImage(im, ix, iy, iw, ih);
     ec.filter = 'none';
 
-    /* 上下融进黑：只给中间一段看得见 */
-    var vis = (el >= 28) ? 0.15 : 0.78;
-    var g = ec.createLinearGradient(0, iy, 0, iy+ih);
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(Math.max(0, 0.5-vis), 'rgba(0,0,0,1)');
-    g.addColorStop(Math.min(1, 0.5+vis), 'rgba(0,0,0,1)');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
+    /* 椭圆柔边遮罩：不再是一条生硬的横切线 */
+    ec.save();
     ec.globalCompositeOperation = 'destination-in';
-    ec.fillStyle = g;
-    ec.fillRect(0,0,W,H);
+    ec.translate(ex, ey);
+    ec.scale(1, 0.78);
+    var mg = ec.createRadialGradient(0,0, iw*0.20, 0,0, iw*0.56);
+    mg.addColorStop(0,    'rgba(0,0,0,1)');
+    mg.addColorStop(0.70, 'rgba(0,0,0,1)');
+    mg.addColorStop(0.90, 'rgba(0,0,0,0.30)');
+    mg.addColorStop(1,    'rgba(0,0,0,0)');
+    ec.fillStyle = mg;
+    ec.fillRect(-iw, -iw, iw*2, iw*2);
+    ec.restore();
 
-    /* 这一屏里，它是唯一的光源 —— 不再压暗 */
-    ec.globalCompositeOperation = 'source-atop';
-    ec.fillStyle = 'rgba(128,148,116,0.05)';
-    ec.fillRect(0,0,W,H);
-
-    /* 它把周围照亮一点 */
-    var hx = ix+iw/2, hy = iy+ih*0.5;
-    var halo = sx.createRadialGradient(hx, hy, 0, hx, hy, iw*0.60);
-    halo.addColorStop(0, 'rgba(92,116,80,' + (0.11*a).toFixed(3) + ')');
+    /* 它把周围照亮 */
+    var halo = sx.createRadialGradient(ex, ey, 0, ex, ey, iw*0.62);
+    halo.addColorStop(0, 'rgba(92,116,80,' + (0.13*a2).toFixed(3) + ')');
     halo.addColorStop(1, 'rgba(92,116,80,0)');
     sx.fillStyle = halo;
-    sx.fillRect(0,0,W,H);
+    sx.beginPath();
+    sx.ellipse(ex, ey, iw*0.62, iw*0.50, 0, 0, Math.PI*2);
+    sx.fill();
 
-    sx.globalAlpha = a;
+    sx.globalAlpha = a2;
     sx.drawImage(eyeC, 0, 0);
     sx.globalAlpha = 1;
   }
 
-  /* 阶段三：定住之后，只剩一句 */
-  if (el >= 26){
-    var a3 = Math.min(1, (el-26)/2.5);
-    sx.font = '12px ' + SERIF;
-    sx.fillStyle = 'rgba(196,194,178,' + (0.46*a3).toFixed(2) + ')';
+  /* ---------- 收尾 ---------- */
+  if (el >= 36){
+    var a3 = Math.min(1, (el-36)/2.5);
+    sx.font = '13px ' + SERIF;
+    sx.fillStyle = 'rgba(212,210,192,' + (0.62*a3).toFixed(2) + ')';
     sx.textAlign = 'center';
-    sx.fillText('本卷已歸還。', W/2, H-96);
+    sx.fillText('余不能記。', W/2, ey + 190);
+    sx.textAlign = 'left';
+  }
+
+  if (el >= 42){
+    var a4 = Math.min(1, (el-42)/3);
+    sx.font = '11px ' + SERIF;
+    sx.fillStyle = 'rgba(154,43,24,' + (0.50*a4).toFixed(2) + ')';
+    sx.textAlign = 'center';
+    sx.fillText('本卷已歸還。', W/2, H-100);
     sx.textAlign = 'left';
   }
 }
@@ -914,7 +999,7 @@ function drawSource(tc){
   if (p.kind === 'map')   rMap(p);
   if (p.kind === 'table') rTable(p);
   if (p.kind === 'note')  rNote(p);
-  if (p.kind === 'blank') rBlank(p);
+  if (p.kind === 'archive') rArchive(p);
 
   /* 时间码 */
   sx.font = '10px ' + MONO;
