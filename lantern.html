@@ -3,126 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>提灯试验 · 证物一</title>
+<title>尘封档案 · 提灯</title>
 <style>
 :root{
-  --lx:50%; --ly:44%;
+  --lx:50%; --ly:41%;
   --r:min(72vmin, 660px);
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;background:#05080a;overflow:hidden;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
 body{
+  background:#04070a;color:#fff9ea;overflow-x:hidden;
   font-family:'Songti SC','SimSun','Noto Serif CJK SC',serif;
   cursor:none;
 }
 
-.stage{position:fixed;inset:0;overflow:hidden;}
-
-/* 第一层：极暗的档案 */
+/* ---------- 每一屏 ---------- */
+.stage{
+  position:relative;height:100vh;overflow:hidden;
+  scroll-snap-align:start;
+}
+html{scroll-snap-type:y proximity;}
 .dark-plate{
   position:absolute;inset:0;
-  background-image:url(assets/plate-01-dark.webp);
-  background-size:cover;
-  background-position:center;
-  transform:scale(1.04);
-  filter:brightness(1.10) contrast(1.02) sepia(.14) saturate(1.06);
+  background-size:cover;background-position:center;
+  transform:scale(1.05);
+  filter:brightness(1.12) contrast(1.02) sepia(.14) saturate(1.06);
 }
 
-/* 第二层：文字——只在光斑内存在 */
+/* ---------- 文字：只在光斑内存在 ---------- */
 .doc{
-  position:absolute;
-  left:31%;right:8.5%;top:13%;bottom:13%;
-  z-index:3;
-  -webkit-mask-image:radial-gradient(circle var(--r) at var(--lx) var(--ly),
-      rgba(0,0,0,1) 0%, rgba(0,0,0,1) 44%, rgba(0,0,0,.90) 62%, rgba(0,0,0,.42) 77%, rgba(0,0,0,.06) 89%, rgba(0,0,0,0) 96%);
-  mask-image:radial-gradient(circle var(--r) at var(--lx) var(--ly),
-      rgba(0,0,0,1) 0%, rgba(0,0,0,1) 44%, rgba(0,0,0,.90) 62%, rgba(0,0,0,.42) 77%, rgba(0,0,0,.06) 89%, rgba(0,0,0,0) 96%);
+  position:absolute;left:31%;right:8.5%;top:14%;bottom:12%;
+  z-index:3;display:flex;flex-direction:column;justify-content:center;
+  -webkit-mask-image:radial-gradient(ellipse calc(var(--r)*0.96) calc(var(--r)*1.14) at var(--lx) var(--ly),
+      rgba(0,0,0,1) 0%, rgba(0,0,0,1) 52%, rgba(0,0,0,.94) 68%,
+      rgba(0,0,0,.42) 77%, rgba(0,0,0,.06) 89%, rgba(0,0,0,0) 96%);
+  mask-image:radial-gradient(ellipse calc(var(--r)*0.96) calc(var(--r)*1.14) at var(--lx) var(--ly),
+      rgba(0,0,0,1) 0%, rgba(0,0,0,1) 52%, rgba(0,0,0,.94) 68%,
+      rgba(0,0,0,.42) 77%, rgba(0,0,0,.06) 89%, rgba(0,0,0,0) 96%);
 }
-.doc .ex-name{
-  font-size:11px;letter-spacing:.42em;
-  color:#cdbf9c;opacity:.86;margin-bottom:.8em;
+.ex-name{font-size:11px;letter-spacing:.42em;color:#cdbf9c;opacity:.86;margin-bottom:.8em;}
+.ex-title{
+  font-size:29px;letter-spacing:.2em;font-weight:600;color:#fffaea;
+  margin-bottom:.55em;
+  text-shadow:0 0 1px rgba(255,250,235,.85),0 0 18px rgba(255,232,186,.30);
 }
-.doc .ex-title{
-  font-size:30px;letter-spacing:.2em;font-weight:600;
-  color:#fffaea;margin-bottom:.6em;
-  text-shadow:0 0 18px rgba(255,232,190,.16);
-}
-.rule{height:1px;background:linear-gradient(90deg,rgba(220,200,160,.42),rgba(220,200,160,.03));margin:0 0 1.6em;}
+.rule{height:1px;background:linear-gradient(90deg,rgba(255,232,186,.40),rgba(255,232,186,.02));margin:0 0 1.5em;}
 .body{
-  font-size:17px;line-height:2.05;letter-spacing:.03em;
-  color:#fff9ea;
+  font-size:16.5px;line-height:2.0;letter-spacing:.028em;color:#fff9ea;
   text-align:justify;
-  text-shadow:0 0 1px rgba(255,250,235,.85), 0 0 2px rgba(255,244,220,.55), 0 0 18px rgba(255,232,186,.30), 0 0 40px rgba(255,220,160,.14);
+  text-shadow:0 0 1px rgba(255,250,235,.85),0 0 2px rgba(255,244,220,.55),
+              0 0 18px rgba(255,232,186,.30),0 0 40px rgba(255,220,160,.13);
 }
-.body p{margin-bottom:1em;text-indent:1.9em;}
+.body p{margin-bottom:.95em;text-indent:1.9em;}
 .body p.noindent{text-indent:0;}
-.body .sign{text-align:right;margin-top:1.6em;font-size:15.5px;opacity:.9;}
-.body .redact{color:#b8563e;letter-spacing:-.06em;}
+.body .sign{text-align:right;margin-top:1.4em;font-size:15px;opacity:.92;}
+.body .redact{color:#c9634a;letter-spacing:-.06em;}
+.body .key{
+  color:#ffb27c;font-weight:600;letter-spacing:.04em;
+  text-shadow:0 0 2px rgba(255,140,80,.85), 0 0 14px rgba(255,130,70,.55), 0 0 32px rgba(255,120,60,.28);
+}
 
-/* 第三层：灯的光晕（screen 提亮） */
+/* ---------- 全局光照层（fixed，一份，跟着人走） ---------- */
 .glow{
-  position:absolute;inset:0;z-index:4;pointer-events:none;
+  position:fixed;inset:0;z-index:20;pointer-events:none;
   background:
     radial-gradient(ellipse calc(var(--r)*0.86) calc(var(--r)*0.70) at var(--lx) var(--ly),
-      rgba(255,204,140,.66) 0%,
-      rgba(255,192,118,.38) 26%,
-      rgba(246,182,112,.20) 44%,
-      rgba(214,166,104,.10) 60%,
-      rgba(160,140,96,.04) 74%,
-      transparent 88%),
+      rgba(255,204,140,.66) 0%, rgba(255,192,118,.38) 26%, rgba(246,182,112,.20) 44%,
+      rgba(214,166,104,.10) 60%, rgba(160,140,96,.04) 74%, transparent 88%),
     radial-gradient(ellipse calc(var(--r)*1.5) calc(var(--r)*1.2) at var(--lx) var(--ly),
-      rgba(255,186,112,.20) 0%,
-      rgba(226,170,104,.10) 44%,
-      rgba(160,140,100,.04) 64%,
-      transparent 82%),
+      rgba(255,186,112,.20) 0%, rgba(226,170,104,.10) 44%, rgba(160,140,100,.04) 64%, transparent 82%),
     radial-gradient(ellipse calc(var(--r)*2.6) calc(var(--r)*2.0) at var(--lx) var(--ly),
-      rgba(255,170,96,.10) 0%,
-      rgba(150,132,92,.035) 50%,
-      transparent 76%);
-  mix-blend-mode:screen;
-  filter:blur(7px);
+      rgba(255,170,96,.10) 0%, rgba(150,132,92,.035) 50%, transparent 76%);
+  mix-blend-mode:screen;filter:blur(7px);
 }
-
-/* 第四层：全局压暗，让光斑外真的黑 */
 .vignette{
-  position:absolute;inset:0;z-index:5;pointer-events:none;
-  background:
-    radial-gradient(circle calc(var(--r) * 1.9) at var(--lx) var(--ly),
-      rgba(2,6,7,0) 0%,
-      rgba(2,6,7,.55) 52%,
-      rgba(4,8,9,.84) 78%,
-      rgba(4,8,9,.93) 100%);
+  position:fixed;inset:0;z-index:21;pointer-events:none;
+  background:radial-gradient(circle calc(var(--r)*1.9) at var(--lx) var(--ly),
+      rgba(4,8,9,0) 0%, rgba(4,8,9,.55) 52%, rgba(4,8,9,.84) 78%, rgba(4,8,9,.93) 100%);
 }
-
-/* 第五层：颗粒 */
 .grain{
-  position:absolute;inset:0;z-index:6;pointer-events:none;opacity:.10;
+  position:fixed;inset:0;z-index:22;pointer-events:none;opacity:.10;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
   mix-blend-mode:overlay;
 }
 
-/* 提示 */
+/* ---------- 提示 ---------- */
 .hint{
-  position:fixed;left:0;right:0;bottom:4.5vh;z-index:9;
-  text-align:center;color:rgba(200,190,165,.5);
-  font-size:11px;letter-spacing:.34em;pointer-events:none;
-  transition:opacity 1.2s;
+  position:fixed;left:0;right:0;bottom:4vh;z-index:24;text-align:center;
+  color:rgba(205,195,170,.55);font-size:11px;letter-spacing:.34em;
+  pointer-events:none;transition:opacity 1.4s;
 }
+.pager{
+  position:fixed;right:2.2vw;top:50%;transform:translateY(-50%);z-index:24;
+  display:flex;flex-direction:column;gap:9px;pointer-events:none;
+}
+.pager i{width:5px;height:5px;border-radius:50%;background:rgba(205,195,170,.22);display:block;transition:.4s;}
+.pager i.on{background:rgba(255,220,160,.85);box-shadow:0 0 8px rgba(255,210,140,.6);}
 
-@media (max-width:900px){
+/* ---------- 手机 ---------- */
+@media (max-width:900px), (max-height:520px){
   :root{--r:min(104vmin, 420px);}
-  .doc{left:7%;right:7%;top:16%;bottom:16%;}
-  .doc .ex-title{font-size:25px;}
-  .body{font-size:16px;line-height:1.95;text-shadow:0 0 10px rgba(255,230,185,.08);}
-  .hint{font-size:10px;letter-spacing:.24em;bottom:3.5vh;}
+  .doc{left:7%;right:7%;top:7%;bottom:11%;justify-content:flex-start;padding-top:5vh;}
+  .ex-title{font-size:24px;}
+  .body{font-size:15.5px;line-height:1.95;}
+  .body p{margin-bottom:.85em;}
+  .hint{font-size:10px;letter-spacing:.24em;bottom:3vh;}
+  .pager{right:3vw;}
 }
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} }
 </style>
 </head>
 <body>
 
-<div class="stage" id="stage">
-  <div class="dark-plate"></div>
-
+<!-- 01 -->
+<section class="stage">
+  <div class="dark-plate" style="background-image:url(assets/plate-01-dark.webp)"></div>
   <div class="doc">
     <p class="ex-name">證 物 一</p>
     <h2 class="ex-title">立 案 文 書</h2>
@@ -131,61 +126,185 @@ body{
       <p>逕啟者：</p>
       <p>本年十月十四日，據本口緝私艇報稱，霞浦縣屬三沙灣外，有漁船一艘，名「順發」，船牌閩霞字第〇四七號，自十月十一日出港後，迄今未歸。</p>
       <p>查該船船主林阿水，年四十一歲，三沙澳人。船員五名：林阿火、陳水來、王番薯、許乞食、鄭炎生。均係本澳漁戶。</p>
-      <p>又查：該船係民國十五年三月初二領牌，牌載「煙囪式硬帆一副」，於十六年換。本年十月十一日清晨出港，未經汛口掛驗。</p>
-      <p>按現行船政法，漁船出港須報澳甲、掛汛口，違者以走私論。惟近年海上不靖，各澳多有未報即出者，積習已久，本關亦難盡究。</p>
-      <p>本關已飭沿海各汛口一體查訪。相應函請　貴公署查照，派員查勘，並取具該船船主族鄰保結，以備核銷。</p>
+      <p>按現行船政法，漁船出港須報澳甲、掛汛口，違者以走私論。惟近年海上不靖，積習已久，本關亦難盡究。</p>
       <p class="sign">署理閩海關稅務司　<span class="redact">▉▉▉</span><br>民國十七年十月十四日</p>
     </div>
   </div>
+</section>
 
-  <div class="glow"></div>
-  <div class="vignette"></div>
-  <div class="grain"></div>
-</div>
+<!-- 02 -->
+<section class="stage">
+  <div class="dark-plate" style="background-image:url(assets/plate-02-dark.webp)"></div>
+  <div class="doc">
+    <p class="ex-name">證 物 二</p>
+    <h2 class="ex-title">現 場 照 片</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <p class="noindent">三沙灣　　順發船　　民國十七年十月　　共三張</p>
+      <p>一、船首殘舵一段，長約四尺，木質，有嚙痕。</p>
+      <p>二、網具一具，網目盡破，破口整齊。</p>
+      <p>三、澳口灘上足印，自水際起，止於社廟階前。</p>
+      <p>以上照片三張，附袋移送。</p>
+      <p class="noindent key">袋中實存二張。</p>
+      <p class="noindent" style="margin-top:1.6em;font-size:14px;opacity:.82;">〔鉛筆〕第三張底片無著落。已問照相館，云未收此片。<br>沖者不識字，云：片上有人。</p>
+    </div>
+  </div>
+</section>
 
-<p class="hint" id="hint">移 動 光 源</p>
+<!-- 03 -->
+<section class="stage">
+  <div class="dark-plate" style="background-image:url(assets/plate-03-dark.webp)"></div>
+  <div class="doc">
+    <p class="ex-name">證 物 三</p>
+    <h2 class="ex-title">村 民 筆 錄</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <p class="noindent">（節六份　餘存關）</p>
+      <p>問：可見「順發」出港？<br>答：看見。天未光就出去。<span class="key">潮水正漲。</span>船上六個人。</p>
+      <p>問：可見「順發」出港？<br>答：看見。<span class="key">潮水正退。</span>船上六個人。</p>
+      <p>問：船可曾翻？<br>答：（不答）<br><span style="opacity:.8;font-size:14px;">記錄員註：被問人不肯答此字。二次問，仍不答。</span></p>
+      <p>問：船上有幾人？<br>答：六個。<br>問：連同船主？<br>答：六個。<br><span style="opacity:.8;font-size:14px;">記錄員註：船牌載船主一名、船員五名。</span></p>
+      <p>問：帆上所書何字？<br>答：無看。<br>問：汝每日見此船，何以不看？<br>答：（不答）</p>
+    </div>
+  </div>
+</section>
+
+<!-- 04 -->
+<section class="stage">
+  <div class="dark-plate" style="background-image:url(assets/plate-04-dark.webp)"></div>
+  <div class="doc">
+    <p class="ex-name">證 物 四</p>
+    <h2 class="ex-title">漁 船 檔 案</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <p class="noindent">福建霞浦縣　漁船船牌存根</p>
+      <p class="noindent">船　名　　順　發<br>船　式　　十三股艚<br>船　主　　林阿水<br>保　結　　族鄰 林阿火、陳水來；澳甲 王番薯<br>發　證　　民國十五年三月初二</p>
+      <p>帆面兩側，應用油墨大字書寫縣分、船戶姓名，自帆頂至帆腳，不得過五六字。</p>
+      <p class="key">帆上所書：「霞浦　順　興」</p>
+      <p class="noindent key">與船牌不符。</p>
+      <p class="noindent" style="margin-top:1.4em;font-size:14px;opacity:.82;">（夾簽）帆非原帆。重寫於發證之後。——何人所寫？</p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 -->
+<section class="stage">
+  <div class="dark-plate" style="background-image:url(assets/plate-05-dark.webp)"></div>
+  <div class="doc">
+    <p class="ex-name">證 物 五</p>
+    <h2 class="ex-title">生 還 者 訊 問</h2>
+    <div class="rule"></div>
+    <div class="body" style="font-size:15.8px;line-height:1.92;">
+      <p class="noindent" style="font-size:13.5px;opacity:.86;">被訊問人：鄭炎生，年十九。十月廿七日於東衝口外拾獲。</p>
+      <p class="noindent" style="margin-top:1em;letter-spacing:.2em;">第三日　十月廿九</p>
+      <p>問：船在何處出事？<br>答：<span class="key">不在海上。</span></p>
+      <p>問：不在海上，在何處？<br>答：在下面。街上也有。<span class="key">街上跟澳裏一樣。</span></p>
+      <p>問：你見到何人？<br>答：見着他們五個。他們在走路。<span class="key">他們沒有影子。</span></p>
+      <p>問：你可曾叫他們？<br>答：叫了。<span class="key">他們回頭了。</span></p>
+      <p>問：回頭之後？<br>答：<span class="key">回頭的時候，還是一樣朝前走。</span></p>
+      <p>問：何以此前不言？<br>答：<span class="key">問的人不是你們。</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- 06 -->
+<section class="stage">
+  <div class="dark-plate" style="background-image:url(assets/plate-06-dark.webp)"></div>
+  <div class="doc">
+    <p class="ex-name">證 物 六</p>
+    <h2 class="ex-title">回 收 物 清 單</h2>
+    <div class="rule"></div>
+    <div class="body">
+      <p class="noindent" style="font-size:14px;opacity:.86;">三沙灣外海面撈獲物件　民國十七年十月廿五日　覆寫一份</p>
+      <p class="noindent" style="line-height:1.95;margin-top:1em;">
+        〇一　舵板一段　　有嚙痕<br>
+        〇二　漁網一具　　破口齊整<br>
+        〇三　木牌一枚　　刻字<br>
+        〇四　瓷碗半隻　　碗底有字<br>
+        〇五　草席一張　　捲起，內空<br>
+        〇六　紙船一艘　　<span class="key">未燒完</span><br>
+        <span style="opacity:.45;">〇七　（此欄空白）</span><br>
+        〇八　布鞋一雙　　鞋底無泥<br>
+        〇九　油紙一束　　潮，字盡失
+      </p>
+      <p style="margin-top:1em;">以上共 <span class="key">十三</span> 件。本清單係覆寫件，原件存關。</p>
+      <p class="noindent" style="margin-top:1.2em;font-size:14px;opacity:.82;">（硃筆旁註）十件。編號至〇九。<span class="key">〇七從未存在。</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- 07 -->
+<section class="stage">
+  <div class="dark-plate" style="background-image:url(assets/plate-07-dark.webp)"></div>
+  <div class="doc">
+    <p class="ex-name">附 錄</p>
+    <h2 class="ex-title">未 歸 檔</h2>
+    <div class="rule"></div>
+    <div class="body" style="font-family:'Kaiti SC','STKaiti',serif;">
+      <p class="noindent" style="font-size:13.5px;opacity:.82;">（非公文紙。另夾卷中。字為鋼筆。）</p>
+      <p>十一月十二日。船名在船牌上是「順發」，在帆上是「順興」。科員說我抄錯。我看了三遍，不是我抄錯。</p>
+      <p class="noindent key">十一月十三日。我核了七次。不是我看錯。</p>
+      <p>十一月十五日。我從頭再看了一遍。第四頁船名，是「順發」。<br>我記得昨天是「順興」。</p>
+      <p>十一月十六日。我又看了。這一次，兩個字都不是。</p>
+      <p>十一月十七日。卷宗在夜裡自己翻了一頁。我沒有開窗。桌上有水。</p>
+      <p class="noindent" style="margin-top:1em;">十一月十六日。我問澳裏討海人：這卷裏的船，你們認得否。他們看我一眼，都不說話。<br>只有一個老的，講：<span class="key">「你莫問。問了就輪着你。」</span></p>
+      <p>十一月十八日。燈沒熄。窗沒開。我坐着沒動。我聽見有人在翻紙。</p>
+    </div>
+  </div>
+</section>
+
+<div class="glow"></div>
+<div class="vignette"></div>
+<div class="grain"></div>
+<p class="hint" id="hint">移 動 光 源 · 向 下 滾</p>
+<div class="pager" id="pager"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 
 <script>
 (function(){
-  var root = document.documentElement;
-  var lx = .50, ly = .44, tx = .50, ty = .44;
-  var auto = true, t = 0;
-  var hint = document.getElementById('hint');
+  var root=document.documentElement;
+  var lx=.50, ly=.41, tx=.50, ty=.41, auto=true, t=0;
+  var hint=document.getElementById('hint');
+  var dots=[].slice.call(document.querySelectorAll('#pager i'));
+  var stages=[].slice.call(document.querySelectorAll('.stage'));
 
   function pos(e){
-    var x, y;
-    if (e.touches && e.touches[0]) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
-    else { x = e.clientX; y = e.clientY; }
-    tx = x / innerWidth; ty = y / innerHeight;
-    if (auto) { auto = false; hint.style.opacity = 0; }
+    var x,y;
+    if(e.touches&&e.touches[0]){x=e.touches[0].clientX;y=e.touches[0].clientY;}
+    else{x=e.clientX;y=e.clientY;}
+    tx=x/innerWidth; ty=y/innerHeight;
+    if(auto){auto=false;hint.style.opacity=0;}
   }
-  addEventListener('mousemove', pos, {passive:true});
-  addEventListener('touchmove', pos, {passive:true});
-  addEventListener('touchstart', pos, {passive:true});
+  addEventListener('mousemove',pos,{passive:true});
+  addEventListener('touchmove',pos,{passive:true});
+  addEventListener('touchstart',pos,{passive:true});
 
-  var last = 0;
+  var last=0;
   function loop(ts){
-    if (ts - last > 24){          // 限到约 40fps，省电
-      last = ts;
-      if (auto){
-        t += 0.0032;
-        tx = .50 + Math.sin(t * 1.55) * .26;
-        ty = .44 + Math.cos(t * 1.02) * .20;
+    if(ts-last>24){
+      last=ts;
+      if(auto){
+        t+=0.0032;
+        tx=.50+Math.sin(t*1.55)*.24;
+        ty=.41+Math.cos(t*1.02)*.18;
       }
-      lx += (tx - lx) * 0.075;
-      ly += (ty - ly) * 0.075;
-      if (auto){
-        lx += Math.sin(ts * 0.00042) * 0.0022;
-        ly += Math.cos(ts * 0.00061) * 0.0018;
-      }
-      root.style.setProperty('--lx', (lx * 100).toFixed(2) + '%');
-      root.style.setProperty('--ly', (ly * 100).toFixed(2) + '%');
+      lx+=(tx-lx)*0.075; ly+=(ty-ly)*0.075;
+      if(auto){ lx+=Math.sin(ts*0.00042)*0.0022; ly+=Math.cos(ts*0.00061)*0.0018; }
+      root.style.setProperty('--lx',(lx*100).toFixed(2)+'%');
+      root.style.setProperty('--ly',(ly*100).toFixed(2)+'%');
     }
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
+
+  // 进度点
+  function up(){
+    var i=Math.round(scrollY/innerHeight);
+    dots.forEach(function(d,k){ d.className = k===i?'on':''; });
+    if(scrollY>40) hint.style.opacity=0;
+  }
+  addEventListener('scroll',up,{passive:true});
+  up();
 })();
 </script>
-
 </body>
 </html>
