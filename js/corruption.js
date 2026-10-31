@@ -64,6 +64,10 @@ window.ABYSS = window.ABYSS || {};
       }
       lastMove = Date.now();
       lampTarget = LAMP_MAX;
+
+      /* 目录只在鼠标靠左时浮现 —— 第一眼应该是场景，不是网页 */
+      if (e.clientX < 150) document.body.classList.add('nav-on');
+      else document.body.classList.remove('nav-on');
     }, { passive: true });
 
     /* 滚动时灯跟着亮起来（移动＝在找东西） */

@@ -513,3 +513,62 @@ body.quiet #stack::before{display:none;}
 /* 目录提亮 */
 #index a{color:rgba(200,188,164,.80);}
 #index a.active{color:#f0e6d0;}
+
+/* ============================================================
+   场景化实验：加"前景层"，让画面有景深
+   左下角落压着东西、四边被挡住 —— 你是在"看"，不是"打开网页"
+   ============================================================ */
+#stack::after{
+  content:"";
+  position:fixed;
+  inset:-4vh -4vw;
+  z-index:6;
+  pointer-events:none;
+  background:
+    /* 左下：镜头前挡着什么 */
+    radial-gradient(ellipse 24% 30% at 0% 102%, rgba(3,7,6,.96) 0%, rgba(3,7,6,.62) 38%, rgba(3,7,6,.18) 66%, transparent 82%),
+    /* 右下 */
+    radial-gradient(ellipse 18% 24% at 101% 96%, rgba(3,7,6,.85) 0%, rgba(3,7,6,.35) 44%, transparent 76%),
+    /* 上沿 */
+    radial-gradient(ellipse 78% 13% at 46% -3%, rgba(3,7,6,.92) 0%, rgba(3,7,6,.40) 48%, transparent 80%),
+    /* 下沿 */
+    radial-gradient(ellipse 86% 16% at 52% 105%, rgba(3,7,6,.88) 0%, rgba(3,7,6,.36) 50%, transparent 82%),
+    /* 左沿 */
+    radial-gradient(ellipse 11% 60% at -3% 52%, rgba(3,7,6,.80) 0%, transparent 76%);
+  filter:blur(16px);
+}
+/* 场景光：一束从左上打下来的暖光，落在纸上 */
+#stack::before{
+  background:
+    radial-gradient(ellipse 26% 20% at 22% 12%, rgba(255,226,170,.10), transparent 72%),
+    radial-gradient(ellipse 18% 12% at 30% 30%, rgba(255,214,150,.05), transparent 74%),
+    radial-gradient(ellipse 24% 16% at 74% 70%, rgba(90,180,170,.07), transparent 72%),
+    radial-gradient(ellipse 12% 9% at 52% 88%, rgba(150,120,200,.06), transparent 70%);
+  animation:sceneLight 52s ease-in-out infinite alternate;
+  filter:blur(38px);
+}
+@keyframes sceneLight{
+  0%{transform:translate3d(0,0,0) scale(1);}
+  100%{transform:translate3d(1.5%,1%,0) scale(1.08);}
+}
+body.quiet #stack::after{display:none;}
+
+/* 前景层加强：遮挡更实 */
+#stack::after{
+  filter:blur(9px) !important;
+  background:
+    radial-gradient(ellipse 26% 34% at -1% 104%, rgba(2,5,4,.99) 0%, rgba(2,5,4,.78) 34%, rgba(2,5,4,.26) 62%, transparent 80%),
+    radial-gradient(ellipse 20% 26% at 102% 98%, rgba(2,5,4,.92) 0%, rgba(2,5,4,.42) 42%, transparent 74%),
+    radial-gradient(ellipse 80% 12% at 46% -4%, rgba(2,5,4,.96) 0%, rgba(2,5,4,.48) 44%, transparent 78%),
+    radial-gradient(ellipse 88% 15% at 52% 106%, rgba(2,5,4,.94) 0%, rgba(2,5,4,.44) 46%, transparent 80%),
+    radial-gradient(ellipse 10% 66% at -4% 50%, rgba(2,5,4,.86) 0%, transparent 74%);
+}
+/* 方向光：左上暖光把纸的左上部提起来 */
+.paper-bg .lightpass{
+  background:
+    radial-gradient(ellipse 46% 34% at 32% 24%, rgba(255,232,186,.24), transparent 70%),
+    radial-gradient(ellipse 30% 22% at 24% 46%, rgba(255,220,164,.12), transparent 72%),
+    radial-gradient(ellipse 24% 18% at 72% 66%, rgba(255,250,236,.07), transparent 70%);
+  mix-blend-mode:screen;
+  opacity:.9;
+}

@@ -577,3 +577,18 @@ body.pass2 .loupe{
 /* 表格字与纸同一光学平面：略降锐度 */
 .depo td,.depo th{filter:blur(.14px);}
 .shipcard-list dd,.shipcard-list dt{filter:blur(.12px);}
+
+/* 目录默认隐藏，靠左才浮出 */
+#index{
+  opacity:0;
+  transform:translateX(-10px);
+  transition:opacity .7s ease, transform .7s ease;
+}
+body.nav-on #index{opacity:1;transform:none;}
+/* 左边缘留一条极窄的感应带提示 */
+body:not(.nav-on) #index::after{
+  content:"";
+  position:fixed;left:0;top:30vh;width:2px;height:40vh;
+  background:linear-gradient(180deg,transparent,rgba(150,180,160,.18),transparent);
+  pointer-events:none;
+}
