@@ -1,23 +1,23 @@
 /* ============================================================
-   abyss.css — 新视觉系统 v2.1
-   原则：光要是「错」的，不是「暗」的
-   这一版把参数调到「明显」，宁可过火再收
+   abyss.css — v3
+   核心改动：纸不再是「一个 div」，是「一张边缘烂掉的纸」
+   ① 纸底用 feDisplacementMap 撕出毛边（永不重复）
+   ② 阴影改用 drop-shadow，贴合不规则轮廓
+   ③ 纤维纹理独立成层，方向交错
+   ④ 排版保持精确 —— 形式严谨 + 材质腐坏
    ============================================================ */
 
 :root{
-  --deep:#060a09;
-  --paper:#c9c6ab;         /* 冷下来的纸：不是暖黄，是潮湿的灰绿 */
-  --paper-deep:#b9b89e;
-  --mold:#1e3226;          /* 病态绿 */
-  --bruise:#2b1b3d;
-  --phosphor:#6fae92;      /* 磷光青 */
+  --paper:#cdc9ae;
+  --paper-deep:#b5b197;
+  --mold:#1e3226;
+  --phosphor:#6fae92;
   --ink:#100e0a;
   --seal:#8f2318;
 
   --f-gov:"FangSong","STFangsong","仿宋","SimSun",serif;
   --f-song:"SimSun","Songti SC","STSong",serif;
   --f-kai:"KaiTi","STKaiti","楷体",serif;
-  --f-type:"Courier New",Courier,monospace;
 }
 
 *{box-sizing:border-box;}
@@ -26,168 +26,166 @@ body{
   margin:0;
   min-height:100vh;
   background:
-    radial-gradient(ellipse 90% 70% at 50% 42%, #0b1a16 0%, #060f0c 48%, #000 100%);
+    radial-gradient(ellipse 92% 74% at 50% 40%, #0c1c17 0%, #06100d 46%, #000 100%);
   display:grid;
   place-items:center;
-  padding:9vh 4vw;
+  padding:11vh 4vw;
   font-family:var(--f-gov);
   overflow-x:hidden;
 }
 
-/* 水体：从下方漫上来的绿 */
+/* 水体 */
 body::before{
   content:"";
   position:fixed;inset:0;
   pointer-events:none;
   z-index:0;
   background:
-    radial-gradient(ellipse 70% 40% at 50% 108%, rgba(60,120,104,.20), transparent 70%),
-    radial-gradient(ellipse 36% 24% at 16% 20%, rgba(43,27,61,.28), transparent 74%),
-    radial-gradient(ellipse 30% 20% at 86% 78%, rgba(30,60,48,.22), transparent 72%),
-    repeating-linear-gradient(11deg, rgba(111,174,146,.03) 0 2px, transparent 2px 13px);
-  filter:blur(1.2px);
-}
-
-/* 全局水下滤镜：像隔着水看 */
-body::after{
-  content:"";
-  position:fixed;inset:0;
-  pointer-events:none;
-  z-index:9;
-  background:linear-gradient(178deg, rgba(30,70,60,.14) 0%, rgba(20,50,44,.05) 40%, rgba(10,30,26,.16) 100%);
-  mix-blend-mode:multiply;
+    radial-gradient(ellipse 72% 42% at 50% 106%, rgba(64,132,112,.22), transparent 70%),
+    radial-gradient(ellipse 34% 24% at 14% 18%, rgba(43,27,61,.30), transparent 74%),
+    radial-gradient(ellipse 28% 18% at 88% 76%, rgba(30,64,50,.24), transparent 72%),
+    repeating-linear-gradient(9deg, rgba(111,174,146,.028) 0 2px, transparent 2px 14px);
+  filter:blur(1.4px);
 }
 
 /* ============================================================
-   纸
+   纸：外层只负责影子与辉光，贴合不规则轮廓
    ============================================================ */
-.sheet{
+.paper-wrap{
   position:relative;
   width:min(720px,94vw);
-  padding:56px 62px 52px;
-  color:var(--ink);
-  background-color:var(--paper);
-  background-image:
-    /* 大片湿痕：右下角往里渗 */
-    radial-gradient(ellipse 66% 52% at 86% 90%, rgba(86,100,74,.34), transparent 66%),
-    radial-gradient(ellipse 44% 36% at 10% 14%, rgba(72,86,64,.24), transparent 70%),
-    radial-gradient(ellipse 30% 20% at 34% 96%, rgba(66,82,60,.22), transparent 72%),
-    /* 起伏 */
-    linear-gradient(116deg, rgba(240,246,232,.34) 0%, rgba(255,255,255,0) 24%),
-    linear-gradient(198deg, rgba(56,74,58,.26) 0%, rgba(255,255,255,0) 34%);
-  box-shadow:
-    /* 纸边的厚度与湿重 */
-    inset 0 1px 0 rgba(226,240,226,.34),
-    inset 0 -5px 16px rgba(34,56,44,.34),
-    inset 5px 0 16px rgba(34,56,44,.20),
-    inset -5px 0 16px rgba(34,56,44,.20),
-    /* 内部绿雾 */
-    inset 0 0 110px rgba(32,54,42,.34),
-    /* 外发光：纸不在灯下，纸泡在会发光的水里 */
-    0 0 46px rgba(72,150,128,.26),
-    0 0 110px rgba(48,110,96,.16),
-    0 0 200px rgba(30,80,70,.10),
-    /* 落影 */
-    0 44px 96px -44px rgba(0,0,0,.96);
-  isolation:isolate;
+  filter:
+    drop-shadow(0 46px 94px rgba(0,0,0,.92))
+    drop-shadow(0 0 34px rgba(96,200,168,.40))
+    drop-shadow(0 0 78px rgba(56,150,128,.26))
+    drop-shadow(0 0 150px rgba(30,100,86,.16));
+  z-index:1;
 }
 
-/* 纸纤维噪声 */
-.sheet::before{
+/* 纸本体：撕边 + 纹理 */
+.paper-bg{
+  position:absolute;
+  inset:0;
+  border-radius:1px;
+  background-color:var(--paper);
+  background-image:
+    /* 大片湿痕 */
+    radial-gradient(ellipse 68% 54% at 86% 90%, rgba(84,98,72,.36), transparent 66%),
+    radial-gradient(ellipse 46% 38% at 10% 13%, rgba(70,84,62,.26), transparent 70%),
+    radial-gradient(ellipse 32% 22% at 32% 97%, rgba(64,80,58,.24), transparent 72%),
+    /* 帘纹：纸浆抄制留下的极细横纹 */
+    repeating-linear-gradient(0deg, rgba(96,92,64,.055) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(96,92,64,.028) 0 1px, transparent 1px 7px),
+    /* 起伏 */
+    linear-gradient(116deg, rgba(244,250,232,.30) 0%, rgba(255,255,255,0) 26%),
+    linear-gradient(198deg, rgba(52,72,54,.28) 0%, rgba(255,255,255,0) 36%),
+    /* 干湿不均的团块 */
+    radial-gradient(ellipse 20% 16% at 40% 70%, rgba(110,104,70,.20), transparent 70%),
+    radial-gradient(ellipse 16% 12% at 66% 24%, rgba(96,92,64,.18), transparent 70%);
+  filter:url(#tornEdge);
+  box-shadow:
+    inset 0 0 0 1px rgba(140,132,96,.30),
+    inset 0 2px 0 rgba(230,240,220,.24),
+    inset 0 0 130px rgba(30,54,42,.38);
+}
+
+/* 纤维 + 凹凸：feDiffuseLighting 把噪声变成真正有光照的纸面 */
+.paper-bg::before{
   content:"";
   position:absolute;inset:0;
   pointer-events:none;
   z-index:1;
   opacity:.55;
-  mix-blend-mode:multiply;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
-  background-size:220px 220px;
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch' result='n'/%3E%3CfeDiffuseLighting in='n' lighting-color='%23ffffff' surfaceScale='2.6'%3E%3CfeDistantLight azimuth='238' elevation='36'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23r)'/%3E%3C/svg%3E");
+  background-size:300px 300px;
 }
 
-/* 边缘不是变黑，是变绿 */
-.sheet::after{
+/* 纸芯切面：边缘一条比纸面略深的线，让它有厚度 */
+.paper-bg::after{
   content:"";
   position:absolute;inset:0;
   pointer-events:none;
-  z-index:2;
+  z-index:1;
   background:
-    radial-gradient(ellipse 74% 68% at 48% 46%,
-      rgba(0,0,0,0) 52%,
-      rgba(44,78,64,.18) 78%,
-      rgba(28,58,46,.36) 92%,
-      rgba(18,44,36,.52) 100%);
+    radial-gradient(ellipse 76% 70% at 50% 48%,
+      rgba(0,0,0,0) 54%,
+      rgba(58,74,52,.14) 82%,
+      rgba(40,58,44,.30) 96%,
+      rgba(28,46,36,.46) 100%);
   mix-blend-mode:multiply;
 }
 
 /* ============================================================
-   霉斑 / 油膜 / 水渍 / 不该有的
+   腐坏：霉 / 油膜 / 水渍 / 不该有的
    ============================================================ */
-.mold{
-  position:absolute;inset:0;
+.mold,.film,.water,.gill,.palm{
+  position:absolute;
   pointer-events:none;
   z-index:2;
-  mix-blend-mode:multiply;
-  opacity:.92;
-  background:
-    radial-gradient(circle at 5% 93%, rgba(24,44,32,.72) 0%, rgba(24,44,32,.34) 7%, transparent 17%),
-    radial-gradient(circle at 14% 97%, rgba(18,36,28,.62) 0%, transparent 13%),
-    radial-gradient(circle at 22% 90%, rgba(28,48,36,.42) 0%, transparent 9%),
-    radial-gradient(circle at 95% 10%, rgba(22,40,30,.60) 0%, transparent 15%),
-    radial-gradient(circle at 88% 24%, rgba(26,46,34,.44) 0%, transparent 11%),
-    radial-gradient(circle at 72% 2%, rgba(20,38,28,.38) 0%, transparent 12%),
-    radial-gradient(circle at 42% 101%, rgba(22,42,32,.40) 0%, transparent 12%);
-  filter:blur(.8px);
 }
-
-/* 虹彩油膜 */
+.mold{
+  inset:0;
+  mix-blend-mode:multiply;
+  opacity:.95;
+  background:
+    radial-gradient(circle at 5% 94%, rgba(22,42,30,.78) 0%, rgba(22,42,30,.36) 7%, transparent 18%),
+    radial-gradient(circle at 13% 98%, rgba(16,34,26,.66) 0%, transparent 14%),
+    radial-gradient(circle at 21% 91%, rgba(26,46,34,.46) 0%, transparent 10%),
+    radial-gradient(circle at 96% 9%, rgba(20,38,28,.64) 0%, transparent 16%),
+    radial-gradient(circle at 89% 23%, rgba(24,44,32,.46) 0%, transparent 12%),
+    radial-gradient(circle at 70% 1%, rgba(18,36,26,.40) 0%, transparent 13%),
+    radial-gradient(circle at 40% 102%, rgba(20,40,30,.42) 0%, transparent 13%);
+  filter:blur(.9px);
+}
 .film{
-  position:absolute;inset:0;
-  pointer-events:none;
-  z-index:2;
-  mix-blend-mode:overlay;
-  opacity:.42;
-  background:conic-gradient(from 18deg at 66% 30%,
+  inset:0;
+  mix-blend-mode:screen;
+  opacity:.55;
+  background:conic-gradient(from 16deg at 64% 28%,
       rgba(120,190,160,.22),
       rgba(140,90,170,.18),
       rgba(80,150,180,.20),
       rgba(150,170,110,.14),
       rgba(120,190,160,.22));
-  filter:blur(3px);
+  filter:blur(4px);
 }
-
-/* 水渍：退水留下的多道环 */
 .water{
-  position:absolute;
   right:-8%;bottom:-6%;
-  width:74%;height:62%;
-  pointer-events:none;
-  z-index:2;
+  width:76%;height:64%;
   mix-blend-mode:multiply;
   opacity:.95;
   background:
     radial-gradient(ellipse 52% 52% at 52% 48%,
       rgba(96,84,46,.00) 0%,
-      rgba(96,84,46,.07) 33%,
-      rgba(78,66,34,.03) 40%,
-      rgba(96,84,46,.13) 47%,
-      rgba(78,66,34,.04) 54%,
-      rgba(96,84,46,.09) 61%,
+      rgba(96,84,46,.075) 33%,
+      rgba(78,66,34,.032) 40%,
+      rgba(96,84,46,.135) 47%,
+      rgba(78,66,34,.042) 54%,
+      rgba(96,84,46,.095) 61%,
       rgba(70,60,30,.00) 72%),
-    radial-gradient(ellipse 34% 30% at 40% 62%, rgba(84,72,38,.09) 0%, transparent 62%);
-  filter:blur(1.4px);
+    radial-gradient(ellipse 34% 30% at 40% 62%, rgba(84,72,38,.095) 0%, transparent 62%);
+  filter:blur(1.6px);
   transform:rotate(-6deg);
 }
-
-/* 一处不该存在的污渍：像手掌，但指头太多 */
-.palm{
-  position:absolute;
-  left:5%;bottom:7%;
-  width:150px;height:170px;
-  pointer-events:none;
-  z-index:3;
-  opacity:.52;
+.gill{
+  right:1%;bottom:3%;
+  width:40%;height:28%;
   mix-blend-mode:multiply;
+  opacity:.28;
+  background:repeating-radial-gradient(
+      ellipse at 100% 100%,
+      rgba(50,30,56,.55) 0 2px,
+      transparent 2px 10px);
   filter:blur(2px);
+  transform:rotate(-4deg);
+}
+.palm{
+  left:4%;bottom:6%;
+  width:150px;height:170px;
+  mix-blend-mode:multiply;
+  opacity:.58;
+  filter:blur(2.2px);
   background:
     radial-gradient(ellipse 30% 26% at 50% 62%, rgba(40,22,50,.85), transparent 74%),
     radial-gradient(ellipse 6% 21% at 24% 41%, rgba(40,22,50,.72), transparent 80%),
@@ -199,36 +197,23 @@ body::after{
   transform:rotate(-12deg);
 }
 
-/* 右下角：极淡的鳃裂弧（不该出现在纸上） */
-.gill{
-  position:absolute;
-  right:2%;bottom:4%;
-  width:38%;height:26%;
-  pointer-events:none;
-  z-index:3;
-  opacity:.20;
-  mix-blend-mode:multiply;
-  background:repeating-radial-gradient(
-      ellipse at 100% 100%,
-      rgba(52,32,58,.55) 0 2px,
-      transparent 2px 9px);
-  filter:blur(1.6px);
-  transform:rotate(-4deg);
-}
-
 /* ============================================================
-   内容
+   内容：精确、冷静、一丝不苟
    ============================================================ */
-.content{position:relative;z-index:4;}
+.content{
+  position:relative;
+  z-index:3;
+  padding:56px 62px 52px;
+  color:var(--ink);
+}
 
 .ex-title{
   margin:0 0 30px;
   font-family:var(--f-song);
   font-size:15px;font-weight:400;letter-spacing:.34em;
-  color:#2e2a1e;
+  color:#2a2a1e;
   padding-bottom:12px;
-  border-bottom:1px solid rgba(46,66,54,.46);
-  text-shadow:0 0 8px rgba(30,60,48,.20);
+  border-bottom:1px solid rgba(40,58,46,.50);
 }
 
 .depo{
@@ -236,39 +221,37 @@ body::after{
   margin-bottom:22px;
   font-size:15px;line-height:1.95;
   font-family:var(--f-kai);
-  border:1px solid rgba(42,58,48,.42);
-  filter:blur(.12px);
+  border:1px solid rgba(38,54,44,.46);
 }
 .depo th{
   width:56px;text-align:center;vertical-align:top;
-  font-weight:400;color:#4a4534;
-  background:linear-gradient(180deg, rgba(120,130,106,.28), rgba(96,106,84,.14));
-  border-right:1px solid rgba(42,58,48,.32);
-  border-bottom:1px solid rgba(42,58,48,.22);
+  font-weight:400;color:#464433;
+  background:linear-gradient(180deg, rgba(118,128,104,.26), rgba(94,104,82,.13));
+  border-right:1px solid rgba(38,54,44,.34);
+  border-bottom:1px solid rgba(38,54,44,.24);
   padding:8px 4px;
 }
 .depo td{
   padding:8px 14px;
-  border-bottom:1px solid rgba(42,58,48,.22);
-  color:#14120d;
-  text-shadow:0 0 .5px rgba(16,14,10,.6);
+  border-bottom:1px solid rgba(38,54,44,.24);
+  color:#12100c;
 }
 .depo b{
   color:var(--seal);
   font-weight:400;
-  text-shadow:0 0 7px rgba(143,35,24,.22);
+  text-shadow:0 0 7px rgba(143,35,24,.20);
 }
 .rec-note{
-  color:#46402e !important;
+  color:#413d2c !important;
   font-size:13px;letter-spacing:.06em;
-  background:rgba(120,130,106,.20);
+  background:rgba(118,128,104,.18);
 }
 .dialect{
   font-family:var(--f-song);font-size:16px;letter-spacing:.05em;
-  color:#241e14;
-  border-bottom:1px dotted rgba(46,66,54,.60);
+  color:#201c12;
+  border-bottom:1px dotted rgba(40,58,46,.62);
 }
-.depo-dialect th{background:rgba(143,35,24,.14);}
+.depo-dialect th{background:rgba(143,35,24,.13);}
 .depo th[colspan]{
   width:auto !important;
   text-align:left;
@@ -284,26 +267,148 @@ body::after{
   z-index:10;
 }
 
-/* ---------- 修正：让纸真的「发光」 ---------- */
-body::after{
+/* ============================================================
+   v3.2 物质感：透视 / 折痕 / 卷角 / 透光 / 墨渗
+   ============================================================ */
+
+/* ① 纸不是正对着你，是摊在桌上被看见 */
+.paper-wrap{
+  transform:perspective(1600px) rotateX(1.6deg) rotateZ(-0.45deg);
+  transform-origin:50% 40%;
+}
+
+/* ② 透光：纸薄处背后透出光 */
+.lightpass{
+  position:absolute;inset:0;
   z-index:0;
-  mix-blend-mode:multiply;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse 40% 30% at 44% 30%, rgba(255,255,242,.22), transparent 72%),
+    radial-gradient(ellipse 26% 20% at 72% 62%, rgba(255,252,236,.12), transparent 70%);
+  mix-blend-mode:soft-light;
 }
-.sheet{
-  position:relative;
-  z-index:1;
+
+/* ③ 折痕：一道横贯的折线，上面亮下面暗 */
+.crease{
+  position:absolute;
+  left:-1%;right:-1%;top:47%;
+  height:2px;
+  z-index:2;
+  pointer-events:none;
+  background:linear-gradient(180deg,
+      rgba(255,255,248,.20) 0%,
+      rgba(88,76,46,.30) 55%,
+      rgba(60,52,30,.16) 100%);
+  filter:blur(.4px);
+}
+.crease::after{
+  content:"";
+  position:absolute;left:0;right:0;top:2px;height:30px;
+  background:linear-gradient(180deg, rgba(56,48,28,.13), transparent 88%);
+}
+.crease::before{
+  content:"";
+  position:absolute;left:0;right:0;bottom:2px;height:18px;
+  background:linear-gradient(0deg, rgba(255,255,246,.10), transparent 90%);
+}
+
+/* ④ 卷角：右下角翘起来，露出背面 */
+.curl{
+  position:absolute;
+  right:0;bottom:0;
+  width:104px;height:104px;
+  z-index:3;
+  pointer-events:none;
+  clip-path:polygon(100% 0, 100% 100%, 0 100%);
+  background:
+    linear-gradient(308deg,
+      rgba(255,253,240,.92) 0%,
+      rgba(226,222,198,.86) 18%,
+      rgba(150,146,118,.55) 34%,
+      rgba(196,192,166,.75) 52%,
+      rgba(238,234,212,.90) 78%,
+      rgba(210,206,180,.85) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(226,240,226,.34),
-    inset 0 -5px 18px rgba(34,56,44,.36),
-    inset 6px 0 18px rgba(34,56,44,.22),
-    inset -6px 0 18px rgba(34,56,44,.22),
-    inset 0 0 120px rgba(30,54,42,.36),
-    0 0 28px rgba(96,200,168,.46),
-    0 0 66px rgba(62,156,132,.34),
-    0 0 130px rgba(40,112,98,.22),
-    0 0 250px rgba(24,82,72,.13),
-    0 48px 100px -46px rgba(0,0,0,.96);
+    -5px -5px 14px rgba(0,0,0,.42),
+    inset 3px 3px 8px rgba(255,255,250,.55);
+  filter:drop-shadow(-6px -6px 10px rgba(0,0,0,.35));
+  transform:rotate(-1.6deg);
+  opacity:.96;
 }
-.film{opacity:.58;mix-blend-mode:screen;}
-.gill{opacity:.30;}
-.palm{opacity:.60;}
+
+/* ⑤ 墨渗：字不是浮在表面，是渗进纤维 */
+.content{
+  text-shadow:0 0 .55px rgba(16,14,10,.42);
+}
+.depo td,.depo th,.ex-title{
+  -webkit-font-smoothing:auto;
+}
+.depo b{
+  text-shadow:0 0 .9px rgba(143,35,24,.55), 0 0 8px rgba(143,35,24,.14);
+}
+
+/* ⑥ 受潮翘曲：整张纸不是平的（作用于 wrap，字跟着纸一起弯） */
+.paper-wrap{
+  filter:
+    url(#warpPaper)
+    drop-shadow(0 46px 94px rgba(0,0,0,.92))
+    drop-shadow(0 0 34px rgba(96,200,168,.40))
+    drop-shadow(0 0 78px rgba(56,150,128,.26))
+    drop-shadow(0 0 150px rgba(30,100,86,.16));
+}
+
+/* ⑦ 卷角与纸面的接触阴影 */
+.curl{
+  filter:drop-shadow(-9px -7px 16px rgba(0,0,0,.48))
+         drop-shadow(-2px -2px 4px rgba(0,0,0,.34));
+}
+
+/* ⑧ 边缘毛刺：极细的纤维丝从边上伸出来 */
+.paper-bg{
+  outline:1px solid transparent;
+}
+
+/* ⑨ 换用真实纹理：程序化纸纹到此为止，改用生成照片 */
+.paper-bg{
+  background-color:#b9b6a0;
+  background-image:url("assets/paper.png");
+  background-size:114% 112%;
+  background-position:50% 48%;
+  background-repeat:no-repeat;
+  filter:url(#tornEdge) saturate(.92) contrast(1.04) brightness(.98);
+}
+/* 照片里已有霉斑/水渍，程序层减弱 */
+.mold{opacity:.30;}
+.water{opacity:.35;}
+.gill{opacity:.16;}
+.palm{opacity:.32;}
+.film{opacity:.24;}
+/* 纤维凹凸层在照片上改为极轻 */
+.paper-bg::before{opacity:.22;}
+/* 默认的纸色渐变不再需要（被照片覆盖） */
+
+/* ⑩ 补光：给照片一个受光面／背光面，别让它是平的 */
+.paper-bg::after{
+  background:
+    radial-gradient(ellipse 70% 66% at 46% 46%,
+      rgba(0,0,0,0) 52%,
+      rgba(52,70,50,.16) 80%,
+      rgba(34,54,42,.34) 94%,
+      rgba(22,42,32,.50) 100%),
+    linear-gradient(124deg,
+      rgba(255,255,242,.12) 0%,
+      rgba(255,255,242,.03) 32%,
+      rgba(0,0,0,0) 52%,
+      rgba(26,42,34,.10) 78%,
+      rgba(18,34,28,.18) 100%);
+  mix-blend-mode:normal;
+}
+
+/* ⑪ 打字的人手不稳：每行基线有极微小的错位 */
+.depo tr:nth-child(1) td,.depo tr:nth-child(1) th{transform:translateY(.25px);}
+.depo tr:nth-child(2) td,.depo tr:nth-child(2) th{transform:translateY(-.35px);}
+.depo tr:nth-child(3) td,.depo tr:nth-child(3) th{transform:translateY(.15px);}
+.depo tr:nth-child(4) td,.depo tr:nth-child(4) th{transform:translateY(-.2px);}
+.depo tr:nth-child(5) td,.depo tr:nth-child(5) th{transform:translateY(.3px);}
+.depo td,.depo th{will-change:transform;}
+.depo{border-spacing:0;}
