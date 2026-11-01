@@ -208,26 +208,26 @@ var PAGES = [
   title: '歸　　檔',
   sub: '民國十七年十一月三日　　歸檔員　記',
   lines: [
-    { y:170, t:'本卷所附，凡六件。',              at:1.0,  k:'b' },
-    { y:198, t:'公函一件、照片三張（實存二張）、',  at:1.8,  k:'l' },
-    { y:222, t:'筆錄六份、海圖一張、勘測表一份、譯稿四頁。', at:2.6, k:'l' },
-    { y:254, t:'均經核對，並無缺漏。',            at:3.5,  k:'b' },
+    { y:170, t:'本卷所附，凡六件。',              at:0.75,  k:'b' },
+    { y:198, t:'公函一件、照片三張（實存二張）、',  at:1.35,  k:'l' },
+    { y:222, t:'筆錄六份、海圖一張、勘測表一份、譯稿四頁。', at:1.95, k:'l' },
+    { y:254, t:'均經核對，並無缺漏。',            at:2.62,  k:'b' },
 
-    { y:294, t:'惟有一事，未能歸檔。',            at:4.4,  k:'r' },
+    { y:294, t:'惟有一事，未能歸檔。',            at:3.30,  k:'r' },
 
-    { y:332, t:'十月十四日，譯員王某來見。',      at:5.4,  k:'b' },
-    { y:358, t:'問何事。不語。',                  at:6.0,  k:'b' },
-    { y:384, t:'取紙筆，書四字：',                at:6.6,  k:'b' },
+    { y:332, t:'十月十四日，譯員王某來見。',      at:4.05,  k:'b' },
+    { y:358, t:'問何事。不語。',                  at:4.50,  k:'b' },
+    { y:384, t:'取紙筆，書四字：',                at:4.95,  k:'b' },
 
-    { y:440, t:'他們在等。',                      at:7.6,  k:'c' },
+    { y:440, t:'他們在等。',                      at:5.70,  k:'c' },
 
-    { y:486, t:'問：誰在等。',                    at:10.2, k:'b' },
-    { y:512, t:'答：船上的人。',                  at:10.9, k:'b' },
-    { y:538, t:'曰：船上無人，船已失。',          at:11.6, k:'b' },
-    { y:564, t:'答：船在。人在。都在等。',        at:12.3, k:'b' },
+    { y:486, t:'問：誰在等。',                    at:7.65, k:'b' },
+    { y:512, t:'答：船上的人。',                  at:8.18, k:'b' },
+    { y:538, t:'曰：船上無人，船已失。',          at:8.70, k:'b' },
+    { y:564, t:'答：船在。人在。都在等。',        at:9.23, k:'b' },
 
-    { y:606, t:'言畢，伏案良久，不動。',          at:13.4, k:'b' },
-    { y:632, t:'余視其目，——',                   at:14.2, k:'b' }
+    { y:606, t:'言畢，伏案良久，不動。',          at:10.05, k:'b' },
+    { y:632, t:'余視其目，——',                   at:10.65, k:'b' }
   ]
 }
 ];
@@ -992,16 +992,16 @@ function rArchive(p){
   }
 
   /* ---------- 掐断 ---------- */
-  if (el > 14.9 && el < 15.7){
-    var blk = Math.min(1, (el-14.9)/0.40);
+  if (el > 10.9 && el < 11.7){
+    var blk = Math.min(1, (el-10.9)/0.40);
     sx.fillStyle = 'rgba(4,5,4,' + (blk*0.99).toFixed(3) + ')';
     sx.fillRect(0,0,W,H);
   }
 
   /* ---------- 眼睛：整张死定，只有瞳孔在走 ---------- */
   var imC = IMGS.eyeClean, imP = IMGS.pupil2;
-  if (imC && imC.complete && el > 15.4){
-    var tIn = el - 15.4;
+  if (imC && imC.complete && el > 11.4){
+    var tIn = el - 11.4;
     var a2 = Math.min(1, tIn/0.16);
     var pop = Math.max(0, 1 - tIn/0.42);      /* 只有入场这一下会动整体 */
 
@@ -1018,15 +1018,15 @@ function rArchive(p){
     sx.filter = 'none';
 
     /* 瞳孔：沿固定路径一直走，节奏 0.62 秒一步，0.055 秒滑到位 */
-    var PATH = [[0,0],[-24,-9],[22,-11],[26,8],[-20,10],[0,0],[-15,-7],[17,7]];
+    var PATH = [[0,0],[-32,-12],[30,-14],[34,10],[-28,13],[0,0],[-20,-9],[22,9]];
     var STEP = 0.62, MOVE = 0.055;
     var gx = 0, gy = 0;
 
-    if (el >= 21.0){
+    if (el >= 16.6){
       gx = 0; gy = 0;                          /* 锁定：回正，停住 */
-    } else if (el > 15.9){
-      var idx = Math.floor((el-15.9)/STEP);
-      var fr = ((el-15.9) - idx*STEP)/STEP;
+    } else if (el > 12.0){
+      var idx = Math.floor((el-12.0)/STEP);
+      var fr = ((el-12.0) - idx*STEP)/STEP;
       var pz = Math.min(1, fr*STEP/MOVE);
       var f0 = PATH[idx % PATH.length];
       var f1 = PATH[(idx+1) % PATH.length];
@@ -1041,15 +1041,15 @@ function rArchive(p){
     }
 
     /* 锁定那一下：过曝 */
-    if (el > 21.0 && el < 21.45){
-      var fl = 1 - (el-21.0)/0.45;
+    if (el > 16.6 && el < 17.05){
+      var fl = 1 - (el-16.6)/0.45;
       sx.globalAlpha = fl*0.24;
       sx.fillStyle = '#d2dbc6';
       sx.fillRect(0,0,W,H);
     }
 
     /* 眨眼 */
-    var blinks = [25.0, 29.2, 33.8];
+    var blinks = [20.2, 24.4, 28.6];
     for (var bi=0; bi<blinks.length; bi++){
       var dt2 = el - blinks[bi];
       if (dt2 > -0.13 && dt2 < 0.13){
@@ -1066,7 +1066,7 @@ function rArchive(p){
   }
 
   /* ---------- 收尾 ---------- */
-  if (el >= 30){
+  if (el >= 23){
     var a3 = Math.min(1, (el-30)/2.2);
     sx.font = '13px ' + SERIF;
     sx.fillStyle = 'rgba(212,210,192,' + (0.60*a3).toFixed(2) + ')';
@@ -1075,7 +1075,7 @@ function rArchive(p){
     sx.textAlign = 'left';
   }
 
-  if (el >= 36){
+  if (el >= 28){
     var a4 = Math.min(1, (el-36)/2.5);
     sx.font = '11px ' + SERIF;
     sx.fillStyle = 'rgba(154,43,24,' + (0.46*a4).toFixed(2) + ')';
@@ -1225,6 +1225,8 @@ function rebuildGrad(){
 }
 
 function boot(){
+  var sp = parseInt((location.search.match(/[?&]p=(\d+)/)||[])[1]||'0',10)-1;
+  if (sp >= 0 && sp < PAGES.length) cur = sp;
   resize();
   ctx2 = out.getContext('2d');
   if (!ctx2){ say('no canvas2d'); return false; }
