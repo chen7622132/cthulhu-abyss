@@ -135,59 +135,149 @@ function handText(txt, x, y, size, alpha, seed, tilt){
 }
 
 function drawDoc(){
-  /* 纸 */
-  ctx.fillStyle = '#d9cfae';
+  /* ---------- 桌面：和第 2 页同一个房间 ---------- */
+  var dg = ctx.createLinearGradient(0,0,0,H);
+  dg.addColorStop(0,   '#241d14');
+  dg.addColorStop(0.42,'#2e2618');
+  dg.addColorStop(1,   '#191309');
+  ctx.fillStyle = dg;
   ctx.fillRect(0,0,W,H);
 
-  /* 蓝格：竖线 + 横线，都有一点抖 */
-  var colW = (W - 56) / 9;
+  /* 木纹：粗、淡 */
+  for (var i=0;i<22;i++){
+    var y0 = rnd(i*5.1) * H;
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(20,15,9,' + (0.08 + rnd(i*7.3)*0.12).toFixed(2) + ')';
+    ctx.lineWidth = 1 + rnd(i*11)*2.4;
+    ctx.moveTo(0, y0);
+    for (var x=0;x<=W;x+=24){
+      var ww = 3 + rnd(i*3)*7;
+      ctx.lineTo(x, y0 + Math.sin(x*0.011 + i*1.7)*ww + Math.sin(x*0.047+i*4.1)*2);
+    }
+    ctx.stroke();
+  }
+
+  /* 灯：左上 */
+  var lg = ctx.createRadialGradient(W*0.16, H*0.10, 8, W*0.16, H*0.10, H*0.62);
+  lg.addColorStop(0,   'rgba(255,216,156,.17)');
+  lg.addColorStop(0.45,'rgba(240,198,136,.055)');
+  lg.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = lg; ctx.fillRect(0,0,W,H);
+
+  /* ---------- 纸：放在桌上的一张，不是铺满 ---------- */
+  var m = 26;
+  var P = [
+    [m + 4, 96],
+    [W - m - 2, 104],
+    [W - m + 4, H - 78],
+    [m - 2, H - 86]
+  ];
+
+  /* 落影：往右下，两层（近影硬、远影软） */
   ctx.save();
-  ctx.strokeStyle = 'rgba(96,112,146,.30)';
-  ctx.lineWidth = 0.8;
-  for (var i=0;i<=9;i++){
-    var x = 28 + i*colW;
-    ctx.beginPath();
-    for (var y=0;y<=H;y+=26){
-      var jx = (rnd(i*13+y*0.3)-0.5)*0.7;
-      if (y===0) ctx.moveTo(x+jx, y); else ctx.lineTo(x+jx, y);
-    }
-    ctx.stroke();
-  }
-  ctx.strokeStyle = 'rgba(96,112,146,.20)';
-  for (var y2=84;y2<H;y2+=colW*0.92){
-    ctx.beginPath();
-    for (var x2=0;x2<=W;x2+=30){
-      var jy = (rnd(y2*0.7+x2*0.2)-0.5)*0.7;
-      if (x2===0) ctx.moveTo(x2, y2+jy); else ctx.lineTo(x2, y2+jy);
-    }
-    ctx.stroke();
-  }
+  ctx.beginPath();
+  ctx.moveTo(P[0][0]+7, P[0][1]+8);
+  ctx.lineTo(P[1][0]+9, P[1][1]+9);
+  ctx.lineTo(P[2][0]+11, P[2][1]+10);
+  ctx.lineTo(P[3][0]+9, P[3][1]+9);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,0,0,.52)';
+  ctx.filter = 'blur(7px)';
+  ctx.fill();
+  ctx.filter = 'none';
   ctx.restore();
 
-  /* 纸的纤维 */
-  for (var f=0;f<700;f++){
-    ctx.fillStyle = rnd(f*3) < .5 ? 'rgba(120,104,74,.05)' : 'rgba(255,252,240,.14)';
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(P[0][0]+2, P[0][1]+3);
+  ctx.lineTo(P[1][0]+3, P[1][1]+3);
+  ctx.lineTo(P[2][0]+3, P[2][1]+4);
+  ctx.lineTo(P[3][0]+2, P[3][1]+3);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,0,0,.46)';
+  ctx.fill();
+  ctx.restore();
+
+  /* 纸面 */
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(P[0][0], P[0][1]);
+  for (var q=1;q<P.length;q++) ctx.lineTo(P[q][0], P[q][1]);
+  ctx.closePath();
+  ctx.clip();
+
+  /* 纸边毛边：沿四边啃出不规则的缺口 */
+  for (var e=0;e<70;e++){
+    var t2 = rnd(e*3.7);
+    var side = Math.floor(rnd(e*7.1)*4);
+    var ex, ey, er = 1.2 + rnd(e*11)*3.4;
+    if (side===0){ ex = m + t2*(W-2*m); ey = P[0][1] + rnd(e*13)*2; }
+    else if (side===1){ ex = W-m + rnd(e*13)*2; ey = 100 + t2*(H-190); }
+    else if (side===2){ ex = m + t2*(W-2*m); ey = P[2][1] - rnd(e*13)*2; }
+    else { ex = m - rnd(e*13)*2; ey = 100 + t2*(H-190); }
+    ctx.fillStyle = 'rgba(26,20,12,' + (0.30 + rnd(e*17)*0.34).toFixed(2) + ')';
+    ctx.beginPath(); ctx.ellipse(ex, ey, er, er*0.7, rnd(e)*3, 0, Math.PI*2); ctx.fill();
+  }
+
+  /* 纸底色 */
+  var pg = ctx.createLinearGradient(0, P[0][1], 0, P[2][1]);
+  pg.addColorStop(0,   '#cfc4a0');
+  pg.addColorStop(0.45,'#c6ba94');
+  pg.addColorStop(1,   '#b6aa84');
+  ctx.fillStyle = pg;
+  ctx.fillRect(0,0,W,H);
+
+  /* 蓝格 */
+  var colW = (W - 2*m - 24) / 9;
+  for (var c2=0;c2<=9;c2++){
+    var x2 = m + 12 + c2*colW + (rnd(c2*7.3)-0.5)*3.2;     /* 每一条位置都偏一点 */
+    ctx.strokeStyle = 'rgba(92,108,142,' + (0.19 + rnd(c2*3.7)*0.15).toFixed(2) + ')';
+    ctx.lineWidth = 0.65 + rnd(c2*5.1)*0.55;                /* 粗细也不匀 */
+    /* 断成几截 —— 印刷的、不是画的 */
+    var yy = 60;
+    while (yy < H){
+      var seg = 90 + rnd(c2*11+yy*0.1)*220;
+      ctx.beginPath();
+      for (var y2=yy; y2<Math.min(H, yy+seg); y2+=24){
+        var jx = (rnd(c2*13+y2*0.31)-0.5)*0.9;
+        if (y2===yy) ctx.moveTo(x2+jx, y2); else ctx.lineTo(x2+jx, y2);
+      }
+      ctx.stroke();
+      yy += seg + 14 + rnd(c2*17+yy)*60;
+    }
+  }
+  ctx.strokeStyle = 'rgba(92,108,142,.17)';
+  for (var y3=110;y3<H;y3+=colW*0.94){
+    ctx.beginPath();
+    for (var x3=0;x3<=W;x3+=28){
+      var jy = (rnd(y3*0.7+x3*0.23)-0.5)*0.9;
+      if (x3===0) ctx.moveTo(x3, y3+jy); else ctx.lineTo(x3, y3+jy);
+    }
+    ctx.stroke();
+  }
+
+  /* 纸纤维 */
+  for (var f=0;f<620;f++){
+    ctx.fillStyle = rnd(f*3) < .5 ? 'rgba(112,96,66,.055)' : 'rgba(255,250,232,.14)';
     ctx.fillRect(rnd(f*7)*W, rnd(f*11)*H, 1.2, 1.2);
   }
 
-  /* 正文：整行倾斜，行气才连得住 */
-  var y0 = 132;
+  /* 正文 */
+  var y0 = 148;
   for (var d=0; d<DOC.length; d++){
     var it = DOC[d];
-    if (it.y) y0 = it.y + 40;
+    if (it.y) y0 = it.y + 56;
     if (it.t){
-      var tilt = (rnd(d*5.7) - 0.5) * 0.042;          /* 每行整体歪，而且比刚才大得多 */
+      var tilt = (rnd(d*5.7) - 0.5) * 0.042;
       var xoff = (rnd(d*9.1) - 0.5) * 5;
-      handText(it.t, 42 + xoff, y0, it.s, it.ink, d*37 + 5, tilt);
-
-      /* 有一处被划掉了 —— 写错了，作者自己划的 */
+      handText(it.t, m + 16 + xoff, y0, it.s, it.ink, d*37 + 5, tilt);
       if (it.fix){
         ctx.save();
         ctx.strokeStyle = 'rgba(30,24,14,.42)';
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(42 + it.fix[0], y0 - it.s*0.34);
-        ctx.lineTo(42 + it.fix[0] + it.fix[1], y0 - it.s*0.24);
+        ctx.moveTo(m + 16 + it.fix[0], y0 - it.s*0.34);
+        ctx.lineTo(m + 16 + it.fix[0] + it.fix[1], y0 - it.s*0.24);
         ctx.stroke();
         ctx.restore();
       }
@@ -195,38 +285,65 @@ function drawDoc(){
     y0 += it.gap;
   }
 
-  /* 一道折痕：纸折过，纤维断了，是亮的 */
-  var fy = H * 0.52;
-  var fg = ctx.createLinearGradient(0, fy-9, 0, fy+9);
+  /* 折痕 */
+  var fy = H * 0.50;
+  var fg = ctx.createLinearGradient(0, fy-8, 0, fy+8);
   fg.addColorStop(0,   'rgba(255,252,236,0)');
-  fg.addColorStop(0.42,'rgba(255,252,236,.16)');
-  fg.addColorStop(0.5, 'rgba(255,252,236,.34)');
-  fg.addColorStop(0.58,'rgba(96,82,54,.20)');
-  fg.addColorStop(1,   'rgba(96,82,54,0)');
+  fg.addColorStop(0.44,'rgba(255,252,236,.15)');
+  fg.addColorStop(0.5, 'rgba(255,252,236,.30)');
+  fg.addColorStop(0.56,'rgba(92,78,50,.19)');
+  fg.addColorStop(1,   'rgba(92,78,50,0)');
   ctx.fillStyle = fg;
-  ctx.fillRect(0, fy-9, W, 18);
+  ctx.fillRect(0, fy-8, W, 16);
 
-  /* 右下角的时间戳：盖章，不是手写 */
+  /* 纸上的光：左上亮，右下暗 —— 方向要和桌面一致 */
+  var lg2 = ctx.createRadialGradient(W*0.20, H*0.14, 20, W*0.20, H*0.14, H*0.95);
+  lg2.addColorStop(0,   'rgba(255,236,196,.13)');
+  lg2.addColorStop(0.42,'rgba(255,236,196,.035)');
+  lg2.addColorStop(1,   'rgba(40,30,16,.30)');
+  ctx.fillStyle = lg2; ctx.fillRect(0,0,W,H);
+
+  /* 纸边压暗 */
+  var ev = ctx.createRadialGradient(W*.5, H*.46, W*.36, W*.5, H*.5, W*.92);
+  ev.addColorStop(0,'rgba(60,48,28,0)');
+  ev.addColorStop(1,'rgba(46,36,20,.34)');
+  ctx.fillStyle = ev; ctx.fillRect(0,0,W,H);
+
+  ctx.restore();
+
+  /* 纸的边缘：一条亮线，纸比桌面高一点 */
+  ctx.beginPath();
+  ctx.moveTo(P[0][0], P[0][1]);
+  for (var q2=1;q2<P.length;q2++) ctx.lineTo(P[q2][0], P[q2][1]);
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(238,230,204,.30)';
+  ctx.lineWidth = 1.1;
+  ctx.stroke();
+
+  /* 收文戳 */
   ctx.save();
-  ctx.translate(W - 96, H - 116);
-  ctx.rotate(-0.03);
-  ctx.strokeStyle = 'rgba(126,52,30,.40)';
+  ctx.translate(P[2][0]-96, P[2][1]-118);
+  ctx.rotate(-0.035);
+  /* 印泥是有厚度的：先在右下方留一道极淡的影 */
+  ctx.fillStyle = 'rgba(52,36,18,.16)';
+  ctx.fillRect(1.6, 2.0, 76, 26);
+  ctx.fillRect(3.0, 3.4, 76, 26);
+  ctx.strokeStyle = 'rgba(122,48,28,.44)';
   ctx.lineWidth = 1.1;
   ctx.strokeRect(0,0,76,26);
   ctx.font = '12px ' + SERIF;
-  ctx.fillStyle = 'rgba(126,52,30,.52)';
+  ctx.fillStyle = 'rgba(122,48,28,.56)';
   ctx.fillText('收到　四月十一', 5, 17);
   ctx.restore();
 
-  /* 四角压暗 */
-  var vg = ctx.createRadialGradient(W*.5,H*.46,H*.26,W*.5,H*.5,H*.94);
+  /* ---------- 全画面收尾：和石函页同一层空气 ---------- */
+  var vg = ctx.createRadialGradient(W*.5,H*.46,H*.22,W*.5,H*.5,H*.94);
   vg.addColorStop(0,'rgba(0,0,0,0)');
-  vg.addColorStop(1,'rgba(30,22,10,.42)');
+  vg.addColorStop(1,'rgba(0,0,0,.66)');
   ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
 
-  /* 颗粒 */
-  for (var g=0;g<160;g++){
-    ctx.fillStyle = Math.random()<.5 ? 'rgba(255,250,232,.07)' : 'rgba(80,64,40,.05)';
+  for (var gg=0;gg<55;gg++){
+    ctx.fillStyle = Math.random()<.5 ? 'rgba(255,250,232,.030)' : 'rgba(0,0,0,.035)';
     ctx.fillRect(Math.random()*W, Math.random()*H, 1.2, 1.2);
   }
 }
@@ -417,9 +534,9 @@ function draw(){
 }
 
 function updateTip(){
-  if (page === 0) tip.textContent = '上滑　翻頁';
-  else if (flip < 0.02) tip.textContent = '按住石函　往下拖';
-  else tip.textContent = '上滑　翻頁';
+  if (page === 0) tip.textContent = '續';
+  else if (flip < 0.02) tip.textContent = '按住　掀看背面';
+  else tip.textContent = '續';
 }
 
 /* ============================================================
