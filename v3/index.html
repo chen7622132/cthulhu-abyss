@@ -741,10 +741,16 @@ function rDepo(p){
     for (var j=0;j<ql.length;j++){ sx.fillText(ql[j], PAD+34, y + j*20); }
     y += ql.length*20;
 
-    var al = wrapText(r.a, CW-34, '14px ' + SERIF);
-    sx.font = '14px ' + SERIF;
-    sx.fillStyle = 'rgba(28,24,17,.92)';
-    for (var k=0;k<al.length;k++){ sx.fillText(al[k], PAD+34, y + k*21); }
+    var aFont = (i === 5) ? ('14.5px ' + KAI) : ('14px ' + SERIF);
+    var al = wrapText(r.a, CW-34, aFont);
+    sx.font = aFont;
+    sx.fillStyle = (i === 5) ? 'rgba(24,20,14,.94)' : 'rgba(28,24,17,.92)';
+    for (var k=0;k<al.length;k++){
+      /* 第六份按了手印的人，字是抖的 */
+      var jx = (i === 5) ? (srnd(k*7+39)-0.5)*1.6 : 0;
+      var jy = (i === 5) ? (srnd(k*11+5)-0.5)*1.1 : 0;
+      sx.fillText(al[k], PAD+34+jx, y + k*21 + jy);
+    }
     y += al.length*21;
 
     if (r.note){
@@ -775,9 +781,93 @@ function rDepo(p){
   stainBlot(W-PAD-24, 250, 42, 0.13);
   stainBlot(PAD+18, H-210, 34, 0.08);
 
+  /* ===== 下半：一张贴上去的纸片 —— 第七份，撕了 ===== */
+  var bx = PAD - 5, by = H - 224, bw = 306, bh = 128;
+  sx.save();
+  sx.translate(bx + bw/2, by + bh/2);
+  sx.rotate(-0.019);
+  sx.translate(-(bx + bw/2), -(by + bh/2));
+
+  /* 贴上去的纸比原页略浅 */
+  sx.beginPath();
+  sx.moveTo(bx, by + 1);
+  sx.lineTo(bx + bw - 2, by);
+  for (var ti2=0; ti2<=16; ti2++){      /* 右缘撕口 */
+    var ty2 = by + bh*ti2/16;
+    sx.lineTo(bx + bw - (ti2%2 ? 6.5 : 1.5) - srnd(ti2*7+3)*4.5, ty2);
+  }
+  sx.lineTo(bx + 1.5, by + bh);
+  sx.closePath();
+  sx.fillStyle = 'rgba(206,198,172,.155)';
+  sx.fill();
+  sx.strokeStyle = 'rgba(236,228,202,.20)';
+  sx.lineWidth = 0.85;
+  sx.stroke();
+
+  /* 撕口内侧一丝亮边 —— 纤维被扯断的反光 */
+  sx.beginPath();
+  for (var ti3=0; ti3<=16; ti3++){
+    var ty3 = by + bh*ti3/16;
+    var tx3 = bx + bw - (ti3%2 ? 6.5 : 1.5) - srnd(ti3*7+3)*4.5;
+    if (ti3===0) sx.moveTo(tx3, ty3); else sx.lineTo(tx3, ty3);
+  }
+  sx.strokeStyle = 'rgba(240,232,206,.34)';
+  sx.lineWidth = 1.0;
+  sx.stroke();
+
+  /* 纸片上的字 */
+  sx.font = '9.5px ' + MONO;
+  sx.fillStyle = 'rgba(60,52,38,.66)';
+  sx.fillText('〇〇七　十月十四日　補錄', bx + 10, by + 17);
+
+  var slipRows = [
+    ['問：', '那夜，爾在廟前作甚？'],
+    ['答：', '我沒有去廟前。'],
+    ['問：', '有人見爾。'],
+    ['答：', '']
+  ];
+  for (var sr2=0; sr2<slipRows.length; sr2++){
+    sx.font = '9.5px ' + MONO;
+    sx.fillStyle = 'rgba(60,52,38,.60)';
+    sx.fillText(slipRows[sr2][0], bx + 10, by + 38 + sr2*22);
+    sx.font = '12.5px ' + KAI;
+    sx.fillStyle = 'rgba(24,20,14,.88)';
+    sx.fillText(slipRows[sr2][1], bx + 36, by + 38 + sr2*22);
+  }
+
+  /* 最后那个"答"后面：空的，但纸上有一枚指印压着 */
+  fingerprint(bx + 132, by + 100, 17, 21, 53, 0.34);
+
+  /* 右下角一行极小的铅笔字 */
+  sx.save();
+  sx.translate(bx + bw - 76, by + bh - 12);
+  sx.rotate(-0.045);
+  sx.font = '8px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.68)';
+  sx.fillText('原頁已撕', 0, 0);
+  sx.restore();
+
+  sx.restore();
+
+  /* ===== 骑缝：半枚红章压在纸边，只剩一半 ===== */
+  sx.save();
+  sx.globalAlpha = 0.50;
+  sx.strokeStyle = 'rgba(116,26,10,.95)';
+  sx.lineWidth = 2.0;
+  sx.beginPath();
+  sx.arc(0, H*0.415, 25, -Math.PI/2, Math.PI/2);
+  sx.stroke();
+  sx.beginPath();
+  sx.arc(0, H*0.415, 20, -Math.PI/2, Math.PI/2);
+  sx.stroke();
+  sx.font = '12px ' + SERIF;
+  sx.fillStyle = 'rgba(116,26,10,.9)';
+  sx.fillText('密', 3.5, H*0.415 + 4.5);
+  sx.restore();
+
   sx.font = '11px ' + MONO;
   sx.fillStyle = C_FAINT;
-  sx.fillText(p.tail, PAD, H-72);
+  sx.fillText(p.tail, PAD, H-52);
 }
 
 /* ---------- 04 海图 ---------- */
