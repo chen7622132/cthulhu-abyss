@@ -346,6 +346,28 @@ var PAGES = [
 },
 
 
+
+/* -------- 14 私记 -------- */
+{
+  kind: 'manuscript',
+  stamp: '附　件',
+  reg: '10 · 17',
+  title: '私　　記',
+  sub: '（此頁不存卷。於譯員王某寓所枕下得之。）',
+  blot: true,
+  paras: [
+    '我至今仍不敢斷言，十月十七日那一夜，我在燈下所見的，究竟是我自己寫下的字，還是別的什麼借了我的手、用了我的墨、坐在我這張椅子上寫下的東西。',
+    '我譯那一頁，凡四回。第一回所用的時間，我可以起誓，不超過一盞茶的工夫；第二回，我從掌燈坐到雞鳴；第三回，我不知道——因为我記得我曾三次起身添油，而燈芯始終未曾短過。',
+    '我是讀過書的人。在海關做事十一年，譯過洋商的提單、洋醫的藥方、洋教士的辯詞。我從未懷疑過：一個字總有一個意思，一句話總有一句話所指的東西。',
+    '但現在我知道（我用「知道」這個詞，是出於一種連我自己也說不清的習慣，因為它所指的那個狀態，早已不屬於我了）——有些句子不是用來讀的，是用來讀你的。',
+    '第四回，我寫下的那三個字，不是我譯的。',
+    '我把紙翻過來，想看看背面有沒有壓痕。',
+    '背面有字。',
+    '是我寫的。',
+    '是我明天要寫的。'
+  ]
+},
+
 /* -------- 13 电报 -------- */
 {
   kind: 'telegram',
@@ -1165,6 +1187,100 @@ function rGroup(p){
   sx.fillText('數之，六。再數，六。', 0, 0);
   sx.textAlign = 'left';
   sx.restore();
+}
+
+
+
+/* 手写：逐字落笔 —— 大小、基线、角度、浓淡都不齐，才是人写的 */
+function handText(txt, x, y, size, col, seed, alpha){
+  var cx = x;
+  for (var k=0;k<txt.length;k++){
+    var ch = txt.charAt(k);
+    if (ch === '　' || ch === ' '){ cx += size * 0.62; continue; }
+    var fs  = size * (0.82 + srnd(seed + k*3.1) * 0.34);
+    var dy  = (srnd(seed + k*7.3) - 0.5) * size * 0.22;
+    var rot = (srnd(seed + k*11.7) - 0.5) * 0.15;
+    var al  = (alpha === undefined ? 0.88 : alpha) + (srnd(seed + k*13.9) - 0.5) * 0.18;
+    if (al < 0.55) al = 0.55;
+    if (al > 1) al = 1;
+    sx.save();
+    sx.translate(cx, y + dy);
+    sx.rotate(rot);
+    sx.font = fs.toFixed(1) + 'px ' + KAI;
+    sx.fillStyle = 'rgba(' + col + ',' + al.toFixed(2) + ')';
+    sx.fillText(ch, 0, 0);
+    sx.restore();
+    cx += fs * 1.03 + (srnd(seed + k*17.3) - 0.5) * 1.8;
+  }
+}
+
+/* ---------- 私记：此地只有这一页是"人"写的 ---------- */
+function rManuscript(p){
+  var y = 96;
+
+  /* 标题：写得比别处用力 */
+  sx.save();
+  sx.translate(PAD, y);
+  sx.rotate(-0.015);
+  sx.font = '19px ' + KAI;
+  sx.fillStyle = 'rgba(24,20,14,.90)';
+  sx.fillText(p.title, 0, 0);
+  sx.restore();
+
+  sx.font = '9.5px ' + KAI;
+  sx.fillStyle = 'rgba(74,66,50,.72)';
+  sx.fillText(p.sub, PAD, y + 20);
+
+  y = 150;
+
+  for (var i=0;i<p.paras.length;i++){
+    var t = p.paras[i];
+    var isLast = (i === p.paras.length-1);
+    var fnt = isLast ? ('16px ' + KAI) : ('13.5px ' + KAI);
+    var lh  = isLast ? 34 : 25;
+    var lines = wrapText(t, CW - 6, fnt);
+
+    for (var j=0;j<lines.length;j++){
+      if (y > H - 130) break;
+      var sz  = isLast ? 17 : 14;
+      var col = isLast ? '96,22,10' : '22,18,12';
+      /* 越写越抖：行位、行角、字距都在偏，越到后面越厉害 */
+      var ramp = 1 + i*0.9 + j*0.18;
+      var jx = (srnd(i*13 + j*7 + 3) - 0.5) * (1.6 * ramp);
+      var jy = (srnd(i*29 + j*11 + 5) - 0.5) * (1.1 * ramp);
+      var rot = (srnd(i*7 + j*3 + 11) - 0.5) * 0.016 * ramp;
+      sx.save();
+      sx.translate(PAD + jx, y + jy);
+      sx.rotate(rot);
+      handText(lines[j], 0, 0, sz, col, i*100 + j*17 + 5, isLast ? 0.94 : 0.90);
+      sx.restore();
+      y += lh * (0.90 + srnd(i*5 + j*3 + 7) * 0.22);
+    }
+    y += (isLast ? 6 : 13);
+  }
+
+  /* 末尾：笔停在这儿，纸被划破了一点 */
+  sx.strokeStyle = 'rgba(22,18,12,.55)';
+  sx.lineWidth = 1.4;
+  sx.beginPath();
+  sx.moveTo(PAD + 4, y - 6);
+  sx.lineTo(PAD + 26, y - 2);
+  sx.stroke();
+
+  /* 一处涂掉的字，涂得很用力 */
+  if (p.blot){
+    sx.fillStyle = 'rgba(16,13,9,.90)';
+    sx.beginPath();
+    sx.ellipse(PAD + 120, 300, 34, 7.5, -0.02, 0, Math.PI*2);
+    sx.fill();
+    sx.fillStyle = 'rgba(16,13,9,.72)';
+    sx.beginPath();
+    sx.ellipse(PAD + 126, 304, 30, 6, 0.03, 0, Math.PI*2);
+    sx.fill();
+  }
+
+  /* 右下：一枚拇指印，印泥已经洇开了 */
+  fingerprint(W - PAD - 34, H - 200, 22, 28, 71, 0.30);
 }
 
 /* ---------- 13 电报 ---------- */
@@ -2814,6 +2930,7 @@ function drawSource(tc){
   if (p.kind === 'check') rCheck(p);
   if (p.kind === 'group') rGroup(p);
   if (p.kind === 'telegram') rTelegram(p);
+  if (p.kind === 'manuscript') rManuscript(p);
   if (p.kind === 'note')  rNote(p);
   if (p.kind === 'archive') rArchive(p);
 
