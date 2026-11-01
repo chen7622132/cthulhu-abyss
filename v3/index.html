@@ -1049,6 +1049,38 @@ function rPhoto(p){
   drawPhoto('photo4', PAD,      gy+134,  cw, ch, -0.009);
   drawPhoto('photo5', PAD+200,  gy+134,  cw, ch,  0.017);
 
+  /* ===== 第四张（灘上）的角落：多了一个人 ===== */
+  sx.save();
+  var fx = PAD + 148, fy = gy + 134 + 74;      /* 脚的位置 */
+  sx.globalAlpha = 0.42;
+  /* 影子先落地 */
+  sx.fillStyle = 'rgba(6,6,5,1)';
+  sx.beginPath();
+  sx.ellipse(fx, fy + 4, 9, 3.2, 0, 0, Math.PI*2);
+  sx.fill();
+  /* 身体：一团比周围略深的直筒 */
+  sx.fillStyle = 'rgba(8,7,6,1)';
+  sx.beginPath();
+  sx.moveTo(fx - 5.5, fy);
+  sx.quadraticCurveTo(fx - 6.5, fy - 20, fx - 4.5, fy - 30);
+  sx.lineTo(fx + 4.5, fy - 30);
+  sx.quadraticCurveTo(fx + 6.5, fy - 20, fx + 5.5, fy);
+  sx.closePath();
+  sx.fill();
+  /* 头 */
+  sx.beginPath();
+  sx.ellipse(fx, fy - 36, 4.6, 5.2, 0, 0, Math.PI*2);
+  sx.fill();
+  /* 边缘一点点光：不是全黑，纸的反光让它"浮"出来了 */
+  sx.globalAlpha = 0.16;
+  sx.strokeStyle = 'rgba(230,222,196,1)';
+  sx.lineWidth = 0.9;
+  sx.beginPath();
+  sx.moveTo(fx - 5.2, fy - 2);
+  sx.quadraticCurveTo(fx - 6.2, fy - 20, fx - 4.2, fy - 30);
+  sx.stroke();
+  sx.restore();
+
   sx.font = '9px ' + KAI;
   sx.fillStyle = 'rgba(74,66,50,.64)';
   sx.fillText('第二張　網具', PAD, gy+ch+13);
