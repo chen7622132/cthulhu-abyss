@@ -71,7 +71,7 @@ var DOC = [
   { t:'', s:14, y:0, gap:22, ink:0 },
   { t:'本日掘至四尺，得石函一具。', s:15, y:110, gap:30, ink:0.90 },
   { t:'函長一尺二寸，廣八寸，高一尺。盝頂。', s:14, y:0, gap:27, ink:0.86 },
-  { t:'四角有鎖，鎖已鏽。', s:14, y:0, gap:27, ink:0.86 },
+  { t:'四角有鎖，鎖已鏽。', s:14, y:0, gap:27, ink:0.86, fix:[62,26] },
   { t:'', s:14, y:0, gap:26, ink:0 },
   { t:'函體完好。鎖扣未動。', s:16, y:0, gap:31, ink:0.94, strong:true },
   { t:'周圍土層無擾動。', s:16, y:0, gap:31, ink:0.94, strong:true },
@@ -85,23 +85,52 @@ var SERIF = '"Songti SC","Noto Serif CJK SC","STSong",serif';
 var KAI   = '"Kaiti SC","STKaiti","KaiTi","Songti SC",serif';
 
 /* 逐字手写：大小、基线、角度都偏 */
-function handText(txt, x, y, size, alpha, seed){
+function handText(txt, x, y, size, alpha, seed, tilt){
   var cx = x;
+  var drift = 0;                     /* 行气：一行写下来，会慢慢往下沉或往上飘 */
+  var baseAng = tilt || 0;           /* 整行的倾斜 */
+
   for (var k=0;k<txt.length;k++){
     var ch = txt.charAt(k);
     if (ch === '　' || ch === ' '){ cx += size * 0.66; continue; }
-    var fs  = size * (0.90 + rnd(seed + k*3.1) * 0.20);
-    var dy  = (rnd(seed + k*7.3) - 0.5) * size * 0.13;
-    var rot = (rnd(seed + k*11.7) - 0.5) * 0.075;
-    var al  = alpha * (0.86 + rnd(seed + k*13.9) * 0.22);
+
+    var fs  = size * (0.82 + rnd(seed + k*3.1) * 0.30);
+    var dy  = (rnd(seed + k*7.3) - 0.5) * size * 0.24 + drift;
+    var sp  = 0.96 + rnd(seed + k*19.1) * 0.26;
+    var rot = baseAng + (rnd(seed + k*11.7) - 0.5) * 0.13;
+    /* 每个字的宽高比都不一样 —— 这是手写和印刷最直观的分界 */
+    var sx2 = 0.90 + rnd(seed + k*31.7) * 0.22;
+    var sy2 = 0.90 + rnd(seed + k*37.3) * 0.20;
+
+    /* 墨色：起笔浓 → 收笔淡。这是"手写"和"印刷"的分界 */
+    var inA = Math.min(1, alpha * (0.98 + rnd(seed + k*13.9) * 0.22));
+    var outA = inA * (0.58 + rnd(seed + k*23.3) * 0.22);
+
     ctx.save();
     ctx.translate(cx, y + dy);
     ctx.rotate(rot);
+    ctx.scale(sx2, sy2);
     ctx.font = fs.toFixed(1) + 'px ' + KAI;
-    ctx.fillStyle = 'rgba(22,18,12,' + Math.min(1, al).toFixed(2) + ')';
+
+    /* 墨色：起笔接近黑，收笔淡到发灰 —— 跨度要够大才看得出来 */
+    var g = ctx.createLinearGradient(0, -fs*0.66, 0, fs*0.56);
+    g.addColorStop(0,    'rgba(16,12,7,'   + Math.min(1, inA*1.10).toFixed(2) + ')');
+    g.addColorStop(0.35, 'rgba(20,16,10,'  + Math.min(1, inA*1.00).toFixed(2) + ')');
+    g.addColorStop(0.70, 'rgba(52,44,31,'  + (outA*1.05).toFixed(2) + ')');
+    g.addColorStop(1,    'rgba(86,76,56,'  + (outA*0.78).toFixed(2) + ')');
+    ctx.fillStyle = g;
     ctx.fillText(ch, 0, 0);
+
+    /* 笔画边缘一点点洇：纸把墨吸开了 */
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = 'rgba(40,34,22,1)';
+    ctx.fillText(ch, 0.5, 0.5);
+    ctx.globalAlpha = 1;
+
     ctx.restore();
-    cx += fs * 1.04 + (rnd(seed + k*17.3) - 0.5) * 0.8;
+
+    cx += fs * sp;
+    drift += (rnd(seed + k*29.7) - 0.5) * 0.9;         /* 行气累积 */
   }
 }
 
@@ -141,16 +170,41 @@ function drawDoc(){
     ctx.fillRect(rnd(f*7)*W, rnd(f*11)*H, 1.2, 1.2);
   }
 
-  /* 正文 */
+  /* 正文：整行倾斜，行气才连得住 */
   var y0 = 132;
   for (var d=0; d<DOC.length; d++){
     var it = DOC[d];
     if (it.y) y0 = it.y + 40;
     if (it.t){
-      handText(it.t, 42, y0, it.s, it.ink, d*37 + 5);
+      var tilt = (rnd(d*5.7) - 0.5) * 0.042;          /* 每行整体歪，而且比刚才大得多 */
+      var xoff = (rnd(d*9.1) - 0.5) * 5;
+      handText(it.t, 42 + xoff, y0, it.s, it.ink, d*37 + 5, tilt);
+
+      /* 有一处被划掉了 —— 写错了，作者自己划的 */
+      if (it.fix){
+        ctx.save();
+        ctx.strokeStyle = 'rgba(30,24,14,.42)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(42 + it.fix[0], y0 - it.s*0.34);
+        ctx.lineTo(42 + it.fix[0] + it.fix[1], y0 - it.s*0.24);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
     y0 += it.gap;
   }
+
+  /* 一道折痕：纸折过，纤维断了，是亮的 */
+  var fy = H * 0.52;
+  var fg = ctx.createLinearGradient(0, fy-9, 0, fy+9);
+  fg.addColorStop(0,   'rgba(255,252,236,0)');
+  fg.addColorStop(0.42,'rgba(255,252,236,.16)');
+  fg.addColorStop(0.5, 'rgba(255,252,236,.34)');
+  fg.addColorStop(0.58,'rgba(96,82,54,.20)');
+  fg.addColorStop(1,   'rgba(96,82,54,0)');
+  ctx.fillStyle = fg;
+  ctx.fillRect(0, fy-9, W, 18);
 
   /* 右下角的时间戳：盖章，不是手写 */
   ctx.save();
