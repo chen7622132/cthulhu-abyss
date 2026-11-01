@@ -148,6 +148,8 @@ stage.addEventListener('pointerdown', function(e){
   if (dragging) return;
   dragging = true;
   activeId = e.pointerId;
+  passed = false;                 /* ← 关键：每次开拖都重置，否则卡点只出现一次 */
+  stage.__lock = 0;
   startX = e.clientX - curX;
   lastMoveT = Date.now();
   stage.setPointerCapture(e.pointerId);
@@ -195,7 +197,7 @@ function endDrag(e, reason){
   stage.__lock = 0;
   var pct = maxX > 0 ? (curX / maxX * 100).toFixed(0) : '0';
   L(reason + ' id=' + (e && e.pointerId) + ' 位置=' + pct + '% '
-    + (passed ? '（已过卡点）' : '（未过卡点，回弹）'),
+    + (passed ? '（已过卡点）' : '（未过卡点，回弹）') + ' / curX=' + Math.round(curX),
     reason.indexOf('pointerup') === 0 ? null : 'warn');
 
   if (!passed){
