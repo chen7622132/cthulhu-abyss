@@ -897,7 +897,7 @@ function buildEyeFrames(){
   var w2 = 540*base, h2 = 960*base;
   var x2 = (W-w2)/2, y2 = (H-h2)/2;
   var cx0 = x2 + 270*base, cy0 = y2 + 468*base;
-  var tw = 140*base, thh = 600*base;
+  var tw = 220*base, thh = 220*base;
 
   var frames = [];
   for (var i=0;i<PTS.length;i++){
@@ -905,7 +905,7 @@ function buildEyeFrames(){
     c.width = W; c.height = H;
     var g = c.getContext('2d');
 
-    g.filter = 'brightness(1.52) contrast(1.12)';
+    g.filter = 'brightness(1.12) contrast(1.18)';
     g.drawImage(imC, x2, y2, w2, h2);
     g.filter = 'none';
 
@@ -918,8 +918,8 @@ function buildEyeFrames(){
     var Rg = 470*base;
     var lt = g.createRadialGradient(cx0, cy0, Rg*0.30, cx0, cy0, Rg*1.02);
     lt.addColorStop(0,   'rgba(0,0,0,0)');
-    lt.addColorStop(0.62,'rgba(0,0,0,0.20)');
-    lt.addColorStop(1,   'rgba(0,0,0,0.86)');
+    lt.addColorStop(0.62,'rgba(0,0,0,0.14)');
+    lt.addColorStop(1,   'rgba(0,0,0,0.72)');
     g.fillStyle = lt;
     g.fillRect(0,0,W,H);
 
