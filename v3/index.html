@@ -207,6 +207,8 @@ var PAGES = [
   ],
   unit: '單位：公尺',
   squeeze: true,
+  sketch: 'section',
+  sketchLabel: '第五段　斷處',
   tail: '第五段，第二次測量未記。',
   tail2: '按：同日午後，潮退。'
 },
@@ -265,6 +267,8 @@ var PAGES = [
     ['十二','—','—','—']
   ],
   unit: '按月報表抄錄',
+  sketch: 'tide',
+  sketchLabel: '虛線為常例　紅點為所記',
   tail: '十一日，大潮之次日，不當為小潮。',
   tail2: '（原表此二欄均有塗改。澳甲另報：是日有霧。）'
 },
@@ -283,6 +287,8 @@ var PAGES = [
     ['十一　十四時','陳阿貴','無']
   ],
   unit: '汛口　第三班',
+  sketch: 'post',
+  sketchLabel: '汛口　虛線止於此',
   tail: '六時一班，字非陳阿貴所書。',
   tail2: '陳阿貴：我初十夜回澳，十一日午後方到汛。'
 },
@@ -2132,6 +2138,180 @@ function rOldCase(p){
   sx.fillText(p.sign, PAD, H - 68);
 }
 
+
+/* ============================================================
+   手绘小图：勘测员自己画的，不是印刷的
+   ============================================================ */
+
+/* 铅笔线：抖的 */
+function inkPath(pts, col, lw, seed, dash){
+  sx.save();
+  if (dash) sx.setLineDash(dash);
+  sx.strokeStyle = col;
+  sx.lineWidth = lw;
+  sx.lineCap = 'round';
+  sx.beginPath();
+  for (var i=0;i<pts.length;i++){
+    var jx = (srnd(seed + i*3.7) - 0.5) * 1.5;
+    var jy = (srnd(seed + i*7.1) - 0.5) * 1.5;
+    if (i === 0) sx.moveTo(pts[i][0]+jx, pts[i][1]+jy);
+    else sx.lineTo(pts[i][0]+jx, pts[i][1]+jy);
+  }
+  sx.stroke();
+  sx.restore();
+}
+
+/* ① 海岸断面：五段，第五段的线断了 */
+function sketchSection(x, y, w, h){
+  var base = y + h*0.72;
+  var col = 'rgba(58,50,36,.62)';
+
+  /* 基线 */
+  inkPath([[x, base], [x+w, base]], 'rgba(58,50,36,.28)', 0.8, 3, [4,3]);
+
+  /* 五段高度 */
+  var hs = [0.30, 0.16, 0.34, 0.12, 0.26];
+  var seg = w/5;
+  for (var i=0;i<5;i++){
+    var x0 = x + seg*i, x1 = x + seg*(i+1);
+    if (i === 4){
+      /* 第五段：画到一半，笔停 */
+      inkPath([[x0+3, base], [x0+3, base - hs[i]*h], [x0 + seg*0.42, base - hs[i]*h*0.95]],
+              col, 1.5, i*17+5);
+      /* 断口：两个小叉 */
+      sx.save();
+      sx.strokeStyle = 'rgba(104,27,11,.62)';
+      sx.lineWidth = 1.1;
+      sx.beginPath();
+      sx.moveTo(x0+seg*0.42-4, base-hs[i]*h*0.95-4);
+      sx.lineTo(x0+seg*0.42+4, base-hs[i]*h*0.95+4);
+      sx.moveTo(x0+seg*0.42+4, base-hs[i]*h*0.95-4);
+      sx.lineTo(x0+seg*0.42-4, base-hs[i]*h*0.95+4);
+      sx.stroke();
+      sx.restore();
+    } else {
+      inkPath([[x0+3, base], [x0+3, base - hs[i]*h], [x1-3, base - hs[i]*h], [x1-3, base]],
+              col, 1.5, i*17+5);
+    }
+    /* 段号 */
+    sx.font = '9px ' + MONO;
+    sx.fillStyle = 'rgba(58,50,36,.66)';
+    sx.textAlign = 'center';
+    sx.fillText(['一','二','三','四','五'][i], x0 + seg/2, base + 13);
+    sx.textAlign = 'left';
+  }
+}
+
+/* ② 潮汐曲线：七个点，十一日那个点不在线上 */
+function sketchTide(x, y, w, h){
+  var base = y + h*0.66;
+  var pts = [];
+  for (var i=0;i<=7;i++){
+    var px3 = x + w*i/7;
+    var py3 = base - Math.sin(i/7*Math.PI*2.15) * h*0.26 - h*0.05;
+    pts.push([px3, py3]);
+  }
+  /* 平顺的预期曲线 */
+  sx.save();
+  sx.strokeStyle = 'rgba(58,50,36,.26)';
+  sx.lineWidth = 0.9;
+  sx.setLineDash([3,3]);
+  sx.beginPath();
+  for (var j=0;j<pts.length;j++){
+    if (j===0) sx.moveTo(pts[j][0], pts[j][1]); else sx.lineTo(pts[j][0], pts[j][1]);
+  }
+  sx.stroke();
+  sx.restore();
+
+  /* 实画的点：第五个（十一日）掉下去了 */
+  for (var k=0;k<pts.length;k++){
+    var px4 = pts[k][0], py4 = pts[k][1];
+    var isD = (k === 4);
+    if (isD){ py4 = base + h*0.16; }
+    sx.fillStyle = isD ? 'rgba(104,27,11,.82)' : 'rgba(58,50,36,.72)';
+    sx.beginPath();
+    sx.arc(px4, py4, isD ? 2.6 : 2.0, 0, Math.PI*2);
+    sx.fill();
+    if (isD){
+      /* 从预期位置拉一条短线到实际位置 */
+      sx.strokeStyle = 'rgba(104,27,11,.50)';
+      sx.lineWidth = 0.9;
+      sx.beginPath();
+      sx.moveTo(px4, pts[k][1]+4);
+      sx.lineTo(px4, py4-5);
+      sx.stroke();
+    }
+  }
+  /* 坐标轴 */
+  inkPath([[x, y+h*0.10], [x, base+6]], 'rgba(58,50,36,.34)', 0.8, 11);
+  inkPath([[x, base+6], [x+w, base+6]], 'rgba(58,50,36,.34)', 0.8, 13);
+}
+
+/* ③ 汛口位置：一个小海湾，一个方框写着"汛" */
+function sketchPost(x, y, w, h){
+  var col = 'rgba(58,50,36,.58)';
+  /* 海岸线：一条弯进来又出去的线 */
+  var pts = [];
+  for (var i=0;i<=10;i++){
+    var tt = i/10;
+    pts.push([x + w*tt, y + h*0.30 + Math.sin(tt*Math.PI*1.6)*h*0.16]);
+  }
+  inkPath(pts, col, 1.4, 21);
+
+  /* 海在这一侧 */
+  sx.font = '8px ' + MONO;
+  sx.fillStyle = 'rgba(58,50,36,.55)';
+  sx.fillText('海', x + 10, y + h*0.78);
+  sx.fillText('陸', x + 10, y + h*0.12);
+
+  /* 汛的方框 */
+  var bx = x + w*0.46, by = y + h*0.20;
+  sx.strokeStyle = 'rgba(58,50,36,.66)';
+  sx.lineWidth = 1.2;
+  sx.strokeRect(bx, by, 16, 13);
+  sx.font = '10px ' + SERIF;
+  sx.fillStyle = 'rgba(40,34,22,.80)';
+  sx.fillText('汛', bx+3.5, by+11);
+
+  /* 一条虚线从海上来，穿过汛口 */
+  inkPath([[x+w*0.14, y+h*0.74], [x+w*0.34, y+h*0.58], [bx+8, by+16]], 'rgba(58,50,36,.50)', 1.0, 31, [4,3]);
+  /* 虚线在汛口那里断了 —— 没挂验 */
+  sx.save();
+  sx.strokeStyle = 'rgba(104,27,11,.66)';
+  sx.lineWidth = 1.1;
+  sx.beginPath();
+  sx.moveTo(bx+8-4, by+16-3); sx.lineTo(bx+8+4, by+16+3);
+  sx.moveTo(bx+8+4, by+16-3); sx.lineTo(bx+8-4, by+16+3);
+  sx.stroke();
+  sx.restore();
+}
+
+/* ④ 编号对照：两列，连线，有一条连到了没有的地方 */
+function sketchIndex(x, y, w, h){
+  var lx = x + w*0.22, rx = x + w*0.72;
+  var col = 'rgba(58,50,36,.58)';
+
+  inkPath([[lx, y+8], [lx, y+h-8]], 'rgba(58,50,36,.30)', 0.9, 41);
+  inkPath([[rx, y+8], [rx, y+h-8]], 'rgba(58,50,36,.30)', 0.9, 43);
+
+  var n = 7, gap = (h-24)/n;
+  for (var i=0;i<n;i++){
+    var yy = y + 16 + gap*i;
+    sx.font = '8px ' + MONO;
+    sx.fillStyle = 'rgba(58,50,36,.68)';
+    sx.fillText('〇〇' + ['一','二','三','四','五','六','七'][i], lx - 26, yy+3);
+    sx.fillStyle = 'rgba(58,50,36,.62)';
+    sx.fillText('〇〇' + ['〇','一','二','三','四','五','六'][i], rx + 6, yy+3);
+
+    /* 连线：除了第一个，其余都移位一格 */
+    if (i > 0){
+      inkPath([[lx+20, yy], [rx-2, yy - gap]], 'rgba(58,50,36,.40)', 0.8, 50+i*7);
+    }
+  }
+  /* 最上面那一条，往上去，连到画外 */
+  inkPath([[lx+20, y+16+gap], [rx-2, y+2], [rx-2, y-12]], 'rgba(104,27,11,.50)', 1.0, 77, [3,3]);
+}
+
 /* ---------- 05 表格 ---------- */
 function rTable(p){
   var y = 96;
@@ -2226,8 +2406,21 @@ function rTable(p){
   sx.fillStyle = C_FAINT;
   sx.fillText(p.unit, PAD, _accY + 20);
 
+  /* 附：手绘小图 */
+  if (p.sketch){
+    var skw = CW, skh = 116;
+    var skx = PAD, sky = _accY + 34;
+    if (sky + skh > H - 96) sky = H - 96 - skh;
+    if (p.sketch === 'section') sketchSection(skx, sky, skw, skh);
+    if (p.sketch === 'tide')    sketchTide(skx, sky, skw, skh);
+    if (p.sketch === 'post')    sketchPost(skx, sky, skw, skh);
+    sx.font = '8.5px ' + KAI;
+    sx.fillStyle = 'rgba(74,66,50,.66)';
+    if (p.sketchLabel) sx.fillText(p.sketchLabel, skx, sky + skh + 12);
+  }
+
   /* 结语 */
-  var ny = _accY + 62;
+  var ny = _accY + (p.sketch ? 172 : 62);
   sx.font = '14px ' + SERIF;
   sx.fillStyle = C_TXT;
   sx.fillText(p.tail, PAD, ny);
@@ -2317,6 +2510,14 @@ function rCheck(p){
   sx.font = '10px ' + KAI;
   sx.fillStyle = 'rgba(74,66,50,.55)';
   sx.fillText(p.tail2, PAD, y+22);
+
+  /* 附：两列编号的对照图 */
+  var skY = y + 48;
+  if (skY + 150 > H - 80) skY = H - 80 - 150;
+  sketchIndex(PAD + 20, skY, CW - 40, 148);
+  sx.font = '8.5px ' + KAI;
+  sx.fillStyle = 'rgba(74,66,50,.66)';
+  sx.fillText('左：海圖所標　　右：本縣舊冊', PAD + 20, skY + 160);
 
   stainBlot(W-PAD-30, 300, 40, 0.12);
   fingerprint(PAD+26, H-120, 22, 28, 41, 0.22);
