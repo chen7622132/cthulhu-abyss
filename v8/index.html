@@ -246,17 +246,20 @@ function carveText(){
     ctx.save();
     ctx.translate(cx + (rnd(i*3.1)-0.5)*2.2, cy + (rnd(i*9.7)-0.5)*2.0);
     ctx.rotate((rnd(i*7.3)-0.5)*0.075);
-    var sc = 0.90 + rnd(i*11.3)*0.20;
+    var sc = 0.74 + rnd(i*11.3)*0.14;
     ctx.scale(sc, sc);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
     if (clear){
-      ctx.globalAlpha = 0.66;
-      ctx.drawImage(tintMask(chars[i], '#0a0805'), -D, -D+0.8, S, S);
-      ctx.globalAlpha = 0.34;
-      ctx.drawImage(tintMask(chars[i], '#050403'), -D-0.5, -D-0.7, S, S);
-      ctx.globalAlpha = 0.40;
-      ctx.drawImage(tintMask(chars[i], '#efe6c8'), -D+0.7, -D+2.0, S, S);
+      /* ① 凹陷：只是比周围深一点，不是黑 */
+      ctx.globalAlpha = 0.46;
+      ctx.drawImage(tintMask(chars[i], '#1a150e'), -D, -D+0.8, S, S);
+      /* ② 内芯再深一点点 */
+      ctx.globalAlpha = 0.22;
+      ctx.drawImage(tintMask(chars[i], '#0e0b07'), -D-0.5, -D-0.7, S, S);
+      /* ③ 下缘受光：石面的本色，不是白 */
+      ctx.globalAlpha = 0.20;
+      ctx.drawImage(tintMask(chars[i], '#b8ac8a'), -D+0.6, -D+1.8, S, S);
       ctx.globalAlpha = 1;
     } else {
       /* ① 一块明确的凹：比周围深 */
@@ -329,8 +332,8 @@ function drawBox(){
   vg.addColorStop(1,'rgba(0,0,0,.62)');
   ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
 
-  for (var i=0;i<130;i++){
-    ctx.fillStyle = Math.random()<.5 ? 'rgba(255,250,232,.055)' : 'rgba(0,0,0,.055)';
+  for (var i=0;i<55;i++){
+    ctx.fillStyle = Math.random()<.5 ? 'rgba(255,250,232,.030)' : 'rgba(0,0,0,.035)';
     ctx.fillRect(Math.random()*W, Math.random()*H, 1.2, 1.2);
   }
 }
