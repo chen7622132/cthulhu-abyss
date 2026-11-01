@@ -382,7 +382,7 @@ function rDoc(p){
     var fnt = fs + 'px ' + SERIF;
     var ls = wrapText(p.paras[i], CW, fnt);
     for (var j=0;j<ls.length;j++){
-      if (y > H-146) break;
+      if (y > H-320) break;
       sx.font = fnt;
       sx.fillStyle = 'rgba(212,210,192,' + (0.86+srnd(i*9+j)*0.14).toFixed(2) + ')';
       sx.fillText(ls[j], PAD + (srnd(i*9+j+500)-0.5)*1.1, y + (srnd(i*9+j)-0.5)*1.5);
@@ -390,6 +390,14 @@ function rDoc(p){
     }
     y += 11;
   }
+
+  /* 附件：剪报残片 */
+  drawPhoto('clip1', W-PAD-166, H-292, 156, 117, -0.028);
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(120,130,112,.70)';
+  sx.fillText('附：剪報一紙', PAD, H-262);
+  sx.fillText('美利堅《詭麗幻譚》', PAD, H-246);
+  sx.fillText('二月號　節譯', PAD, H-230);
 
   var sy = H-118;
   sx.font = '15px ' + SERIF;
@@ -567,6 +575,14 @@ function rDepo(p){
   sx.font = '19px ' + SERIF;
   sx.fillStyle = C_TXT;
   sx.fillText(p.title, PAD, y);
+
+  /* 右侧：口供纸一角（带指印） */
+  drawPhoto('thumb1', W-PAD-140, 96, 132, 99, 0.022);
+  sx.font = '8px ' + KAI;
+  sx.fillStyle = 'rgba(154,43,24,.62)';
+  sx.textAlign = 'right';
+  sx.fillText('捺印', W-PAD, 208);
+  sx.textAlign = 'left';
 
   y = 132;
   for (var i=0;i<p.rows.length;i++){
@@ -1035,6 +1051,15 @@ function rNote(p){
     y += ty2 + 24;
     sx.restore();
   }
+
+  /* 附：原稿残页 */
+  drawPhoto('ms1', PAD, H-268, 196, 147, -0.02);
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(120,130,112,.70)';
+  sx.fillText('原稿　殘頁', PAD+206, H-244);
+  sx.fillStyle = 'rgba(154,43,24,.66)';
+  sx.fillText('末二行', PAD+206, H-226);
+  sx.fillText('已塗', PAD+206, H-210);
 
   /* 涂改的斜线 */
   sx.strokeStyle = 'rgba(154,43,24,.32)';
