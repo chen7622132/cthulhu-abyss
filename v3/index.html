@@ -157,8 +157,8 @@ var PAGES = [
   cap: '民國十七年九月初九，順發船出港前一日，攝於澳口。',
   names: ['林阿水','林阿火','陳水來','王番薯','許乞食','鄭炎生'],
   gapNote: '此位無人。',
-  missing: '（第七人之名，已塗去。）',
-  tail: '底片一併附卷。沖印時，暗房稱：只六人。'
+  missing: '（相紙上之人，面孔皆同。）',
+  tail: '底片一併附卷。沖印師云：底片只照一人。'
 },
 
 /* -------- 04 海图 -------- */
@@ -302,21 +302,14 @@ var PAGES = [
 
 /* -------- 10 木牌译文 -------- */
 {
-  kind: 'note',
+  kind: 'plank',
   stamp: '證物　〇五',
   reg: '10 · 20',
   title: '木牌　摹寫',
-  lead: '灘上木牌一枚。刻字七。非漢文，非倭文，非英吉利文。譯員不能識。',
-  items: [
-    { n:'第一', t:'形如「⊂」' },
-    { n:'第二', t:'形如「⊃」' },
-    { n:'第三', t:'形如「∪」' },
-    { n:'第四', t:'形如「∩」。與第三相合，則成一環。', mark:true },
-    { n:'第五', t:'與第一同' },
-    { n:'第六', t:'與第二同' },
-    { n:'第七', t:'牌已中斷。斷處平滑。' }
-  ],
-  foot: '—— 七字皆是一筆。無起處，無止處。摹之三次，三次皆合。'
+  photo: 'plank1',
+  rubb: 'rubb1',
+  lead: '灘上木牌一枚。刻字七。非漢文，非倭文，非英吉利文。',
+  notes: ['原牌　　長一尺二寸　斷其右端', '拓本　　紙三層　墨已淡']
 },
 
 /* -------- 06 译员手记 -------- */
@@ -1040,7 +1033,7 @@ function fingerprint(cx, cy, rx, ry, seed, alpha){
 }
 
 /* ---------- 02 照片 ---------- */
-function drawPhoto(key, x, y, w, h, rot){
+function drawPhoto(key, x, y, w, h, rot, light){
   var im = IMGS[key];
   sx.save();
   sx.translate(x+w/2, y+h/2);
@@ -1064,7 +1057,7 @@ function drawPhoto(key, x, y, w, h, rot){
   }
 
   /* 压进页面：降亮 + 一抹病绿 */
-  sx.fillStyle = 'rgba(8,10,8,.32)';
+  sx.fillStyle = light ? 'rgba(8,10,8,.10)' : 'rgba(8,10,8,.32)';
   sx.fillRect(-w/2, -h/2, w, h);
   sx.fillStyle = 'rgba(34,46,30,.08)';
   sx.fillRect(-w/2, -h/2, w, h);
@@ -1212,101 +1205,66 @@ function rGroup(p){
   sx.fillStyle = C_FAINT;
   sx.fillText(p.cap, PAD, y + 20);
 
-  /* 照片框：底片遗失，只剩这张纸 */
-  var gx = PAD, gy = 142, gw = CW, gh = 330;
-  sx.fillStyle = 'rgba(24,22,17,.34)';
-  sx.fillRect(gx, gy, gw, gh);
-  sx.strokeStyle = 'rgba(74,66,50,.46)';
-  sx.lineWidth = 1;
-  sx.strokeRect(gx, gy, gw, gh);
+  /* 相纸本身 */
+  var pw = CW, ph = CW * 0.76;
+  drawPhoto('group1', PAD, 140, pw, ph, -0.009);
 
-  /* 四边被胶带固定过的压痕 */
-  sx.strokeStyle = 'rgba(240,232,206,.14)';
-  sx.lineWidth = 0.9;
-  sx.beginPath();
-  sx.moveTo(gx, gy+16); sx.lineTo(gx, gy+gh-16);
-  sx.moveTo(gx+gw, gy+16); sx.lineTo(gx+gw, gy+gh-16);
-  sx.stroke();
-
-  /* 斜印：底片已失 */
-  sx.save();
-  sx.translate(gx+gw/2, gy+gh/2);
-  sx.rotate(-0.16);
-  sx.textAlign = 'center';
-  sx.font = '27px ' + SERIF;
-  sx.fillStyle = 'rgba(104,27,11,.26)';
-  sx.fillText('底　片　已　失', 0, 0);
-  sx.font = '10px ' + KAI;
-  sx.fillStyle = 'rgba(104,27,11,.42)';
-  sx.fillText('（存根一卷，已成灰）', 0, 22);
-  sx.textAlign = 'left';
-  sx.restore();
-
-  /* 七个人位：上四、下三 */
-  var pos = [
-    [0.135,0.28],[0.385,0.28],[0.635,0.28],[0.875,0.28],
-    [0.20,0.66],[0.50,0.66],[0.72,0.66]     /* 第七位：挨得太近，装不下一个人 */
-  ];
-  for (var i=0;i<7;i++){
-    var bx = gx + gw*pos[i][0] - 26;
-    var by = gy + gh*pos[i][1] - 30;
-    var empty = (i === 6);          /* 第七位：空的 */
-
-    /* 位置标注框 */
-    sx.strokeStyle = empty ? 'rgba(104,27,11,.62)' : 'rgba(240,232,206,.34)';
-    sx.lineWidth = empty ? 1.2 : 0.9;
-    if (empty) sx.setLineDash([3,3]);
-    sx.strokeRect(bx, by, 52, 66);
-    sx.setLineDash([]);
-
-    if (!empty){
-      /* 人位：一团模糊的轮廓，看不清脸 —— 底片本来就糊 */
-      sx.fillStyle = 'rgba(206,198,172,.10)';
-      sx.beginPath(); sx.arc(bx+26, by+26, 12, 0, Math.PI*2); sx.fill();
-      sx.fillStyle = 'rgba(206,198,172,.09)';
-      sx.beginPath();
-      sx.moveTo(bx+13, by+60); sx.lineTo(bx+20, by+40);
-      sx.lineTo(bx+32, by+40); sx.lineTo(bx+39, by+60);
-      sx.closePath(); sx.fill();
-      /* 名字 */
-      sx.font = '9px ' + KAI;
-      sx.fillStyle = 'rgba(40,34,22,.80)';
-      sx.textAlign = 'center';
-      sx.fillText(p.names[i], bx+26, by+78);
-      sx.textAlign = 'left';
-    } else {
-      /* 第七位：框在，人不在 */
-      sx.save();
-      sx.translate(bx+26, by+38);
-      sx.rotate(-0.10);
-      sx.font = '9px ' + KAI;
-      sx.fillStyle = 'rgba(104,27,11,.80)';
-      sx.textAlign = 'center';
-      sx.fillText(p.gapNote, 0, 0);
-      sx.restore();
-      sx.textAlign = 'left';
-    }
+  /* 照片底下：人名，一个一个对过去 */
+  var baseY = 140 + ph + 26;
+  sx.font = '9.5px ' + KAI;
+  sx.fillStyle = 'rgba(40,34,22,.82)';
+  for (var i2=0;i2<6;i2++){
+    var nx = PAD + 8 + i2 * (CW-16)/6;
+    sx.fillText(p.names[i2], nx, baseY);
   }
 
-  /* 框下一行小字 */
-  sx.font = '9.5px ' + KAI;
-  sx.fillStyle = 'rgba(104,27,11,.72)';
-  sx.fillText(p.missing, PAD, gy + gh + 22);
-
-  sx.font = '12px ' + SERIF;
-  sx.fillStyle = 'rgba(15,13,9,.86)';
-  sx.fillText(p.tail, PAD, gy + gh + 52);
-
-  /* 右侧手写：数了两遍 */
+  /* 第七位：在照片外面，没有对应的人 */
   sx.save();
-  sx.translate(W-PAD-6, gy+gh+70);
-  sx.rotate(-0.03);
-  sx.font = '10px ' + KAI;
-  sx.fillStyle = 'rgba(104,27,11,.62)';
+  sx.translate(W - PAD - 22, baseY + 4);
+  sx.rotate(-0.08);
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.86)';
   sx.textAlign = 'right';
-  sx.fillText('數之，六。再數，六。', 0, 0);
+  sx.fillText(p.gapNote, 0, 0);
+  sx.restore();
+  sx.textAlign = 'left';
+
+  /* 朱笔在照片上画了一道：把最右边那个人圈出来 */
+  sx.save();
+  sx.strokeStyle = 'rgba(104,27,11,.52)';
+  sx.lineWidth = 1.4;
+  sx.beginPath();
+  sx.ellipse(PAD + pw*0.855, 140 + ph*0.44, pw*0.062, ph*0.20, 0.04, 0, Math.PI*2);
+  sx.stroke();
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.80)';
+  sx.textAlign = 'right';
+  sx.fillText('此人不識', W - PAD - 4, 140 + ph*0.22);
   sx.textAlign = 'left';
   sx.restore();
+
+  /* 说明 */
+  var ty2 = baseY + 46;
+  sx.font = '12px ' + SERIF;
+  sx.fillStyle = 'rgba(15,13,9,.86)';
+  sx.fillText(p.tail, PAD, ty2);
+
+  /* 数了三遍 */
+  sx.save();
+  sx.translate(W - PAD - 4, ty2 + 34);
+  sx.rotate(-0.025);
+  sx.font = '10.5px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.72)';
+  sx.textAlign = 'right';
+  sx.fillText('數之，六。', 0, 0);
+  sx.fillText('再數，七。', 0, 20);
+  sx.fillText('再數——', 0, 40);
+  sx.textAlign = 'left';
+  sx.restore();
+
+  sx.font = '9.5px ' + KAI;
+  sx.fillStyle = 'rgba(74,66,50,.70)';
+  sx.fillText(p.missing, PAD, ty2 + 40);
 }
 
 
@@ -2072,6 +2030,54 @@ function rMap(p){
   sx.textAlign = 'left';
 }
 
+
+
+/* ---------- 10 木牌：物证照 + 拓本 ---------- */
+function rPlank(p){
+  var y = 96;
+  sx.font = '19px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.title, PAD, y);
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = C_FAINT;
+  sx.fillText(p.lead, PAD, y + 20);
+
+  /* 物证照 */
+  drawPhoto(p.photo, PAD, 138, CW, CW*0.70, 0.011);
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(74,66,50,.72)';
+  sx.fillText(p.notes[0], PAD, 138 + CW*0.70 + 16);
+
+  /* 拓本：贴在下面，纸比底纸白 */
+  var ry = 138 + CW*0.70 + 26;
+  var rw = CW - 96, rh2 = rw * 0.52;
+  drawPhoto(p.rubb, PAD + 48, ry, rw, rh2, -0.014, true);
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(74,66,50,.72)';
+  sx.fillText(p.notes[1], PAD + 50, ry + rh2 + 15);
+
+  /* 在拓本上，把第四个字圈出来 */
+  sx.save();
+  sx.strokeStyle = 'rgba(104,27,11,.55)';
+  sx.lineWidth = 1.3;
+  sx.beginPath();
+  sx.ellipse(PAD + 48 + rw*0.52, ry + rh2*0.46, 19, 12, -0.05, 0, Math.PI*2);
+  sx.stroke();
+  sx.restore();
+
+  /* 一句话，写在最下面 */
+  sx.save();
+  sx.translate(PAD + 2, H - 96);
+  sx.rotate(-0.012);
+  sx.font = '12.5px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.80)';
+  sx.fillText('七字皆是一筆。無起處，無止處。', 0, 0);
+  sx.restore();
+
+  sx.font = '9.5px ' + KAI;
+  sx.fillStyle = 'rgba(74,66,50,.70)';
+  sx.fillText('摹之三次，三次皆合。', PAD + 2, H - 74);
+}
 
 /* ---------- 08 旧案卷：竖排右起，朱笔写在行间 ---------- */
 function rOldCase(p){
@@ -3114,6 +3120,7 @@ function drawSource(tc){
   if (p.kind === 'telegram') rTelegram(p);
   if (p.kind === 'manuscript') rManuscript(p);
   if (p.kind === 'oldcase') rOldCase(p);
+  if (p.kind === 'plank') rPlank(p);
   if (p.kind === 'note')  rNote(p);
   if (p.kind === 'archive') rArchive(p);
 
