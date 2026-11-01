@@ -78,7 +78,8 @@ var DOC = [
   { t:'', s:14, y:0, gap:26, ink:0 },
   { t:'匠人云：此石非本地所產。', s:14, y:0, gap:28, ink:0.82 },
   { t:'', s:14, y:0, gap:34, ink:0 },
-  { t:'記此。', s:15, y:0, gap:30, ink:0.88 }
+  { t:'記此。', s:15, y:0, gap:44, ink:0.88 },
+  { t:'測繪員　沈硯秋　記', s:13, y:0, gap:26, ink:0.78 }
 ];
 
 var SERIF = '"Songti SC","Noto Serif CJK SC","STSong",serif';
@@ -221,38 +222,28 @@ function drawDoc(){
 
   /* 纸底色 */
   var pg = ctx.createLinearGradient(0, P[0][1], 0, P[2][1]);
-  pg.addColorStop(0,   '#cfc4a0');
-  pg.addColorStop(0.45,'#c6ba94');
-  pg.addColorStop(1,   '#b6aa84');
+  pg.addColorStop(0,   '#d6cdb2');
+  pg.addColorStop(0.45,'#cdc4a8');
+  pg.addColorStop(1,   '#bfb497');
   ctx.fillStyle = pg;
   ctx.fillRect(0,0,W,H);
 
-  /* 蓝格 */
-  var colW = (W - 2*m - 24) / 9;
-  for (var c2=0;c2<=9;c2++){
-    var x2 = m + 12 + c2*colW + (rnd(c2*7.3)-0.5)*3.2;     /* 每一条位置都偏一点 */
-    ctx.strokeStyle = 'rgba(92,108,142,' + (0.19 + rnd(c2*3.7)*0.15).toFixed(2) + ')';
-    ctx.lineWidth = 0.65 + rnd(c2*5.1)*0.55;                /* 粗细也不匀 */
-    /* 断成几截 —— 印刷的、不是画的 */
-    var yy = 60;
-    while (yy < H){
-      var seg = 90 + rnd(c2*11+yy*0.1)*220;
-      ctx.beginPath();
-      for (var y2=yy; y2<Math.min(H, yy+seg); y2+=24){
-        var jx = (rnd(c2*13+y2*0.31)-0.5)*0.9;
-        if (y2===yy) ctx.moveTo(x2+jx, y2); else ctx.lineTo(x2+jx, y2);
-      }
-      ctx.stroke();
-      yy += seg + 14 + rnd(c2*17+yy)*60;
-    }
-  }
-  ctx.strokeStyle = 'rgba(92,108,142,.17)';
-  for (var y3=110;y3<H;y3+=colW*0.94){
+  /* 帘纹：手工纸抄的时候竹帘留下的极细横纹 —— 不是格子，是纸自己的纹理 */
+  for (var lw2=0; lw2 < H; lw2 += 2.6){
+    ctx.strokeStyle = 'rgba(120,102,68,' + (0.020 + rnd(lw2*0.7)*0.022).toFixed(3) + ')';
+    ctx.lineWidth = 0.55;
     ctx.beginPath();
-    for (var x3=0;x3<=W;x3+=28){
-      var jy = (rnd(y3*0.7+x3*0.23)-0.5)*0.9;
-      if (x3===0) ctx.moveTo(x3, y3+jy); else ctx.lineTo(x3, y3+jy);
-    }
+    ctx.moveTo(0, lw2 + (rnd(lw2*1.3)-0.5)*0.7);
+    ctx.lineTo(W, lw2 + (rnd(lw2*2.1)-0.5)*0.7);
+    ctx.stroke();
+  }
+  /* 帘纹的大方向：每 32px 一道略深一点的 */
+  for (var lw3=0; lw3 < H; lw3 += 32){
+    ctx.strokeStyle = 'rgba(108,90,58,' + (0.035 + rnd(lw3*0.3)*0.020).toFixed(3) + ')';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(0, lw3);
+    ctx.lineTo(W, lw3);
     ctx.stroke();
   }
 
