@@ -146,6 +146,20 @@ var PAGES = [
   tail: '本頁六份，均經捺印。'
 },
 
+
+/* -------- 04 合影 -------- */
+{
+  kind: 'group',
+  stamp: '證物　〇四',
+  reg: '09 · 09',
+  title: '合　　影',
+  cap: '民國十七年九月初九，順發船出港前一日，攝於澳口。',
+  names: ['林阿水','林阿火','陳水來','王番薯','許乞食','鄭炎生'],
+  gapNote: '此位無人。',
+  missing: '（第七人之名，已塗去。）',
+  tail: '底片一併附卷。沖印時，暗房稱：只六人。'
+},
+
 /* -------- 04 海图 -------- */
 {
   kind: 'map',
@@ -231,6 +245,86 @@ var PAGES = [
   tail2: '（無批語。）'
 },
 
+
+/* -------- 07 气象潮汐 -------- */
+{
+  kind: 'table',
+  stamp: '證物　〇六',
+  reg: '10 · 12',
+  title: '氣象與潮汐記錄',
+  cap: '同表兩欄，一為抄錄，一為補記。',
+  head: ['日','天　氣','風','潮'],
+  rows: [
+    ['初七','晴','北　三','小潮'],
+    ['初八','晴','北　三','小潮'],
+    ['初九','陰','東　二','中潮'],
+    ['初十','晴','北　四','大　潮'],
+    ['十一','晴','北　三','小潮'],
+    ['十二','—','—','—']
+  ],
+  unit: '按月報表抄錄',
+  tail: '十一日，大潮之次日，不當為小潮。',
+  tail2: '（原表此二欄均有塗改。澳甲另報：是日有霧。）'
+},
+
+/* -------- 08 值班日志 -------- */
+{
+  kind: 'table',
+  stamp: '證物　〇七',
+  reg: '10 · 11',
+  title: '汛口值班日誌',
+  cap: '十一日，凡三班。記名者二。',
+  head: ['時','值　班','記　事'],
+  rows: [
+    ['初十　十八時','陳阿貴','無'],
+    ['十一　六時','　　（無名）','順發出港　未掛驗'],
+    ['十一　十四時','陳阿貴','無']
+  ],
+  unit: '汛口　第三班',
+  tail: '六時一班，字非陳阿貴所書。',
+  tail2: '陳阿貴：我初十夜回澳，十一日午後方到汛。'
+},
+
+/* -------- 09 旧案卷 -------- */
+{
+  kind: 'doc',
+  stamp: '附　卷　一',
+  reg: '14 · 10',
+  title: '舊　　案',
+  org: '閩海關稅務司公署',
+  no: '第 十九 號',
+  paras: [
+    '逕啟者：民國十四年十月，霞浦三沙灣外，漁船「金順」，船牌閩霞字第〇三一號，出港後未歸。',
+    '船主林阿水，年三十八歲。船員四名：林阿火、陳水來、王番薯、許乞食。',
+    '查該船出港之日，亦未經汛口掛驗。',
+    '本關派員查勘三次。海面無獲，灘上無跡，社廟階前亦無所見。'
+  ],
+  sign: '擬：查無實據，註銷。',
+  date: '民國十四年十二月　日',
+  seal: ['註','銷'],
+  redact: ['十四年十月'],
+  hint: '上滑　續'
+},
+
+/* -------- 10 木牌译文 -------- */
+{
+  kind: 'note',
+  stamp: '證物　〇五',
+  reg: '10 · 20',
+  title: '木牌　譯文',
+  lead: '灘上木牌一枚。刻字七。非漢文，非倭文，非英吉利文。',
+  items: [
+    { n:'第一', t:'音作「伊」' },
+    { n:'第二', t:'音作「爾」' },
+    { n:'第三', t:'音作「之」' },
+    { n:'第四', t:'似「下」，又似「不」。墨痕兩可。', mark:true },
+    { n:'第五', t:'音作「有」——此字旁有一孔，穿繩處也' },
+    { n:'第六', t:'音作「光」' },
+    { n:'第七', t:'不可辨。牌已中斷。' }
+  ],
+  foot: '—— 姑以音記，不敢強解'
+},
+
 /* -------- 06 译员手记 -------- */
 {
   kind: 'note',
@@ -246,6 +340,18 @@ var PAGES = [
     { n:'其四', t:'「他們都在。他們一直。他們。」', mark:true }
   ],
   foot: '——九月十七夜，燈將盡'
+},
+
+
+/* -------- 13 电报 -------- */
+{
+  kind: 'telegram',
+  stamp: '電　報',
+  reg: '11 · 20',
+  to: '霞浦縣公署　縣長　鈞鑒',
+  body: ['三七號案　已結', '毋庸深究', '仰即歸檔　並將原件封存'],
+  from: '閩海關稅務司　（印）',
+  date: '民國十七年十一月二十日'
 },
 
 /* -------- 07 归档 ---------- */
@@ -280,6 +386,9 @@ var PAGES = [
   ]
 }
 ];
+
+/* 页码按顺序重排——加页不必改数据 */
+for (var _pi=0; _pi<PAGES.length; _pi++){ PAGES[_pi].num = ('0'+(_pi+1)).slice(-2); }
 
 /* ============================================================
    3. 画布
@@ -346,10 +455,11 @@ function chrome(p, tc){
   /* 页脚 */
   sx.font = '11px ' + MONO;
   sx.fillStyle = C_FAINT;
-  sx.fillText('記錄 ' + p.num + ' / 08', PAD, H-34);
+  var tot = ('0' + PAGES.length).slice(-2);
+  sx.fillText('記錄 ' + p.num + ' / ' + tot, PAD, H-34);
 
   sx.textAlign = 'right';
-  sx.fillText(p.num === '08' ? '○' : '↑ ↓', W-PAD, H-34);
+  sx.fillText(p.num === ('0' + PAGES.length).slice(-2) ? '○' : '↑ ↓', W-PAD, H-34);
   sx.textAlign = 'left';
 
   /* REC */
@@ -937,6 +1047,192 @@ function rPhoto(p){
   sx.textAlign = 'right';
   for (var m=0;m<ml.length;m++) sx.fillText(ml[m], W-PAD, H-58 + m*14);
   sx.textAlign = 'left';
+}
+
+
+/* ---------- 04 合影 ---------- */
+function rGroup(p){
+  var y = 96;
+  sx.font = '19px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.title, PAD, y);
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = C_FAINT;
+  sx.fillText(p.cap, PAD, y + 20);
+
+  /* 照片框：底片遗失，只剩这张纸 */
+  var gx = PAD, gy = 142, gw = CW, gh = 330;
+  sx.fillStyle = 'rgba(24,22,17,.34)';
+  sx.fillRect(gx, gy, gw, gh);
+  sx.strokeStyle = 'rgba(74,66,50,.46)';
+  sx.lineWidth = 1;
+  sx.strokeRect(gx, gy, gw, gh);
+
+  /* 四边被胶带固定过的压痕 */
+  sx.strokeStyle = 'rgba(240,232,206,.14)';
+  sx.lineWidth = 0.9;
+  sx.beginPath();
+  sx.moveTo(gx, gy+16); sx.lineTo(gx, gy+gh-16);
+  sx.moveTo(gx+gw, gy+16); sx.lineTo(gx+gw, gy+gh-16);
+  sx.stroke();
+
+  /* 斜印：底片已失 */
+  sx.save();
+  sx.translate(gx+gw/2, gy+gh/2);
+  sx.rotate(-0.16);
+  sx.textAlign = 'center';
+  sx.font = '27px ' + SERIF;
+  sx.fillStyle = 'rgba(104,27,11,.26)';
+  sx.fillText('底　片　已　失', 0, 0);
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.42)';
+  sx.fillText('（存根一卷，已成灰）', 0, 22);
+  sx.textAlign = 'left';
+  sx.restore();
+
+  /* 七个人位：上四、下三 */
+  var pos = [
+    [0.135,0.28],[0.385,0.28],[0.635,0.28],[0.875,0.28],
+    [0.20,0.66],[0.50,0.66],[0.80,0.66]
+  ];
+  for (var i=0;i<7;i++){
+    var bx = gx + gw*pos[i][0] - 26;
+    var by = gy + gh*pos[i][1] - 30;
+    var empty = (i === 6);          /* 第七位：空的 */
+
+    /* 位置标注框 */
+    sx.strokeStyle = empty ? 'rgba(104,27,11,.62)' : 'rgba(240,232,206,.34)';
+    sx.lineWidth = empty ? 1.2 : 0.9;
+    if (empty) sx.setLineDash([3,3]);
+    sx.strokeRect(bx, by, 52, 66);
+    sx.setLineDash([]);
+
+    if (!empty){
+      /* 人位：一团模糊的轮廓，看不清脸 —— 底片本来就糊 */
+      sx.fillStyle = 'rgba(206,198,172,.10)';
+      sx.beginPath(); sx.arc(bx+26, by+26, 12, 0, Math.PI*2); sx.fill();
+      sx.fillStyle = 'rgba(206,198,172,.09)';
+      sx.beginPath();
+      sx.moveTo(bx+13, by+60); sx.lineTo(bx+20, by+40);
+      sx.lineTo(bx+32, by+40); sx.lineTo(bx+39, by+60);
+      sx.closePath(); sx.fill();
+      /* 名字 */
+      sx.font = '9px ' + KAI;
+      sx.fillStyle = 'rgba(40,34,22,.80)';
+      sx.textAlign = 'center';
+      sx.fillText(p.names[i], bx+26, by+78);
+      sx.textAlign = 'left';
+    } else {
+      /* 第七位：框在，人不在 */
+      sx.save();
+      sx.translate(bx+26, by+38);
+      sx.rotate(-0.10);
+      sx.font = '9px ' + KAI;
+      sx.fillStyle = 'rgba(104,27,11,.80)';
+      sx.textAlign = 'center';
+      sx.fillText(p.gapNote, 0, 0);
+      sx.restore();
+      sx.textAlign = 'left';
+    }
+  }
+
+  /* 框下一行小字 */
+  sx.font = '9.5px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.72)';
+  sx.fillText(p.missing, PAD, gy + gh + 22);
+
+  sx.font = '12px ' + SERIF;
+  sx.fillStyle = 'rgba(15,13,9,.86)';
+  sx.fillText(p.tail, PAD, gy + gh + 52);
+
+  /* 右侧手写：数了两遍 */
+  sx.save();
+  sx.translate(W-PAD-6, gy+gh+70);
+  sx.rotate(-0.03);
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.62)';
+  sx.textAlign = 'right';
+  sx.fillText('數之，六。再數，六。', 0, 0);
+  sx.textAlign = 'left';
+  sx.restore();
+}
+
+/* ---------- 13 电报 ---------- */
+function rTelegram(p){
+  /* 顶部：一封电报该有的样子，只有格线和字 */
+  var y = 150;
+
+  sx.font = '13px ' + MONO;
+  sx.fillStyle = 'rgba(40,34,22,.72)';
+  sx.fillText('收：' + p.to, PAD, y);
+
+  /* 电报格：右上角的收发戳 */
+  sx.textAlign = 'right';
+  sx.font = '10px ' + MONO;
+  sx.fillStyle = 'rgba(60,52,38,.58)';
+  sx.fillText('到　十一月二十一日　七時', W-PAD, y-22);
+  sx.textAlign = 'left';
+
+  sx.strokeStyle = 'rgba(74,66,50,.30)';
+  sx.lineWidth = 0.9;
+  sx.beginPath(); sx.moveTo(PAD, y+16); sx.lineTo(W-PAD, y+16); sx.stroke();
+
+  /* 正文：三行，字距拉开 —— 越少越重 */
+  y += 96;
+  for (var i=0;i<p.body.length;i++){
+    sx.save();
+    sx.font = '23px ' + SERIF;
+    sx.fillStyle = 'rgba(15,13,9,.94)';
+    var ch = p.body[i];
+    var cx = PAD + 8;
+    for (var k=0;k<ch.length;k++){
+      var isSpace = (ch[k] === '　' || ch[k] === ' ');
+      if (isSpace){ cx += 7; continue; }
+      sx.fillText(ch[k], cx, y + i*54);
+      cx += 26;
+    }
+    sx.restore();
+  }
+
+  /* 落款 */
+  y += p.body.length*54 + 40;
+  sx.font = '13px ' + SERIF;
+  sx.fillStyle = 'rgba(30,26,18,.82)';
+  sx.textAlign = 'right';
+  sx.fillText(p.from, W-PAD, y);
+  sx.font = '12px ' + SERIF;
+  sx.fillStyle = 'rgba(48,42,30,.72)';
+  sx.fillText(p.date, W-PAD, y+24);
+  sx.textAlign = 'left';
+
+  /* 一枚骑缝章，压在右边 */
+  sx.save();
+  sx.globalAlpha = .42;
+  sx.strokeStyle = 'rgba(116,26,10,.95)';
+  sx.lineWidth = 2;
+  sx.beginPath(); sx.arc(W-16, y+4, 26, Math.PI/2, Math.PI*1.5); sx.stroke();
+  sx.restore();
+
+  /* 经手人 —— 名字被墨点盖住了 */
+  sx.font = '11px ' + MONO;
+  sx.fillStyle = 'rgba(60,52,38,.62)';
+  sx.fillText('經手', PAD, y + 40);
+  sx.fillStyle = 'rgba(14,12,9,.92)';
+  sx.beginPath();
+  sx.ellipse(PAD + 46, y + 37, 13, 7, 0.08, 0, Math.PI*2);
+  sx.fill();
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.62)';
+  sx.fillText('（墨污）', PAD + 64, y + 41);
+
+  /* 底部：一句铅笔字，写得很轻 */
+  sx.save();
+  sx.translate(PAD+10, H-150);
+  sx.rotate(-0.02);
+  sx.font = '11px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.48)';
+  sx.fillText('此電到時，卷已封三日。', 0, 0);
+  sx.restore();
 }
 
 /* ---------- 03 笔录 ---------- */
@@ -2504,6 +2800,8 @@ function drawSource(tc){
   if (p.kind === 'map')   rMap(p);
   if (p.kind === 'table') rTable(p);
   if (p.kind === 'check') rCheck(p);
+  if (p.kind === 'group') rGroup(p);
+  if (p.kind === 'telegram') rTelegram(p);
   if (p.kind === 'note')  rNote(p);
   if (p.kind === 'archive') rArchive(p);
 
@@ -2763,7 +3061,7 @@ function loop(now){
 
   var sec = Math.floor(t);
   /* 第七屏眼睛出现后，必须每帧重绘，否则瞳孔一秒才动一次，像卡住 */
-  var eyeLive = (cur === 7 && (t - pageEnter) > 11.0);
+  var eyeLive = (cur === PAGES.length-1 && (t - pageEnter) > 11.0);
   if (sec !== lastSec || eyeLive){
     lastSec = sec;
     drawSource(t);
@@ -2774,7 +3072,7 @@ function loop(now){
   /* 锁定的一瞬：世界静止 0.42 秒 */
   var elNow = t - pageEnter;
   var wasStill = STILL;
-  STILL = (cur === 7 && elNow > 24.0 && elNow < 24.42);
+  STILL = (cur === PAGES.length-1 && elNow > 24.0 && elNow < 24.42);
   if (STILL && !wasStill) FREEZE_T = t;
 
   draw2D();
