@@ -570,6 +570,208 @@ function copierArtifacts(){
   sx.restore();
 }
 
+
+/* ============================================================
+   档案实物层
+   ============================================================ */
+
+/* 背面透字：纸薄，背面的字透过来 —— 而且是反的 */
+function showThrough(seed){
+  var txt = ['民國十七年','十月','三沙','順發','查','員','水','號','第七'];
+  sx.save();
+  sx.globalAlpha = 0.105;
+  sx.fillStyle = 'rgba(20,16,10,1)';
+  for (var i=0;i<5;i++){
+    var x = 30 + srnd(seed*17+i*7)*380;
+    var y = 120 + srnd(seed*31+i*11)*640;
+    var fs = 16 + srnd(i*5+seed)*9;
+    var ang = (srnd(i*13+seed)-0.5)*0.05;
+    sx.save();
+    sx.translate(x, y);
+    sx.rotate(ang);
+    sx.scale(-1, 1);              /* 镜像：从背面看过来 */
+    sx.font = fs.toFixed(1) + 'px ' + SERIF;
+    sx.fillText(txt[(i + seed) % txt.length], 0, 0);
+    sx.restore();
+  }
+  sx.restore();
+}
+
+
+/* 虫蛀：针尖大的洞，洞缘的纤维被顶起来，是亮的 */
+function wormHoles(seed){
+  var n = 5 + Math.floor(srnd(seed*3)*4);
+  for (var i=0;i<n;i++){
+    var x = 24 + srnd(seed*13+i*7)*404;
+    var y = 90 + srnd(seed*29+i*11)*700;
+    var r = 0.85 + srnd(i*3+seed)*1.5;
+    sx.fillStyle = 'rgba(8,7,5,.88)';
+    sx.beginPath(); sx.arc(x, y, r, 0, Math.PI*2); sx.fill();
+    sx.strokeStyle = 'rgba(232,224,198,.34)';
+    sx.lineWidth = 0.65;
+    sx.beginPath(); sx.arc(x, y, r + 0.7, 0, Math.PI*2); sx.stroke();
+  }
+}
+
+/* 霉斑：边缘深、芯子淡，像长出来的，不是泼上去的 */
+function mildewSpot(cx, cy, rr, al, seed){
+  sx.save();
+  sx.beginPath();
+  for (var i=0;i<=30;i++){
+    var a = i/30*Math.PI*2;
+    var wb = 1 + (srnd(seed+i*4.3)-0.5)*0.55;
+    var X = cx + Math.cos(a)*rr*wb, Y = cy + Math.sin(a)*rr*wb*0.82;
+    if (i===0) sx.moveTo(X,Y); else sx.lineTo(X,Y);
+  }
+  sx.closePath();
+  var g = sx.createRadialGradient(cx, cy, 0, cx, cy, rr*1.1);
+  g.addColorStop(0,    'rgba(96,84,52,' + (al*0.30).toFixed(3) + ')');
+  g.addColorStop(0.62, 'rgba(72,62,38,' + (al*0.52).toFixed(3) + ')');
+  g.addColorStop(0.88, 'rgba(44,36,22,' + (al*0.85).toFixed(3) + ')');
+  g.addColorStop(1,    'rgba(44,36,22,0)');
+  sx.fillStyle = g;
+  sx.fill();
+  /* 斑里再撒一层更细的点 */
+  for (var k=0;k<12;k++){
+    var ka = srnd(seed+k*17)*Math.PI*2;
+    var kr = srnd(seed+k*31)*rr*0.85;
+    sx.fillStyle = 'rgba(38,32,20,' + (al*0.35).toFixed(3) + ')';
+    sx.beginPath();
+    sx.arc(cx + Math.cos(ka)*kr, cy + Math.sin(ka)*kr*0.82, 0.7 + srnd(k)*1.1, 0, Math.PI*2);
+    sx.fill();
+  }
+  sx.restore();
+}
+
+/* 纸纤维：几根极短的亮丝 */
+function paperFiber(seed){
+  for (var i=0;i<10;i++){
+    var x = srnd(seed*7+i*13)*W;
+    var y = srnd(seed*19+i*23)*H;
+    var a = srnd(i*5+seed)*Math.PI;
+    var len = 4 + srnd(i*11)*14;
+    sx.strokeStyle = 'rgba(238,230,204,' + (0.05 + srnd(i*3)*0.07).toFixed(3) + ')';
+    sx.lineWidth = 0.55;
+    sx.beginPath();
+    sx.moveTo(x, y);
+    sx.lineTo(x + Math.cos(a)*len, y + Math.sin(a)*len*0.5);
+    sx.stroke();
+  }
+}
+
+/* 胶带：贴在裂口上，黄了，有气泡 */
+function tapeAt(x, y, w, h, ang, al){
+  sx.save();
+  sx.translate(x, y);
+  sx.rotate(ang);
+
+  var g = sx.createLinearGradient(0, -h/2, 0, h/2);
+  g.addColorStop(0,   'rgba(212,202,166,' + (al*0.80).toFixed(3) + ')');
+  g.addColorStop(0.42,'rgba(234,226,194,' + (al*1.15).toFixed(3) + ')');
+  g.addColorStop(1,   'rgba(202,192,156,' + (al*0.78).toFixed(3) + ')');
+  sx.fillStyle = g;
+  sx.fillRect(-w/2, -h/2, w, h);
+
+  /* 两侧的硬边 —— 胶带是切出来的，不是撕的 */
+  sx.strokeStyle = 'rgba(246,238,214,' + (al*0.55).toFixed(3) + ')';
+  sx.lineWidth = 0.7;
+  sx.beginPath();
+  sx.moveTo(-w/2, -h/2); sx.lineTo(w/2, -h/2);
+  sx.moveTo(-w/2, h/2);  sx.lineTo(w/2, h/2);
+  sx.stroke();
+
+  /* 起皱的小泡 */
+  for (var i=0;i<5;i++){
+    var bx2 = -w/2 + srnd(i*13+x)*w;
+    var by2 = -h/2 + srnd(i*29+y)*h;
+    sx.strokeStyle = 'rgba(250,244,222,' + (al*0.62).toFixed(3) + ')';
+    sx.lineWidth = 0.55;
+    sx.beginPath();
+    sx.arc(bx2, by2, 1.6 + srnd(i*7)*2.4, 0, Math.PI*2);
+    sx.stroke();
+  }
+  sx.restore();
+}
+
+/* 回形针：一根钢丝弯出来的，带压痕 */
+function paperclipAt(x, y, ang, len, al){
+  sx.save();
+  sx.translate(x, y);
+  sx.rotate(ang);
+  sx.strokeStyle = 'rgba(238,232,208,' + al.toFixed(2) + ')';
+  sx.lineWidth = 1.9;
+  sx.lineCap = 'round';
+  var w2 = 5.2;
+  sx.beginPath();
+  sx.moveTo(-len/2, -w2*0.4);
+  sx.lineTo(len/2 - 4, -w2*0.4);
+  sx.arc(len/2 - 4, 0, w2*0.4, -Math.PI/2, Math.PI/2);
+  sx.lineTo(-len/2 + 6, w2*0.4);
+  sx.stroke();
+  sx.beginPath();
+  sx.moveTo(-len/2 + 6, w2*0.4);
+  sx.arc(-len/2 + 6, w2*0.9, w2*0.5, -Math.PI/2, Math.PI/2, true);
+  sx.lineTo(len/2 - 9, w2*1.4);
+  sx.stroke();
+  /* 纸被夹住的地方：压出一道浅痕 */
+  sx.strokeStyle = 'rgba(236,228,202,' + (al*0.5).toFixed(2) + ')';
+  sx.lineWidth = 0.8;
+  sx.beginPath();
+  sx.moveTo(-len/2 + 2, w2*1.9);
+  sx.lineTo(len/2 - 8, w2*1.9);
+  sx.stroke();
+  sx.restore();
+}
+
+/* 订书钉：两个小孔 + 一道压痕，锈渗进纸里 */
+function stapleAt(x, y, ang, al){
+  sx.save();
+  sx.translate(x, y);
+  sx.rotate(ang);
+  var w2 = 9;
+  /* 压痕 */
+  sx.strokeStyle = 'rgba(236,228,202,' + (al*0.55).toFixed(2) + ')';
+  sx.lineWidth = 1.2;
+  sx.beginPath(); sx.moveTo(-w2, 0); sx.lineTo(w2, 0); sx.stroke();
+  /* 两个孔 */
+  sx.fillStyle = 'rgba(16,14,10,' + (al*0.9).toFixed(2) + ')';
+  sx.beginPath(); sx.arc(-w2+1.6, 0, 1.5, 0, Math.PI*2); sx.fill();
+  sx.beginPath(); sx.arc( w2-1.6, 0, 1.5, 0, Math.PI*2); sx.fill();
+  /* 锈：孔周围一圈偏红 */
+  var rg2 = sx.createRadialGradient(0, 0, 1, 0, 0, 9);
+  rg2.addColorStop(0, 'rgba(112,60,30,' + (al*0.30).toFixed(2) + ')');
+  rg2.addColorStop(1, 'rgba(112,60,30,0)');
+  sx.fillStyle = rg2;
+  sx.fillRect(-10, -6, 20, 12);
+  sx.restore();
+}
+
+/* 折角：右下角被人翻过，翘起来 */
+function dogEar(x, y, sz){
+  sx.save();
+  /* 影子（用提亮，暗底看不见加深） */
+  sx.beginPath();
+  sx.moveTo(x, y);
+  sx.lineTo(x - sz, y + sz);
+  sx.lineTo(x - sz - 2, y + sz + 2);
+  sx.lineTo(x + 2, y + 2);
+  sx.closePath();
+  sx.fillStyle = 'rgba(246,238,214,.10)';
+  sx.fill();
+  /* 翻起来的那块 */
+  sx.beginPath();
+  sx.moveTo(x, y);
+  sx.lineTo(x - sz, y + sz);
+  sx.lineTo(x, y + sz);
+  sx.closePath();
+  sx.fillStyle = 'rgba(214,206,178,.16)';
+  sx.fill();
+  sx.strokeStyle = 'rgba(240,232,206,.30)';
+  sx.lineWidth = 0.8;
+  sx.stroke();
+  sx.restore();
+}
+
 /* ---------- 纸质痕迹工具 ---------- */
 function penLine(x1,y1,x2,y2,seed,col,w){
   sx.save();
@@ -614,9 +816,15 @@ function drawPhoto(key, x, y, w, h, rot){
   sx.translate(x+w/2, y+h/2);
   sx.rotate(rot);
 
-  /* 相纸白边 */
-  sx.fillStyle = 'rgba(60,54,40,.72)';
+  /* 照片是贴在纸上的：右下有一道极淡的投影 */
+  sx.fillStyle = 'rgba(0,0,0,.28)';
+  sx.fillRect(-w/2-6+3.5, -h/2-5+4, w+12, h+12);
+
+  /* 相纸白边 —— 比底纸亮，这是照片"浮起来"的原因 */
+  sx.fillStyle = 'rgba(216,208,182,.34)';
   sx.fillRect(-w/2-6, -h/2-6, w+12, h+12);
+  sx.fillStyle = 'rgba(64,58,42,.38)';
+  sx.fillRect(-w/2-3, -h/2-3, w+6, h+6);
 
   if (im && im.complete && im.naturalWidth){
     sx.drawImage(im, -w/2, -h/2, w, h);
@@ -631,9 +839,28 @@ function drawPhoto(key, x, y, w, h, rot){
   sx.fillStyle = 'rgba(34,46,30,.08)';
   sx.fillRect(-w/2, -h/2, w, h);
 
-  sx.strokeStyle = 'rgba(0,0,0,.5)';
-  sx.lineWidth = 1;
-  sx.strokeRect(-w/2-0.5, -h/2-0.5, w+1, h+1);
+  /* 上沿受光发亮，下沿压暗 */
+  sx.strokeStyle = 'rgba(242,234,208,.30)';
+  sx.lineWidth = 0.9;
+  sx.beginPath();
+  sx.moveTo(-w/2-6, -h/2-6); sx.lineTo(w/2+6, -h/2-6);
+  sx.stroke();
+  sx.strokeStyle = 'rgba(0,0,0,.42)';
+  sx.beginPath();
+  sx.moveTo(-w/2-6, h/2+6); sx.lineTo(w/2+6, h/2+6);
+  sx.stroke();
+
+  /* 右上角被翻起来的一小角 */
+  sx.beginPath();
+  sx.moveTo(w/2+6, -h/2-6);
+  sx.lineTo(w/2+6-9.5, -h/2-6);
+  sx.lineTo(w/2+6, -h/2-6+11.5);
+  sx.closePath();
+  sx.fillStyle = 'rgba(246,238,214,.26)';
+  sx.fill();
+  sx.strokeStyle = 'rgba(250,244,222,.34)';
+  sx.lineWidth = 0.7;
+  sx.stroke();
 
   sx.restore();
 }
@@ -2257,6 +2484,8 @@ function drawSource(tc){
     sx.fillRect(Math.random()*W, Math.random()*H, 1, 1);
   }
 
+
+
   /* 纸张老化：大尺度的明暗，不是一块均匀色 */
   var ag = sx.createRadialGradient(W*0.34, H*0.40, 30, W*0.52, H*0.52, H*0.92);
   ag.addColorStop(0,    'rgba(178,168,138,.17)');
@@ -2278,8 +2507,24 @@ function drawSource(tc){
   if (p.kind === 'note')  rNote(p);
   if (p.kind === 'archive') rArchive(p);
 
+  showThrough(cur * 7 + 3);
+  paperFiber(cur * 5 + 1);
+  wormHoles(cur * 11 + 4);
+  mildewSpot(34 + srnd(cur*3)*60, H*0.72, 30 + srnd(cur*7)*22, 0.16, cur*13+5);
+  mildewSpot(W - 40 - srnd(cur*9)*50, H*0.18, 24 + srnd(cur*5)*18, 0.14, cur*17+9);
+
   copierArtifacts();
   punchHoles();
+
+  /* 每页的实物：夹子、胶带、钉、折角 */
+  if (p.kind === 'doc'){       paperclipAt(W-PAD+7, 170, 1.42, 46, 0.80); }
+  if (p.kind === 'photo'){     tapeAt(W-PAD-26, 300, 58, 17, -0.30, 0.46); stapleAt(PAD+10, 108, 0.06, 0.86); }
+  if (p.kind === 'depo'){      tapeAt(PAD+96, H-232, 62, 16, 0.16, 0.42); stapleAt(W-PAD-8, H-236, 1.55, 0.82); }
+  if (p.kind === 'map'){       dogEar(W-6, H-8, 34); stapleAt(PAD+120, 136, 0.02, 0.78); }
+  if (p.kind === 'table'){     stapleAt(W-PAD-6, 150, 1.57, 0.80); tapeAt(PAD+2, 420, 54, 15, 1.55, 0.40); }
+  if (p.kind === 'check'){     paperclipAt(PAD-7, 212, 1.40, 42, 0.76); }
+  if (p.kind === 'note'){      tapeAt(W-PAD-8, 250, 66, 18, 0.42, 0.44); }
+
 
   /* 时间码 */
   sx.font = '10px ' + MONO;
