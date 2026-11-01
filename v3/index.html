@@ -383,6 +383,43 @@ function rDoc(p){
   sx.restore();
 }
 
+/* ---------- 纸质痕迹工具 ---------- */
+function penLine(x1,y1,x2,y2,seed,col,w){
+  sx.save();
+  sx.strokeStyle = col; sx.lineWidth = w;
+  sx.beginPath();
+  var n = 7;
+  for (var i=0;i<=n;i++){
+    var tt = i/n;
+    var px = x1 + (x2-x1)*tt + (srnd(seed+i)-0.5)*1.8;
+    var py = y1 + (y2-y1)*tt + (srnd(seed+i+50)-0.5)*1.8;
+    if (i===0) sx.moveTo(px,py); else sx.lineTo(px,py);
+  }
+  sx.stroke(); sx.restore();
+}
+
+function stainBlot(cx, cy, rad, alpha){
+  var g = sx.createRadialGradient(cx,cy,0,cx,cy,rad);
+  g.addColorStop(0,   'rgba(46,38,26,'+alpha+')');
+  g.addColorStop(0.55,'rgba(46,38,26,'+(alpha*0.55).toFixed(3)+')');
+  g.addColorStop(1,   'rgba(46,38,26,0)');
+  sx.fillStyle = g;
+  sx.beginPath(); sx.arc(cx,cy,rad,0,Math.PI*2); sx.fill();
+}
+
+function fingerprint(cx, cy, rx, ry, seed, alpha){
+  sx.save();
+  sx.lineWidth = 0.55;
+  for (var k=0;k<10;k++){
+    var sc = 0.16 + k*0.088;
+    sx.strokeStyle = 'rgba(186,176,150,'+(alpha*(0.5+srnd(seed+k)*0.5)).toFixed(3)+')';
+    sx.beginPath();
+    sx.ellipse(cx, cy, rx*sc, ry*sc, srnd(seed+k)*0.9, 0.4, Math.PI*1.75);
+    sx.stroke();
+  }
+  sx.restore();
+}
+
 /* ---------- 02 照片 ---------- */
 function drawPhoto(key, x, y, w, h, rot){
   var im = IMGS[key];
@@ -536,6 +573,14 @@ function rDepo(p){
     y += 14;
   }
 
+  /* 纸质痕迹：指纹 + 涂改 + 污点 */
+  fingerprint(W-PAD-46, H-160, 26, 34, 11, 0.30);
+  fingerprint(PAD+34, H-104, 20, 26, 31, 0.22);
+  penLine(PAD+150, 322, PAD+196, 318, 7, 'rgba(205,198,176,.30)', 5.5);
+  penLine(PAD+152, 327, PAD+198, 323, 9, 'rgba(205,198,176,.24)', 4.5);
+  stainBlot(W-PAD-24, 250, 42, 0.13);
+  stainBlot(PAD+18, H-210, 34, 0.08);
+
   sx.font = '11px ' + MONO;
   sx.fillStyle = C_FAINT;
   sx.fillText(p.tail, PAD, H-72);
@@ -675,6 +720,57 @@ function rMap(p){
   sx.fillText('〇', sbx-2, sby+13);
   sx.fillText('五〇〇公尺', sbx+40, sby+13);
 
+  /* 纸的痕迹：折痕是亮的（纤维断裂反光），水渍有边 */
+  sx.save();
+
+  /* 横向折痕：一条亮线 + 一条暗线 */
+  var fg = sx.createLinearGradient(0, 508, 0, 548);
+  fg.addColorStop(0,    'rgba(200,192,168,0)');
+  fg.addColorStop(0.42, 'rgba(200,192,168,.10)');
+  fg.addColorStop(0.50, 'rgba(220,212,186,.16)');
+  fg.addColorStop(0.58, 'rgba(0,0,0,.20)');
+  fg.addColorStop(1,    'rgba(0,0,0,0)');
+  sx.fillStyle = fg;
+  sx.fillRect(0, 508, W, 40);
+
+  /* 右缘：纸边不齐，露出一点浅色边 */
+  sx.beginPath();
+  sx.moveTo(W+2, 0);
+  for (var yy2=0; yy2<=H; yy2+=22){
+    sx.lineTo(W - (2 + srnd(yy2*3)*8), yy2);
+  }
+  sx.lineTo(W+2, H);
+  sx.closePath();
+  sx.fillStyle = 'rgba(190,182,158,.11)';
+  sx.fill();
+  sx.strokeStyle = 'rgba(210,202,176,.20)';
+  sx.lineWidth = 0.8;
+  sx.stroke();
+
+  /* 左下角：受潮起皱，微微发亮 */
+  var cg = sx.createRadialGradient(10, H-10, 0, 10, H-10, 110);
+  cg.addColorStop(0,   'rgba(180,172,148,.10)');
+  cg.addColorStop(0.6, 'rgba(150,142,120,.045)');
+  cg.addColorStop(1,   'rgba(150,142,120,0)');
+  sx.fillStyle = cg;
+  sx.fillRect(0, H-120, 130, 120);
+
+  sx.restore();
+
+  /* 水渍：中心淡、边缘深，像干了的圆斑 */
+  function waterRing(cx, cy, rr, al){
+    var g1 = sx.createRadialGradient(cx,cy,0,cx,cy,rr);
+    g1.addColorStop(0,    'rgba(170,162,138,'+(al*0.35).toFixed(3)+')');
+    g1.addColorStop(0.72, 'rgba(150,142,120,'+(al*0.55).toFixed(3)+')');
+    g1.addColorStop(0.88, 'rgba(60,52,40,'+(al*1.4).toFixed(3)+')');
+    g1.addColorStop(1,    'rgba(60,52,40,0)');
+    sx.fillStyle = g1;
+    sx.beginPath(); sx.arc(cx,cy,rr,0,Math.PI*2); sx.fill();
+  }
+  waterRing(gx+gw*0.24, gy+gh*0.31, 54, 0.16);
+  waterRing(gx+gw*0.71, gy+gh*0.75, 40, 0.13);
+  waterRing(gx+gw*0.54, gy+gh*0.13, 30, 0.10);
+
   /* 批注脚注 */
   sx.font = '10px ' + KAI;
   sx.fillStyle = 'rgba(154,43,24,.55)';
@@ -753,6 +849,18 @@ function rTable(p){
       }
     }
   }
+
+  /* 铅笔勾（第四行）+ 橡皮擦痕（第二行） */
+  var cy1 = ty+26+rh*3 + rh/2;
+  penLine(xs[1]+cols[1]*CW-26, cy1, xs[1]+cols[1]*CW-14, cy1+9, 21, 'rgba(206,198,174,.62)', 1.8);
+  penLine(xs[1]+cols[1]*CW-14, cy1+9, xs[1]+cols[1]*CW+6, cy1-13, 23, 'rgba(206,198,174,.62)', 1.8);
+
+  var cy2 = ty+26+rh*1 + rh/2;
+  var eg = sx.createRadialGradient(xs[2]+cols[2]*CW/2, cy2, 0, xs[2]+cols[2]*CW/2, cy2, 46);
+  eg.addColorStop(0, 'rgba(186,178,152,.20)');
+  eg.addColorStop(1, 'rgba(186,178,152,0)');
+  sx.fillStyle = eg;
+  sx.beginPath(); sx.ellipse(xs[2]+cols[2]*CW/2, cy2, 46, 13, -0.05, 0, Math.PI*2); sx.fill();
 
   /* 单位 */
   sx.font = '10px ' + MONO;
