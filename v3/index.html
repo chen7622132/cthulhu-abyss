@@ -115,9 +115,10 @@ var PAGES = [
     { label:'第 三 張', sub:'另　寄', mark:true }
   ],
   notes: [
-    '一、船首殘舵一段，長約四尺，木質，有嚙痕。',
-    '二、網具一具，網目盡破，破口整齊。',
-    '三、澳口灘上足印，自水際起，止於社廟階前。'
+    '一、船首殘舵。　二、網具一具，破口整齊。',
+    '三、灘上足印，自水際起，止於社廟階前。',
+    '四、社廟階前木牌一枚，刻字非漢文。',
+    '五、袋中原記「三張」。'
   ],
   tail: '以上照片三張，附袋移送。',
   tailStrong: '袋中實存二張。',
@@ -420,67 +421,70 @@ function rPhoto(p){
   sx.fillText(p.title, PAD, y);
 
   /* 主图 */
-  drawPhoto('photo1', PAD, 112, 314, 236, -0.011);
+  drawPhoto('photo1', PAD, 106, 268, 202, -0.011);
 
-  /* 右侧标签 */
   sx.font = '10px ' + MONO;
   sx.fillStyle = C_FAINT;
-  sx.fillText('第一張', PAD+328, 130);
+  sx.fillText('第一張', PAD+282, 124);
   sx.font = '9px ' + KAI;
   sx.fillStyle = 'rgba(120,130,112,.64)';
-  var cap1 = ['船首殘舵','一段，長約','四尺。'];
-  for (var c=0;c<cap1.length;c++) sx.fillText(cap1[c], PAD+328, 148+c*14);
+  sx.fillText('船首殘舵', PAD+282, 142);
+  sx.fillText('一段，長約', PAD+282, 156);
+  sx.fillText('四尺。', PAD+282, 170);
 
-  /* 手绘箭头指咬痕 */
+  /* 手绘箭头 */
   sx.strokeStyle = 'rgba(154,43,24,.5)';
   sx.lineWidth = 0.9;
   sx.beginPath();
-  sx.moveTo(PAD+330, 214);
-  sx.lineTo(PAD+296, 238);
-  sx.lineTo(PAD+290, 231);
+  sx.moveTo(PAD+282, 210);
+  sx.lineTo(PAD+250, 232);
+  sx.lineTo(PAD+244, 226);
   sx.stroke();
   sx.font = '9px ' + KAI;
   sx.fillStyle = 'rgba(154,43,24,.72)';
-  sx.fillText('嚙痕', PAD+332, 228);
+  sx.fillText('嚙痕', PAD+284, 222);
 
-  /* 两张小图 */
-  drawPhoto('photo2', PAD, 366, 186, 140,  0.015);
-  drawPhoto('photo3', PAD+200, 366, 186, 140, -0.023);
+  /* 四张小图 2×2 */
+  var gy = 322, cw = 188, ch = 126;
+  drawPhoto('photo2', PAD,      gy,      cw, ch,  0.014);
+  drawPhoto('photo3', PAD+200,  gy,      cw, ch, -0.020);
+  drawPhoto('photo4', PAD,      gy+134,  cw, ch, -0.009);
+  drawPhoto('photo5', PAD+200,  gy+134,  cw, ch,  0.017);
 
   sx.font = '9px ' + KAI;
   sx.fillStyle = 'rgba(120,130,112,.64)';
-  sx.fillText('第二張　網具', PAD, 522);
+  sx.fillText('第二張　網具', PAD, gy+ch+13);
   sx.fillStyle = 'rgba(154,43,24,.78)';
-  sx.fillText('第三張　另　寄', PAD+200, 522);
+  sx.fillText('第三張　另　寄', PAD+200, gy+ch+13);
+  sx.fillStyle = 'rgba(120,130,112,.64)';
+  sx.fillText('第四張　灘上', PAD, gy+134+ch+13);
+  sx.fillStyle = 'rgba(120,130,112,.64)';
+  sx.fillText('第五張　木牌', PAD+200, gy+134+ch+13);
 
   /* 说明 */
-  y = 550;
-  sx.font = '12px ' + SERIF;
+  y = 618;
+  sx.font = '11px ' + SERIF;
   for (var k=0;k<p.notes.length;k++){
-    var ls = wrapText(p.notes[k], CW-6, '12px ' + SERIF);
-    for (var j=0;j<ls.length;j++){
-      sx.fillStyle = 'rgba(196,194,178,.80)';
-      sx.fillText(ls[j], PAD, y);
-      y += 19;
-    }
-    y += 2;
+    sx.fillStyle = 'rgba(212,210,192,.80)';
+    sx.fillText(p.notes[k], PAD, y);
+    y += 18;
   }
 
-  y += 10;
-  sx.font = '13px ' + SERIF;
+  y += 8;
+  sx.font = '12px ' + SERIF;
   sx.fillStyle = C_TXT;
   sx.fillText(p.tail, PAD, y);
-  y += 22;
-  sx.font = '14px ' + SERIF;
+  y += 20;
+  sx.font = '13px ' + SERIF;
   sx.fillStyle = C_RED;
   sx.fillText(p.tailStrong, PAD, y);
 
   /* 边注 */
-  sx.font = '10px ' + KAI;
+  sx.font = '9px ' + KAI;
   sx.fillStyle = 'rgba(154,43,24,.6)';
   var ml = p.margin.split('\n');
   sx.textAlign = 'right';
-  for (var m=0;m<ml.length;m++) sx.fillText(ml[m], W-PAD, H-92 + m*16);
+  for (var m=0;m<ml.length;m++) sx.fillText(ml[m], W-PAD, H-58 + m*14);
   sx.textAlign = 'left';
 }
 
@@ -1202,7 +1206,11 @@ var eye3D = (function(){
       var dive = Math.max(0, Math.min(1, (el-18.0)/8.0));
       var divePow = Math.pow(dive, 2.4);
       var zoom = 1.16 + pop*0.55 + divePow*5.6;
-      var fov  = 1.0 + divePow*0.6;
+      var foc = 0;
+      if (el > 16.2 && el < 19.2){
+        foc = Math.sin((el-16.2)/3.0 * Math.PI) * 0.085;   /* 先收后放，像对焦 */
+      }
+      var fov  = 1.0 + divePow*0.6 - foc;
 
       /* 四周越收越紧 */
       var vig = 0.14;
