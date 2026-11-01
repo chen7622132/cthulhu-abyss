@@ -284,8 +284,9 @@ var PAGES = [
    3. 画布
    ============================================================ */
 var srcC = document.createElement('canvas');
-srcC.width = W; srcC.height = H;
+srcC.width = W*2; srcC.height = H*2;
 var sx = srcC.getContext('2d');
+sx.scale(2,2);
 
 /* 照片资产 */
 var IMGS = {};
@@ -337,7 +338,7 @@ function chrome(p, tc){
   sx.fillText('登記 ' + p.reg, W-PAD, 44);
   sx.textAlign = 'left';
 
-  sx.strokeStyle = 'rgba(120,130,112,.20)';
+  sx.strokeStyle = 'rgba(74,66,50,.20)';
   sx.lineWidth = 1;
   sx.beginPath(); sx.moveTo(PAD, 58); sx.lineTo(W-PAD, 58); sx.stroke();
 
@@ -352,7 +353,7 @@ function chrome(p, tc){
 
   /* REC */
   sx.font = '10px ' + MONO;
-  sx.fillStyle = 'rgba(120,130,112,.55)';
+  sx.fillStyle = 'rgba(74,66,50,.55)';
   sx.fillText('REC', W-PAD-42, H-34);
   sx.beginPath();
   sx.arc(W-PAD-18, H-37, 2.6, 0, Math.PI*2);
@@ -403,7 +404,7 @@ function rDoc(p){
   /* 附件：剪报残片 */
   drawPhoto('clip1', W-PAD-166, H-292, 156, 117, -0.028);
   sx.font = '9px ' + KAI;
-  sx.fillStyle = 'rgba(120,130,112,.70)';
+  sx.fillStyle = 'rgba(74,66,50,.70)';
   sx.fillText('附：剪報一紙', PAD, H-262);
   sx.fillText('美利堅《詭麗幻譚》', PAD, H-246);
   sx.fillText('二月號　節譯', PAD, H-230);
@@ -613,7 +614,7 @@ function drawPhoto(key, x, y, w, h, rot){
   sx.rotate(rot);
 
   /* 相纸白边 */
-  sx.fillStyle = 'rgba(186,182,166,.72)';
+  sx.fillStyle = 'rgba(60,54,40,.72)';
   sx.fillRect(-w/2-6, -h/2-6, w+12, h+12);
 
   if (im && im.complete && im.naturalWidth){
@@ -649,7 +650,7 @@ function rPhoto(p){
   sx.fillStyle = C_FAINT;
   sx.fillText('第一張', PAD+282, 124);
   sx.font = '9px ' + KAI;
-  sx.fillStyle = 'rgba(120,130,112,.64)';
+  sx.fillStyle = 'rgba(74,66,50,.64)';
   sx.fillText('船首殘舵', PAD+282, 142);
   sx.fillText('一段，長約', PAD+282, 156);
   sx.fillText('四尺。', PAD+282, 170);
@@ -674,20 +675,20 @@ function rPhoto(p){
   drawPhoto('photo5', PAD+200,  gy+134,  cw, ch,  0.017);
 
   sx.font = '9px ' + KAI;
-  sx.fillStyle = 'rgba(120,130,112,.64)';
+  sx.fillStyle = 'rgba(74,66,50,.64)';
   sx.fillText('第二張　網具', PAD, gy+ch+13);
   sx.fillStyle = 'rgba(104,27,11,.78)';
   sx.fillText('第三張　另　寄', PAD+200, gy+ch+13);
-  sx.fillStyle = 'rgba(120,130,112,.64)';
+  sx.fillStyle = 'rgba(74,66,50,.64)';
   sx.fillText('第四張　灘上', PAD, gy+134+ch+13);
-  sx.fillStyle = 'rgba(120,130,112,.64)';
+  sx.fillStyle = 'rgba(74,66,50,.64)';
   sx.fillText('第五張　木牌', PAD+200, gy+134+ch+13);
 
   /* 说明 */
   y = 618;
   sx.font = '11px ' + SERIF;
   for (var k=0;k<p.notes.length;k++){
-    sx.fillStyle = 'rgba(26,23,16,.80)';
+    sx.fillStyle = 'rgba(15,13,9,.80)';
     sx.fillText(p.notes[k], PAD, y);
     y += 18;
   }
@@ -736,13 +737,13 @@ function rDepo(p){
 
     var ql = wrapText(r.q, CW-34, '13px ' + SERIF);
     sx.font = '13px ' + SERIF;
-    sx.fillStyle = 'rgba(196,194,178,.62)';
+    sx.fillStyle = 'rgba(28,24,17,.62)';
     for (var j=0;j<ql.length;j++){ sx.fillText(ql[j], PAD+34, y + j*20); }
     y += ql.length*20;
 
     var al = wrapText(r.a, CW-34, '14px ' + SERIF);
     sx.font = '14px ' + SERIF;
-    sx.fillStyle = 'rgba(196,194,178,.92)';
+    sx.fillStyle = 'rgba(28,24,17,.92)';
     for (var k=0;k<al.length;k++){ sx.fillText(al[k], PAD+34, y + k*21); }
     y += al.length*21;
 
@@ -758,7 +759,7 @@ function rDepo(p){
       y += 4;
       sx.font = '12px ' + KAI;
       for (var e=0;e<el.length;e++){
-        sx.fillStyle = e >= 2 ? 'rgba(196,194,178,.75)' : 'rgba(120,130,112,.75)';
+        sx.fillStyle = e >= 2 ? 'rgba(28,24,17,.75)' : 'rgba(74,66,50,.75)';
         sx.fillText(el[e], PAD+34, y);
         y += 19;
       }
@@ -792,12 +793,12 @@ function rMap(p){
 
   /* 图框 */
   var gx = PAD, gy = 132, gw = CW, gh = 480;
-  sx.strokeStyle = 'rgba(120,130,112,.28)';
+  sx.strokeStyle = 'rgba(74,66,50,.28)';
   sx.lineWidth = 1;
   sx.strokeRect(gx, gy, gw, gh);
 
   /* 网格 */
-  sx.strokeStyle = 'rgba(120,130,112,.06)';
+  sx.strokeStyle = 'rgba(74,66,50,.06)';
   for (var i=1;i<8;i++){
     sx.beginPath(); sx.moveTo(gx+gw*i/8, gy); sx.lineTo(gx+gw*i/8, gy+gh); sx.stroke();
   }
@@ -831,12 +832,12 @@ function rMap(p){
   for (var q=1;q<pts.length;q++) sx.lineTo(px(pts[q][0]), py(pts[q][1]));
   sx.lineTo(px(1.02), py(-0.02)); sx.lineTo(px(-0.02), py(-0.02));
   sx.closePath();
-  sx.fillStyle = 'rgba(196,194,178,.055)';
+  sx.fillStyle = 'rgba(28,24,17,.055)';
   sx.fill();
   sx.restore();
 
   /* 海岸线 */
-  sx.strokeStyle = 'rgba(196,194,178,.66)';
+  sx.strokeStyle = 'rgba(28,24,17,.66)';
   sx.lineWidth = 1.3;
   sx.beginPath();
   sx.moveTo(px(pts[0][0]), py(pts[0][1]));
@@ -849,7 +850,7 @@ function rMap(p){
     var it = isles[s];
     sx.beginPath();
     sx.ellipse(px(it[0]), py(it[1]), it[2], it[2]*0.66, srnd(s)*1.2, 0, Math.PI*2);
-    sx.strokeStyle = 'rgba(196,194,178,.34)';
+    sx.strokeStyle = 'rgba(28,24,17,.34)';
     sx.lineWidth = 1;
     sx.stroke();
   }
@@ -858,10 +859,10 @@ function rMap(p){
   for (var b=0;b<p.bays.length;b++){
     var bay = p.bays[b];
     sx.font = '11px ' + MONO;
-    sx.fillStyle = 'rgba(150,158,138,.9)';
+    sx.fillStyle = 'rgba(80,72,54,.9)';
     sx.fillText(bay.t, px(bay.x), py(bay.y));
     sx.beginPath(); sx.arc(px(bay.x)+2, py(bay.y)+4, 1.6, 0, Math.PI*2);
-    sx.fillStyle = 'rgba(150,158,138,.55)'; sx.fill();
+    sx.fillStyle = 'rgba(80,72,54,.55)'; sx.fill();
   }
 
   /* 多出来的那个 */
@@ -886,7 +887,7 @@ function rMap(p){
 
   /* 指北针 */
   var nx2 = gx+gw-30, ny2 = gy+26;
-  sx.strokeStyle = 'rgba(150,158,138,.5)';
+  sx.strokeStyle = 'rgba(80,72,54,.5)';
   sx.lineWidth = 1;
   sx.beginPath();
   sx.moveTo(nx2, ny2+14); sx.lineTo(nx2, ny2-12);
@@ -894,14 +895,249 @@ function rMap(p){
   sx.moveTo(nx2, ny2-12); sx.lineTo(nx2+4, ny2-4);
   sx.stroke();
   sx.font = '9px ' + MONO;
-  sx.fillStyle = 'rgba(150,158,138,.7)';
+  sx.fillStyle = 'rgba(80,72,54,.7)';
   sx.textAlign = 'center';
   sx.fillText('北', nx2, ny2+26);
   sx.textAlign = 'left';
 
+
+  /* ============ 海图本体 ============ */
+
+  /* 等深线：不规则闭合，像手绘的 */
+  function isoDepth(cx, cy, rx, ry, seed){
+    sx.beginPath();
+    for (var a2=0; a2<=54; a2++){
+      var ang = a2/54*Math.PI*2;
+      var wob = 1 + (srnd(seed + a2*3.7) - 0.5)*0.26;
+      var X = cx + Math.cos(ang)*rx*wob;
+      var Y = cy + Math.sin(ang)*ry*wob;
+      if (a2 === 0) sx.moveTo(X, Y); else sx.lineTo(X, Y);
+    }
+    sx.strokeStyle = 'rgba(74,66,50,.26)';
+    sx.lineWidth = 0.75;
+    sx.stroke();
+  }
+  isoDepth(px(0.63), py(0.50), 82, 54, 7);
+  isoDepth(px(0.63), py(0.50), 54, 35, 19);
+  isoDepth(px(0.26), py(0.80), 62, 42, 31);
+
+  /* 水深：近岸小而密，远海大而疏 —— 海图最容易认的一眼 */
+  var SND = [
+    [0.10,0.22,3,2],[0.15,0.27,4,5],[0.20,0.31,2,8],[0.25,0.36,5,1],
+    [0.30,0.40,3,6],[0.35,0.44,6,0],[0.41,0.48,4,7],[0.46,0.52,7,3],
+    [0.52,0.56,5,5],[0.58,0.60,8,1],[0.64,0.64,6,4],[0.70,0.68,9,2],
+    [0.76,0.72,7,6],[0.82,0.76,5,9],[0.88,0.80,8,3],
+    [0.13,0.40,11,4],[0.19,0.48,13,0],[0.24,0.56,9,8],
+    [0.30,0.64,14,2],[0.36,0.72,12,5],[0.42,0.80,16,0],
+    [0.48,0.88,15,3],[0.09,0.56,18,7],[0.14,0.66,21,3],
+    [0.20,0.76,17,9],[0.26,0.88,19,4],[0.71,0.86,23,1],
+    [0.77,0.92,26,5],[0.83,0.97,24,8],[0.61,0.94,28,2],
+    [0.67,0.99,31,0],[0.56,0.88,25,6],[0.44,0.96,29,3]
+  ];
+  var UX0 = gx + 0.60*gw, UY0 = gy + 0.84*gh;   /* 未测区中心，先算好 */
+  var leftOne = -1;                              /* 唯一漏划的那一个 */
+  for (var si=0; si<SND.length; si++){
+    var so = SND[si];
+    var SX = px(so[0]), SY = py(so[1]);
+    var ddx = (SX-UX0)/78, ddy = (SY-UY0)/56;
+    var inU = (ddx*ddx + ddy*ddy) < 1.18;
+    sx.font = '8.5px ' + MONO;
+    sx.fillStyle = inU ? 'rgba(56,50,38,.62)' : 'rgba(44,38,26,.86)';
+    sx.fillText('' + so[2], SX, SY);
+    sx.font = '6px ' + MONO;
+    sx.fillStyle = 'rgba(56,48,34,.80)';
+    sx.fillText('' + so[3], SX + 8, SY + 2.5);
+
+    if (inU){
+      if (leftOne < 0 && so[2] >= 20){ leftOne = si; }   /* 这个不划 */
+      else {
+        /* 铅笔划掉：两道，一粗一细，不平行 */
+        sx.strokeStyle = 'rgba(58,50,36,.80)';
+        sx.lineWidth = 1.6;
+        sx.beginPath();
+        sx.moveTo(SX-2.5, SY-6.5); sx.lineTo(SX+15, SY-2);
+        sx.stroke();
+        sx.lineWidth = 0.85;
+        sx.beginPath();
+        sx.moveTo(SX-2, SY-2.6); sx.lineTo(SX+14, SY+1.2);
+        sx.stroke();
+      }
+    }
+  }
+  /* 漏划的这一个：旁边补一道歪的、短的、没划干净的第二笔 */
+  if (leftOne >= 0){
+    var LO = SND[leftOne];
+    var LX = px(LO[0]), LY = py(LO[1]);
+    sx.strokeStyle = 'rgba(58,50,36,.45)';
+    sx.lineWidth = 1.1;
+    sx.beginPath(); sx.moveTo(LX+2, LY-3); sx.lineTo(LX+8, LY-1.5); sx.stroke();
+  }
+
+  /* 底质：泥 M、沙 S、岩 R、石 St —— 老海图的暗号 */
+  var BOT = [
+    [0.17,0.34,'M'],[0.33,0.52,'S'],[0.50,0.72,'M'],
+    [0.24,0.62,'St'],[0.68,0.90,'R'],[0.12,0.50,'S'],[0.40,0.92,'M']
+  ];
+  for (var bi=0; bi<BOT.length; bi++){
+    sx.font = '7.5px ' + SERIF;
+    sx.fillStyle = 'rgba(52,45,32,.72)';
+    sx.fontStyle = 'italic';
+    sx.fillText(BOT[bi][2], px(BOT[bi][0]), py(BOT[bi][1]));
+  }
+  sx.fontStyle = 'normal';
+
+  /* 干出高度：带下划线的数字（涨潮淹没、退潮露出） */
+  var DRY = [[0.22,0.44,'1'],[0.55,0.66,'2'],[0.79,0.74,'1']];
+  for (var di=0; di<DRY.length; di++){
+    var DX = px(DRY[di][0]), DY = py(DRY[di][1]);
+    sx.font = '8px ' + MONO;
+    sx.fillStyle = 'rgba(44,38,26,.80)';
+    sx.fillText(DRY[di][2], DX, DY);
+    sx.strokeStyle = 'rgba(44,38,26,.62)';
+    sx.lineWidth = 0.7;
+    sx.beginPath(); sx.moveTo(DX, DY+2); sx.lineTo(DX+4.5, DY+2); sx.stroke();
+  }
+
+  /* 危险：礁石十字符号 */
+  var RK = [[0.49,0.60],[0.72,0.83],[0.31,0.44],[0.86,0.70]];
+  st_draw_rocks: {
+    for (var ri=0; ri<RK.length; ri++){
+      var RX = px(RK[ri][0]), RY = py(RK[ri][1]);
+      sx.strokeStyle = 'rgba(120,26,10,.62)';
+      sx.lineWidth = 1.1;
+      sx.beginPath();
+      sx.moveTo(RX-3.6, RY-3.6); sx.lineTo(RX+3.6, RY+3.6);
+      sx.moveTo(RX+3.2, RY-3.2); sx.lineTo(RX-3.2, RY+3.2);
+      sx.stroke();
+    }
+  }
+
+  /* ===== 未测区：整张图上唯一什么都没写的地方 ===== */
+  var UMX = px(0.60), UMY = py(0.84), UMRX = 74, UMRY = 52;
+  sx.save();
+  sx.beginPath();
+  for (var ui=0; ui<=40; ui++){
+    var ua = ui/40*Math.PI*2;
+    var uw = 1 + (srnd(ui*5.3+41)-0.5)*0.34;
+    var UX = UMX + Math.cos(ua)*UMRX*uw;
+    var UY = UMY + Math.sin(ua)*UMRY*uw;
+    if (ui===0) sx.moveTo(UX, UY); else sx.lineTo(UX, UY);
+  }
+  sx.closePath();
+  sx.fillStyle = 'rgba(255,250,232,.055)';      /* 比周围略浅，像没印上 */
+  sx.fill();
+  sx.setLineDash([2.5, 3.5]);
+  sx.strokeStyle = 'rgba(120,26,10,.34)';
+  sx.lineWidth = 0.9;
+  sx.stroke();
+  sx.setLineDash([]);
+  sx.restore();
+
+  /* 区中央：只有两个字 */
+  sx.save();
+  sx.translate(UMX-16, UMY+2);
+  sx.rotate(-0.055);
+  sx.font = '13px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.80)';
+  sx.fillText('未　測', 0, 0);
+  sx.restore();
+
+  /* ===== 铅笔航线：画到未测区边上就断了 ===== */
+  var RT = [
+    [0.30,0.38],[0.36,0.46],[0.42,0.54],[0.47,0.62],
+    [0.51,0.69],[0.53,0.745]
+  ];
+  sx.strokeStyle = 'rgba(62,54,40,.72)';
+  sx.lineWidth = 1.25;
+  sx.setLineDash([5, 3.5]);
+  sx.beginPath();
+  sx.moveTo(px(RT[0][0]), py(RT[0][1]));
+  for (var ti=1; ti<RT.length; ti++) sx.lineTo(px(RT[ti][0]), py(RT[ti][1]));
+  sx.stroke();
+  sx.setLineDash([]);
+
+  /* 断笔处：不是箭头，是一个短促的、往下压的收笔 */
+  var eX = px(RT[RT.length-1][0]), eY = py(RT[RT.length-1][1]);
+  sx.strokeStyle = 'rgba(52,44,30,.88)';
+  sx.lineWidth = 2.0;
+  sx.beginPath(); sx.moveTo(eX-1, eY-2); sx.lineTo(eX+1.5, eY+5); sx.stroke();
+  sx.lineWidth = 1.2;
+  sx.beginPath(); sx.moveTo(eX+3, eY+1.5); sx.lineTo(eX+6, eY+3.5); sx.stroke();
+
+  /* 断笔旁边一句小字 */
+  sx.save();
+  sx.translate(eX+9, eY+16);
+  sx.rotate(-0.07);
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.74)';
+  sx.fillText('至此不畫', 0, 0);
+  sx.restore();
+
+  /* 航线起点的小圆圈（出发港） */
+  sx.strokeStyle = 'rgba(62,54,40,.62)';
+  sx.lineWidth = 1;
+  sx.beginPath(); sx.arc(px(0.30), py(0.38), 3.4, 0, Math.PI*2); sx.stroke();
+
+  /* ===== 罗盘玫瑰 ===== */
+  var crx = gx+gw-38, cry = gy+42;
+  sx.save();
+  sx.translate(crx, cry);
+  sx.strokeStyle = 'rgba(74,66,50,.42)';
+  sx.lineWidth = 0.8;
+  sx.beginPath(); sx.arc(0,0,17,0,Math.PI*2); sx.stroke();
+  sx.beginPath(); sx.arc(0,0,12.5,0,Math.PI*2); sx.stroke();
+  for (var ci=0; ci<8; ci++){
+    var ca = ci/8*Math.PI*2 - Math.PI/2;
+    var long = (ci%2===0) ? 12.5 : 7;
+    sx.beginPath();
+    sx.moveTo(0,0);
+    sx.lineTo(Math.cos(ca)*long, Math.sin(ca)*long);
+    sx.stroke();
+  }
+  /* 北向那一根实心 */
+  sx.beginPath();
+  sx.moveTo(0,-12.5); sx.lineTo(2.6,-3); sx.lineTo(-2.6,-3);
+  sx.closePath();
+  sx.fillStyle = 'rgba(74,66,50,.55)'; sx.fill();
+  sx.font = '7.5px ' + MONO;
+  sx.fillStyle = 'rgba(74,66,50,.72)';
+  sx.textAlign = 'center';
+  sx.fillText('北', 0, -20);
+  sx.textAlign = 'left';
+  sx.restore();
+
+  /* 磁差：印的数值被划掉，旁边手写了一个新的 */
+  sx.font = '7px ' + SERIF;
+  sx.fillStyle = 'rgba(60,52,38,.70)';
+  sx.fillText('磁差 西 二度', crx-22, cry+30);
+  sx.strokeStyle = 'rgba(58,50,36,.80)';
+  sx.lineWidth = 1.3;
+  sx.beginPath(); sx.moveTo(crx-24, cry+28); sx.lineTo(crx+14, cry+26); sx.stroke();
+  sx.save();
+  sx.translate(crx-20, cry+42);
+  sx.rotate(-0.05);
+  sx.font = '9px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.78)';
+  sx.fillText('西　七度', 0, 0);
+  sx.restore();
+
+  sx.save();
+  sx.translate(gx+gw-96, gy+gh-22);
+  sx.rotate(-0.03);
+  sx.font = '8px ' + KAI;
+  sx.fillStyle = 'rgba(104,27,11,.62)';
+  sx.fillText('原圖甚細　可近觀', 0, 0);
+  sx.restore();
+
+  /* 图廓注记 */
+  sx.font = '7px ' + SERIF;
+  sx.fillStyle = 'rgba(60,52,38,.62)';
+  sx.fillText('據民國十六年海關水師測', gx+10, gy+gh-30);
+  sx.fillText('比例 五萬分之一', gx+10, gy+gh-21);
+
   /* 比例尺 */
   var sbx = gx+14, sby = gy+gh-16;
-  sx.strokeStyle = 'rgba(150,158,138,.55)';
+  sx.strokeStyle = 'rgba(80,72,54,.55)';
   sx.beginPath();
   sx.moveTo(sbx, sby); sx.lineTo(sbx+72, sby);
   sx.moveTo(sbx, sby-4); sx.lineTo(sbx, sby+4);
@@ -909,7 +1145,7 @@ function rMap(p){
   sx.moveTo(sbx+72, sby-4); sx.lineTo(sbx+72, sby+4);
   sx.stroke();
   sx.font = '8px ' + MONO;
-  sx.fillStyle = 'rgba(150,158,138,.65)';
+  sx.fillStyle = 'rgba(80,72,54,.65)';
   sx.fillText('〇', sbx-2, sby+13);
   sx.fillText('五〇〇公尺', sbx+40, sby+13);
 
@@ -998,11 +1234,11 @@ function rTable(p){
   }
   sx.textAlign = 'left';
 
-  sx.strokeStyle = 'rgba(120,130,112,.32)';
+  sx.strokeStyle = 'rgba(74,66,50,.32)';
   sx.beginPath(); sx.moveTo(PAD, ty+26); sx.lineTo(PAD+CW, ty+26); sx.stroke();
 
   /* 竖线 */
-  sx.strokeStyle = 'rgba(120,130,112,.14)';
+  sx.strokeStyle = 'rgba(74,66,50,.14)';
   for (var v=1;v<cols.length;v++){
     var sk = (srnd(v*7+3)-0.5)*2.6;
     sx.beginPath();
@@ -1018,11 +1254,11 @@ function rTable(p){
     var odd = (r % 2 === 1);
 
     if (odd){
-      sx.fillStyle = 'rgba(120,130,112,.045)';
+      sx.fillStyle = 'rgba(74,66,50,.045)';
       sx.fillRect(PAD, ry, CW, rh);
     }
 
-    sx.strokeStyle = 'rgba(120,130,112,.10)';
+    sx.strokeStyle = 'rgba(74,66,50,.10)';
     var hk = (srnd(r*11+5)-0.5)*1.6;
     sx.beginPath(); sx.moveTo(PAD, ry+rh); sx.lineTo(PAD+CW, ry+rh+hk); sx.stroke();
 
@@ -1031,7 +1267,7 @@ function rTable(p){
       sx.font = (c===0 ? '13px ' + MONO : '14px ' + MONO);
       if (isLast && c>0) sx.fillStyle = 'rgba(104,27,11,.62)';
       else if (c===0) sx.fillStyle = C_DIM;
-      else sx.fillStyle = 'rgba(196,194,178,.88)';
+      else sx.fillStyle = 'rgba(28,24,17,.88)';
 
       if (c===0){
         sx.fillText(row[c], xs[c]+6, ry+28);
@@ -1096,10 +1332,10 @@ function rCheck(p){
   sx.fillText(p.title, PAD, y);
 
   sx.font = '10px ' + KAI;
-  sx.fillStyle = 'rgba(120,130,112,.68)';
+  sx.fillStyle = 'rgba(74,66,50,.68)';
   sx.fillText(p.sub, PAD, y+22);
 
-  sx.strokeStyle = 'rgba(120,130,112,.18)';
+  sx.strokeStyle = 'rgba(74,66,50,.18)';
   sx.beginPath(); sx.moveTo(PAD, 136); sx.lineTo(W-PAD, 136); sx.stroke();
 
   y = 168;
@@ -1117,19 +1353,19 @@ function rCheck(p){
       var isSeven = (row[1] === '七' || /〇〇七/.test(row[1]));
 
       sx.font = '13px ' + SERIF;
-      sx.fillStyle = isOdd ? 'rgba(120,130,112,.62)' : 'rgba(26,23,16,.86)';
+      sx.fillStyle = isOdd ? 'rgba(74,66,50,.62)' : 'rgba(15,13,9,.86)';
       sx.fillText(row[0], PAD+10, y);
 
       /* 点线 */
       var lx = PAD + 12 + sx.measureText(row[0]).width + 8;
       var rx2 = W - PAD - 78;
-      sx.fillStyle = 'rgba(120,130,112,.26)';
+      sx.fillStyle = 'rgba(74,66,50,.26)';
       for (var dx=lx; dx<rx2; dx+=4.5){
         sx.fillRect(dx, y-3, 1.4, 1.2);
       }
 
       sx.font = '13px ' + MONO;
-      sx.fillStyle = isSeven ? 'rgba(104,27,11,.92)' : (isOdd ? 'rgba(120,130,112,.62)' : 'rgba(26,23,16,.92)');
+      sx.fillStyle = isSeven ? 'rgba(104,27,11,.92)' : (isOdd ? 'rgba(74,66,50,.62)' : 'rgba(15,13,9,.92)');
       sx.textAlign = 'right';
       sx.fillText(row[1], W-PAD, y);
       sx.textAlign = 'left';
@@ -1140,7 +1376,7 @@ function rCheck(p){
   }
 
   /* 结论 */
-  sx.strokeStyle = 'rgba(120,130,112,.16)';
+  sx.strokeStyle = 'rgba(74,66,50,.16)';
   sx.beginPath(); sx.moveTo(PAD, y-4); sx.lineTo(W-PAD, y-4); sx.stroke();
 
   y += 22;
@@ -1149,7 +1385,7 @@ function rCheck(p){
   sx.fillText(p.tail, PAD, y);
 
   sx.font = '10px ' + KAI;
-  sx.fillStyle = 'rgba(120,130,112,.55)';
+  sx.fillStyle = 'rgba(74,66,50,.55)';
   sx.fillText(p.tail2, PAD, y+22);
 
   stainBlot(W-PAD-30, 300, 40, 0.12);
@@ -1163,7 +1399,7 @@ function rNote(p){
   sx.translate(PAD, y);
   sx.rotate(-0.012);
   sx.font = '18px ' + KAI;
-  sx.fillStyle = 'rgba(196,194,178,.88)';
+  sx.fillStyle = 'rgba(28,24,17,.88)';
   sx.fillText(p.title, 0, 0);
   sx.restore();
 
@@ -1196,7 +1432,7 @@ function rNote(p){
   /* 附：原稿残页 */
   drawPhoto('ms1', PAD, H-268, 196, 147, -0.02);
   sx.font = '9px ' + KAI;
-  sx.fillStyle = 'rgba(120,130,112,.70)';
+  sx.fillStyle = 'rgba(74,66,50,.70)';
   sx.fillText('原稿　殘頁', PAD+206, H-244);
   sx.fillStyle = 'rgba(104,27,11,.66)';
   sx.fillText('末二行', PAD+206, H-226);
@@ -1740,10 +1976,10 @@ function rArchive(p){
   sx.fillText(p.title, PAD, 96);
 
   sx.font = '10px ' + KAI;
-  sx.fillStyle = 'rgba(120,130,112,.66)';
+  sx.fillStyle = 'rgba(74,66,50,.66)';
   sx.fillText(p.sub, PAD, 120);
 
-  sx.strokeStyle = 'rgba(120,130,112,.16)';
+  sx.strokeStyle = 'rgba(74,66,50,.16)';
   sx.beginPath(); sx.moveTo(PAD, 136); sx.lineTo(W-PAD, 136); sx.stroke();
 
   for (var i=0;i<p.lines.length;i++){
@@ -1761,7 +1997,7 @@ function rArchive(p){
       }
       var cxw = W/2 - total/2;
       for (var n=0;n<L.t.length;n++){
-        sx.fillStyle = 'rgba(26,23,16,' + (a*0.95).toFixed(2) + ')';
+        sx.fillStyle = 'rgba(15,13,9,' + (a*0.95).toFixed(2) + ')';
         sx.fillText(L.t[n], cxw + ws[n]/2, L.y);
         cxw += ws[n];
       }
@@ -1778,8 +2014,8 @@ function rArchive(p){
     var fs2 = (L.k === 'l') ? 12 : 14;
     sx.font = fs2 + 'px ' + SERIF;
     if (L.k === 'r') sx.fillStyle = 'rgba(104,27,11,' + (a*0.9).toFixed(2) + ')';
-    else if (L.k === 'l') sx.fillStyle = 'rgba(26,23,16,' + (a*0.70).toFixed(2) + ')';
-    else sx.fillStyle = 'rgba(26,23,16,' + (a*0.92).toFixed(2) + ')';
+    else if (L.k === 'l') sx.fillStyle = 'rgba(15,13,9,' + (a*0.70).toFixed(2) + ')';
+    else sx.fillStyle = 'rgba(15,13,9,' + (a*0.92).toFixed(2) + ')';
     sx.fillText(L.t, PAD + (L.k === 'l' ? 12 : 0), L.y);
   }
 
@@ -1813,7 +2049,7 @@ function rArchive(p){
   if (el >= 23){
     var a3 = Math.min(1, (el-30)/2.2);
     sx.font = '13px ' + SERIF;
-    sx.fillStyle = 'rgba(26,23,16,' + (0.60*a3).toFixed(2) + ')';
+    sx.fillStyle = 'rgba(15,13,9,' + (0.60*a3).toFixed(2) + ')';
     sx.textAlign = 'center';
     sx.fillText('余不能記。', W/2, H-150);
     sx.textAlign = 'left';
@@ -1876,7 +2112,7 @@ function drawSource(tc){
   /* 时间码 */
   sx.font = '10px ' + MONO;
   sx.textAlign = 'right';
-  sx.fillStyle = 'rgba(120,130,112,.42)';
+  sx.fillStyle = 'rgba(74,66,50,.42)';
   sx.fillText('00:' + pad2(tc/60) + ':' + pad2(tc%60), PAD+120, 44);
   sx.textAlign = 'left';
 }
@@ -1940,6 +2176,13 @@ function updateExposure(dt){
    ============================================================ */
 var out = document.getElementById('out');
 var ctx2 = null, scanPat = null, noisePat = null, vigGrad = null;
+var zS = 1, zX = 0, zY = 0, zMax = 3.2;
+window.__zoom = function(s,cx,cy){
+  if(s<=1){ zS=1; zX=0; zY=0; return; }
+  zS = s;
+  zX = (1-s)*((cx==null?W/2:cx) - W/2);
+  zY = (1-s)*((cy==null?H/2:cy) - H/2);
+};
 
 function resize(){
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -2011,7 +2254,8 @@ function draw2D(){
   ctx2.fillRect(0,0,w,h);
 
   ctx2.save();
-  ctx2.translate(w/2, h/2);
+  ctx2.translate(w/2 + zX*(w/W), h/2 + zY*(w/W));
+  ctx2.scale(zS, zS);
   ctx2.rotate(-0.0115);          /* 0.66 度 —— 说不出，但"正"的感觉没了 */
   ctx2.scale(1.045, 1.045);
   ctx2.globalAlpha = 0.20;
@@ -2153,24 +2397,99 @@ function onUp(x, y){
   }
 }
 
+/* ---------- 手势：滑动翻页 / 双击放大 / 放大后拖动 ---------- */
+var lastTap = 0, lastTapX = 0, lastTapY = 0, tapTimer = null;
+var dragX = 0, dragY = 0, pinch0 = 0, zS0 = 1;
+
+function toLogicX(pxv){ return pxv * W / Math.max(1, window.innerWidth); }
+function toLogicY(pyv){ return pyv * H / Math.max(1, window.innerHeight); }
+function clampZoom(){
+  var mx = (zS-1)*W/2, my = (zS-1)*H/2;
+  zX = Math.max(-mx, Math.min(mx, zX));
+  zY = Math.max(-my, Math.min(my, zY));
+}
+function tdist(t){
+  var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
 document.addEventListener('touchstart', function(e){
   if (typeof AUD !== 'undefined') AUD.start();
-  var tp = e.touches[0]; onDown(tp.clientX, tp.clientY);
-}, {passive:true});
-document.addEventListener('touchmove', function(e){
-  var tp = e.touches[0]; onMove(tp.clientX, tp.clientY);
-}, {passive:true});
-document.addEventListener('touchend', function(e){
-  var tp = e.changedTouches[0]; onUp(tp.clientX, tp.clientY);
+  if (e.touches.length >= 2){
+    pinch0 = tdist(e.touches); zS0 = zS; moved = true;
+    return;
+  }
+  var tp = e.touches[0];
+  onDown(tp.clientX, tp.clientY);
+  dragX = tp.clientX; dragY = tp.clientY;
 }, {passive:true});
 
-var mDown = false, mx0 = 0, my0 = 0;
+document.addEventListener('touchmove', function(e){
+  /* 双指：捏合缩放 */
+  if (e.touches.length >= 2){
+    var d = tdist(e.touches);
+    if (pinch0 > 0 && d > 0){
+      var ns = Math.max(1, Math.min(zMax, zS0 * d / pinch0));
+      var cx = (e.touches[0].clientX + e.touches[1].clientX)/2;
+      var cy = (e.touches[0].clientY + e.touches[1].clientY)/2;
+      if (ns <= 1.02){ zS = 1; zX = 0; zY = 0; }
+      else { zS = ns; zX = (1-ns)*(toLogicX(cx) - W/2); zY = (1-ns)*(toLogicY(cy) - H/2); clampZoom(); }
+    }
+    moved = true;
+    return;
+  }
+  var tp = e.touches[0];
+  /* 放大态：单指拖动等于平移，不翻页 */
+  if (zS > 1.02){
+    zX += toLogicX(tp.clientX - dragX);
+    zY += toLogicY(tp.clientY - dragY);
+    dragX = tp.clientX; dragY = tp.clientY;
+    clampZoom(); moved = true;
+    return;
+  }
+  onMove(tp.clientX, tp.clientY);
+}, {passive:true});
+
+document.addEventListener('touchend', function(e){
+  if (pinch0 > 0 && e.touches.length < 2){ pinch0 = 0; }
+  if (!e.changedTouches.length) return;
+  var tp = e.changedTouches[0];
+  var now = Date.now();
+
+  /* 双击：放大 / 复原 */
+  var sameSpot = Math.abs(tp.clientX-lastTapX) < 32 && Math.abs(tp.clientY-lastTapY) < 32;
+  if (!moved && sameSpot && (now - lastTap) < 360){
+    lastTap = 0;
+    if (tapTimer){ clearTimeout(tapTimer); tapTimer = null; }
+    if (zS > 1.02) { zS = 1; zX = 0; zY = 0; }
+    else { zS = 2.8; zX = (1-zS)*(toLogicX(tp.clientX)-W/2); zY = (1-zS)*(toLogicY(tp.clientY)-H/2); clampZoom(); }
+    return;
+  }
+  lastTap = now; lastTapX = tp.clientX; lastTapY = tp.clientY;
+
+  if (zS > 1.02) return;            /* 放大态不翻页 */
+
+  var dx = Math.abs(tp.clientX - sx0), dy = Math.abs(tp.clientY - sy0);
+  if (moved || dy > 12 || dx > 12){ onUp(tp.clientX, tp.clientY); return; }
+
+  /* 单击：压 300ms 等第二下，避免双击变成"翻页+放大" */
+  if (tapTimer){ clearTimeout(tapTimer); tapTimer = null; }
+  tapTimer = setTimeout(function(){ tapTimer = null; goNext(); }, 300);
+}, {passive:true});
+
+var mDown = false;
 document.addEventListener('mousedown', function(e){ mDown = true; onDown(e.clientX, e.clientY); });
 document.addEventListener('mousemove', function(e){ if (mDown) onMove(e.clientX, e.clientY); });
 document.addEventListener('mouseup', function(e){
   if (!mDown) return;
   mDown = false; onUp(e.clientX, e.clientY);
 });
+document.addEventListener('dblclick', function(e){
+  e.preventDefault();
+  if (zS > 1.02){ zS = 1; zX = 0; zY = 0; }
+  else { zS = 2.8; zX = (1-zS)*(toLogicX(e.clientX)-W/2); zY = (1-zS)*(toLogicY(e.clientY)-H/2); clampZoom(); }
+});
+
 window.addEventListener('keydown', function(e){
   if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') goNext();
   if (e.key === 'ArrowUp' || e.key === 'PageUp') goPrev();
