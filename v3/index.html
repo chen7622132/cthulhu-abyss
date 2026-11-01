@@ -193,12 +193,48 @@ var PAGES = [
   tail2: '按：同日午後，潮退。'
 },
 
+/* -------- 06 勘合 -------- */
+{
+  kind: 'check',
+  stamp: '證物　〇六',
+  reg: '10 · 02',
+  num: '06',
+  title: '勘　　合',
+  sub: '民國十七年十月初二　　書記　核',
+  groups: [
+    { name:'一、人數',
+      rows:[
+        ['船牌存根', '六'],
+        ['澳甲口報', '六'],
+        ['筆錄〇〇一', '六'],
+        ['筆錄〇〇五', '七'],
+        ['（旁注）', '已改為六'],
+        ['照片說明', '船員五名']
+      ]},
+    { name:'二、日期',
+      rows:[
+        ['出　港', '十月十一'],
+        ['報　案', '十月十四'],
+        ['公函發文', '十月十四'],
+        ['公署收文', '十月初七'],
+        ['底片沖印', '十月十六']
+      ]},
+    { name:'三、澳口',
+      rows:[
+        ['海圖所標', '〇〇一 至 〇〇七'],
+        ['本縣舊冊', '〇〇一 至 〇〇六']
+      ]}
+  ],
+  tail: '以上三項，均不合。',
+  tail2: '（無批語。）'
+},
+
 /* -------- 06 译员手记 -------- */
 {
   kind: 'note',
   stamp: '譯員　手記',
   reg: '09 · 29',
-  num: '06',
+  num: '07',
   title: '譯　稿',
   lead: '同一句，譯了四回。第四回我沒敢交上去。',
   items: [
@@ -213,9 +249,9 @@ var PAGES = [
 /* -------- 07 归档 ---------- */
 {
   kind: 'archive',
-  stamp: '證物　〇七',
+  stamp: '證物　〇八',
   reg: '11 · 03',
-  num: '07',
+  num: '08',
   title: '歸　　檔',
   sub: '民國十七年十一月三日　　歸檔員　記',
   lines: [
@@ -307,10 +343,10 @@ function chrome(p, tc){
   /* 页脚 */
   sx.font = '11px ' + MONO;
   sx.fillStyle = C_FAINT;
-  sx.fillText('記錄 ' + p.num + ' / 07', PAD, H-34);
+  sx.fillText('記錄 ' + p.num + ' / 08', PAD, H-34);
 
   sx.textAlign = 'right';
-  sx.fillText(p.num === '07' ? '○' : '↑ ↓', W-PAD, H-34);
+  sx.fillText(p.num === '08' ? '○' : '↑ ↓', W-PAD, H-34);
   sx.textAlign = 'left';
 
   /* REC */
@@ -895,7 +931,75 @@ function handLine(text, x, y, size, rgb, seed){
   return cx;
 }
 
-/* ---------- 06 手记 ---------- */
+/* ---------- 06 勘合 ---------- */
+function rCheck(p){
+  var y = 92;
+  sx.font = '21px ' + SERIF;
+  sx.fillStyle = C_TXT;
+  sx.fillText(p.title, PAD, y);
+
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = 'rgba(120,130,112,.68)';
+  sx.fillText(p.sub, PAD, y+22);
+
+  sx.strokeStyle = 'rgba(120,130,112,.18)';
+  sx.beginPath(); sx.moveTo(PAD, 136); sx.lineTo(W-PAD, 136); sx.stroke();
+
+  y = 168;
+  for (var g=0; g<p.groups.length; g++){
+    var grp = p.groups[g];
+
+    sx.font = '11px ' + MONO;
+    sx.fillStyle = 'rgba(154,43,24,.72)';
+    sx.fillText(grp.name, PAD, y);
+    y += 24;
+
+    for (var r=0; r<grp.rows.length; r++){
+      var row = grp.rows[r];
+      var isOdd = /旁注|均不合/.test(row[0]);
+      var isSeven = (row[1] === '七' || /〇〇七/.test(row[1]));
+
+      sx.font = '13px ' + SERIF;
+      sx.fillStyle = isOdd ? 'rgba(120,130,112,.62)' : 'rgba(212,210,192,.86)';
+      sx.fillText(row[0], PAD+10, y);
+
+      /* 点线 */
+      var lx = PAD + 12 + sx.measureText(row[0]).width + 8;
+      var rx2 = W - PAD - 78;
+      sx.fillStyle = 'rgba(120,130,112,.26)';
+      for (var dx=lx; dx<rx2; dx+=4.5){
+        sx.fillRect(dx, y-3, 1.4, 1.2);
+      }
+
+      sx.font = '13px ' + MONO;
+      sx.fillStyle = isSeven ? 'rgba(154,43,24,.92)' : (isOdd ? 'rgba(120,130,112,.62)' : 'rgba(212,210,192,.92)');
+      sx.textAlign = 'right';
+      sx.fillText(row[1], W-PAD, y);
+      sx.textAlign = 'left';
+
+      y += 23;
+    }
+    y += 16;
+  }
+
+  /* 结论 */
+  sx.strokeStyle = 'rgba(120,130,112,.16)';
+  sx.beginPath(); sx.moveTo(PAD, y-4); sx.lineTo(W-PAD, y-4); sx.stroke();
+
+  y += 22;
+  sx.font = '15px ' + SERIF;
+  sx.fillStyle = 'rgba(154,43,24,.88)';
+  sx.fillText(p.tail, PAD, y);
+
+  sx.font = '10px ' + KAI;
+  sx.fillStyle = 'rgba(120,130,112,.55)';
+  sx.fillText(p.tail2, PAD, y+22);
+
+  stainBlot(W-PAD-30, 300, 40, 0.12);
+  fingerprint(PAD+26, H-120, 22, 28, 41, 0.22);
+}
+
+/* ---------- 07 手记 ---------- */
 function rNote(p){
   var y = 92;
   sx.save();
@@ -1495,6 +1599,7 @@ function drawSource(tc){
   if (p.kind === 'depo')  rDepo(p);
   if (p.kind === 'map')   rMap(p);
   if (p.kind === 'table') rTable(p);
+  if (p.kind === 'check') rCheck(p);
   if (p.kind === 'note')  rNote(p);
   if (p.kind === 'archive') rArchive(p);
 
@@ -1719,7 +1824,7 @@ function loop(now){
 
   var sec = Math.floor(t);
   /* 第七屏眼睛出现后，必须每帧重绘，否则瞳孔一秒才动一次，像卡住 */
-  var eyeLive = (cur === 6 && (t - pageEnter) > 11.0);
+  var eyeLive = (cur === 7 && (t - pageEnter) > 11.0);
   if (sec !== lastSec || eyeLive){
     lastSec = sec;
     drawSource(t);
@@ -1730,7 +1835,7 @@ function loop(now){
   /* 锁定的一瞬：世界静止 0.42 秒 */
   var elNow = t - pageEnter;
   var wasStill = STILL;
-  STILL = (cur === 6 && elNow > 24.0 && elNow < 24.42);
+  STILL = (cur === 7 && elNow > 24.0 && elNow < 24.42);
   if (STILL && !wasStill) FREEZE_T = t;
 
   draw2D();
