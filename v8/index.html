@@ -50,20 +50,39 @@ var flip = 0, flipV = 0, holding = false, holdT = 0;
 
 function resize(){
   DPR = Math.min(window.devicePixelRatio||1, 2);
-  cv.width  = Math.floor(innerWidth  * DPR);
-  cv.height = Math.floor(innerHeight * DPR);
-  cv.style.width  = innerWidth + 'px';
-  cv.style.height = innerHeight + 'px';
-  W = 390; H = Math.round(390 * innerHeight / innerWidth);
+  /* 直接用 CSS 像素 —— 不要再从 390 反推高度，那会在某些设备上算飞 */
+  /* 以 canvas 自身的 CSS 尺寸为准 —— 这是唯一不会被浏览器骗的值 */
+  var r = cv.getBoundingClientRect();
+  W = Math.round(r.width)  || 390;
+  H = Math.round(r.height) || 844;
+  cv.width  = Math.floor(W * DPR);
+  cv.height = Math.floor(H * DPR);
+  cv.style.width  = W + 'px';
+  cv.style.height = H + 'px';
   draw();
 }
 addEventListener('resize', resize);
 
+/* 图片铺满后的真实位置 —— 所有交互坐标都要从这里换算 */
+var VIEW = { ox:0, oy:0, dw:W, dh:H, ok:false };
+
 function paintCover(img, ok){
   if (!ok){ ctx.fillStyle = '#0a0908'; ctx.fillRect(0,0,W,H); return; }
   var sc = Math.max(W/img.width, H/img.height);
-  var dw = img.width*sc, dh = img.height*sc;
-  ctx.drawImage(img, (W-dw)/2, (H-dh)/2, dw, dh);
+  VIEW.dw = img.width*sc;
+  VIEW.dh = img.height*sc;
+  VIEW.ox = (W - VIEW.dw)/2;
+  VIEW.oy = (H - VIEW.dh)/2;
+  VIEW.ok = true;
+  ctx.drawImage(img, VIEW.ox, VIEW.oy, VIEW.dw, VIEW.dh);
+}
+
+/* 屏幕坐标 -> 图片归一化坐标 */
+function toUV(x, y){
+  return {
+    u: (x - VIEW.ox) / VIEW.dw,
+    v: (y - VIEW.oy) / VIEW.dh
+  };
 }
 
 /* 七个字：刻在内侧石面上 */
@@ -130,8 +149,10 @@ function tintMask(ch, color){
 
 function carve(){
   var chars = ['启','者','代','我','守','此','函'];
-  var cx = W * 0.505;
-  var y0 = H * 0.235, y1 = H * 0.685;
+  /* 用图片坐标换算：字要落在石面上，不是落在屏幕上 */
+  var cx = VIEW.ox + VIEW.dw * 0.505;
+  var y0 = VIEW.oy + VIEW.dh * 0.235;
+  var y1 = VIEW.oy + VIEW.dh * 0.685;
   var step = (y1-y0)/6;
   var S = 52, D = 24;          /* 遮罩尺寸 / 半个 */
 
@@ -232,6 +253,18 @@ function draw(){
     ctx.fillRect(W/2 - lw, 0, lw*2, H);
   }
 
+  /* 可交互区域的极淡提示：一圈几乎看不见的呼吸光 */
+  if (flip < 0.02 && VIEW.ok){
+    var hx = VIEW.ox + VIEW.dw * 0.55;
+    var hy = VIEW.oy + VIEW.dh * 0.45;
+    var breathe = 0.5 + 0.5*Math.sin(Date.now()/900);
+    var hg = ctx.createRadialGradient(hx, hy, 10, hx, hy, VIEW.dw*0.28);
+    hg.addColorStop(0,'rgba(255,232,180,' + (0.030*breathe).toFixed(3) + ')');
+    hg.addColorStop(1,'rgba(255,232,180,0)');
+    ctx.fillStyle = hg;
+    ctx.fillRect(0,0,W,H);
+  }
+
   /* 暗角 */
   var vg = ctx.createRadialGradient(W*.5,H*.46,H*.20,W*.5,H*.5,H*.92);
   vg.addColorStop(0,'rgba(0,0,0,0)');
@@ -245,8 +278,9 @@ function draw(){
 var g = { on:false, id:null, y0:0, base:0 };
 
 function hitLid(x,y){
-  var nx = x/W, ny = y/H;
-  return nx > 0.34 && nx < 0.76 && ny > 0.22 && ny < 0.66;
+  if (!VIEW.ok) return true;              /* 图还没到，先不拦 */
+  var p = toUV(x, y);
+  return p.u > 0.30 && p.u < 0.80 && p.v > 0.18 && p.v < 0.70;
 }
 
 cv.addEventListener('pointerdown', function(e){
@@ -262,7 +296,7 @@ cv.addEventListener('pointermove', function(e){
   if (!g.on || e.pointerId !== g.id) return;
   var r = cv.getBoundingClientRect();
   var y = e.clientY - r.top;
-  var want = g.base + (y - g.y0) / (H * 0.30);
+  var want = g.base + (y - g.y0) / (H * 0.28);
   flip = Math.max(0, Math.min(1, want));
   draw();
 }, {passive:true});
@@ -282,6 +316,12 @@ cv.addEventListener('pointerup', function(e){ endFlip(); }, {passive:true});
 cv.addEventListener('pointercancel', function(e){ g.on=false; flip=0; draw(); }, {passive:true});
 
 window.__flip = function(v){ flip = v; draw(); };
+window.__state = function(){ return {flip: flip.toFixed(2), view: VIEW}; };
+
+/* 低频重绘：只为了让提示光"呼吸"，150ms 一次，不做每帧渲染 */
+setInterval(function(){
+  if (flip < 0.02) draw();
+}, 150);
 
 resize();
 })();
