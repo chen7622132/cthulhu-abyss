@@ -38,6 +38,10 @@
 
   <div class="btn" id="gyro">① 点这里授权陀螺仪</div>
   <div class="hint" id="gyroState">状态：未请求（unknown）</div>
+  <div style="height:26px;background:#1e1a12;border:1px solid #3a3324;position:relative;">
+    <div id="gyroBar" style="position:absolute;left:50%;top:0;height:100%;width:2px;background:#8fa07c;"></div>
+    <div id="gyroNum" style="position:absolute;right:6px;top:3px;font:11px ui-monospace,monospace;color:#7a7158;">gamma —</div>
+  </div>
 
   <div class="stage" id="stage">
     <div class="slot"></div>
@@ -68,8 +72,15 @@ var gyroGot = 0;
 var gyroBtn = document.getElementById('gyro');
 var gyroStateEl = document.getElementById('gyroState');
 
+var gyroBar = document.getElementById('gyroBar');
+var gyroNum = document.getElementById('gyroNum');
 function onOrient(e){
   gyroGot++;
+  if (e.gamma != null){
+    var g = Math.max(-90, Math.min(90, e.gamma));
+    gyroBar.style.left = (50 + g/90*48) + '%';
+    gyroNum.textContent = 'gamma ' + g.toFixed(1);
+  }
   if (gyroGot === 1){
     L('deviceorientation <b>首个事件到达</b> beta=' + (e.beta==null?'null':e.beta.toFixed(1))
       + ' gamma=' + (e.gamma==null?'null':e.gamma.toFixed(1)));
@@ -151,18 +162,24 @@ stage.addEventListener('pointermove', function(e){
 
   if (!passed){
     if (want >= barrier){
-      /* 卡在 60% */
-      setKnob(barrier);
-      barrierT += 0;
-      if (!stage.__inBarrier){
-        stage.__inBarrier = true;
-        L('⚠ 到达 60% 卡点（继续拖会停在这里）', 'warn');
+      var now = Date.now();
+      if (!stage.__lock){
+        stage.__lock = now + 220;      /* 到卡点，锁 220ms —— 不管拖多快 */
+        setKnob(barrier);
+        L('⚠ 卡点锁定 220ms（速度=' + (Date.now()-lastMoveT>0?'快':'慢') + '）', 'warn');
+        return;
       }
-      /* 判定"突破"：必须从卡点再往前推 60px */
-      if (want > barrier + 60 * (maxX / 280)){
+      if (now < stage.__lock){
+        setKnob(barrier);
+        return;
+      }
+      /* 解锁后仍要再推一段才破 */
+      if (want > barrier + 36){
         passed = true;
-        stage.__inBarrier = false;
+        stage.__lock = 0;
         L('✓ 突破卡点，阻尼释放');
+      } else {
+        setKnob(barrier);
       }
       return;
     }
@@ -175,7 +192,7 @@ stage.addEventListener('pointermove', function(e){
 function endDrag(e, reason){
   if (!dragging) return;
   dragging = false;
-  stage.__inBarrier = false;
+  stage.__lock = 0;
   var pct = maxX > 0 ? (curX / maxX * 100).toFixed(0) : '0';
   L(reason + ' id=' + (e && e.pointerId) + ' 位置=' + pct + '% '
     + (passed ? '（已过卡点）' : '（未过卡点，回弹）'),
@@ -200,7 +217,7 @@ stage.addEventListener('pointercancel', function(e){
 stage.addEventListener('lostpointercapture', function(e){
   if (dragging){
     L('lostpointercapture ⚠ 捕获丢失，强制复位', 'bad');
-    dragging = false; setKnob(0); passed = false; activeId = null;
+    dragging = false; setKnob(0); passed = false; activeId = null; stage.__lock = 0;
   }
 }, {passive:true});
 
@@ -208,7 +225,7 @@ stage.addEventListener('lostpointercapture', function(e){
 setInterval(function(){
   if (dragging && Date.now() - lastMoveT > 900){
     L('⚠ 900ms 无 move 事件 —— 疑似 pointerup 丢失，强制复位', 'bad');
-    dragging = false; setKnob(0); passed = false; activeId = null;
+    dragging = false; setKnob(0); passed = false; activeId = null; stage.__lock = 0;
   }
 }, 300);
 
