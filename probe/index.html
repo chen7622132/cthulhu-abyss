@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>probe</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#14120d;color:#d8d0b8;
+    font:14px/1.5 -apple-system,"PingFang SC",sans-serif;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+    touch-action:none;overflow:hidden;}
+  .wrap{padding:18px 16px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;}
+  h1{font-size:15px;margin:0;color:#e8dfc4;font-weight:500;letter-spacing:.06em;}
+  .btn{background:#2a2519;border:1px solid #4a4230;color:#e8dfc4;padding:12px 14px;
+    border-radius:2px;font-size:14px;text-align:center;}
+  .btn:active{background:#3a3324;}
+  .stage{position:relative;flex:0 0 auto;height:150px;background:#1e1a12;
+    border:1px solid #3a3324;overflow:hidden;}
+  .slot{position:absolute;left:10px;right:10px;top:50%;height:46px;margin-top:-23px;
+    background:#171409;border:1px dashed #3a3324;}
+  .knob{position:absolute;top:50%;left:0;width:64px;height:46px;margin-top:-23px;
+    background:#6b6046;border:1px solid #8a7d5c;display:flex;align-items:center;justify-content:center;
+    color:#f0e8d0;font-size:12px;letter-spacing:.1em;}
+  .hint{font-size:11px;color:#7a7158;line-height:1.6;}
+  .log{flex:1;min-height:0;background:#0e0c08;border:1px solid #2a2519;overflow-y:auto;
+    padding:8px 10px;font:11px/1.55 ui-monospace,Menlo,monospace;color:#8fa07c;
+    -webkit-overflow-scrolling:touch;}
+  .log b{color:#d8c88a;font-weight:400;}
+  .log .warn{color:#d08a5a;}
+  .log .bad{color:#c85a4a;}
+  .tag{display:inline-block;padding:1px 5px;background:#2a2519;color:#a89d7c;
+    border-radius:2px;font-size:10px;margin-right:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>PROBE · 触摸与陀螺仪</h1>
+
+  <div class="btn" id="gyro">① 点这里授权陀螺仪</div>
+  <div class="hint" id="gyroState">状态：未请求（unknown）</div>
+
+  <div class="stage" id="stage">
+    <div class="slot"></div>
+    <div class="knob" id="knob">DRAG</div>
+  </div>
+  <div class="hint">② 按住褐色方块，向右拖到 60% 会卡住，松手回弹。用力拖过头才能推到底。</div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var logEl = document.getElementById('log');
+var t0 = Date.now();
+function L(msg, cls){
+  var ms = Date.now() - t0;
+  var d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.innerHTML = '<b>+' + (ms/1000).toFixed(2) + 's</b> ' + msg;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+/* =========== ① 陀螺仪 =========== */
+var gyroState = 'unknown';          /* iOS 没有 permissions.query，只能本地跟踪 */
+var gyroGot = 0;
+var gyroBtn = document.getElementById('gyro');
+var gyroStateEl = document.getElementById('gyroState');
+
+function onOrient(e){
+  gyroGot++;
+  if (gyroGot === 1){
+    L('deviceorientation <b>首个事件到达</b> beta=' + (e.beta==null?'null':e.beta.toFixed(1))
+      + ' gamma=' + (e.gamma==null?'null':e.gamma.toFixed(1)));
+  } else if (gyroGot % 30 === 0){
+    L('orientation #' + gyroGot + ' gamma=' + (e.gamma==null?'null':e.gamma.toFixed(1)));
+  }
+  /* 关键：授权前会静默收到 null */
+  if (e.beta === null && e.gamma === null){
+    if (gyroGot === 1) L('⚠ 收到空数据 —— 授权未生效，但<b>不会报错</b>', 'warn');
+  }
+}
+
+gyroBtn.addEventListener('click', function(){
+  L('点击了授权按钮（真实手势处理器内部）');
+  if (typeof DeviceOrientationEvent === 'undefined'){
+    L('✗ DeviceOrientationEvent 不存在', 'bad'); return;
+  }
+  if (typeof DeviceOrientationEvent.requestPermission === 'function'){
+    L('检测到 iOS：调用 requestPermission()');
+    DeviceOrientationEvent.requestPermission().then(function(res){
+      gyroState = res;
+      gyroStateEl.textContent = '状态：' + res;
+      if (res === 'granted'){
+        L('✓ 权限 granted，开始订阅');
+        window.addEventListener('deviceorientation', onOrient);
+      } else {
+        L('✗ 权限 ' + res + ' —— 走降级：手指拖动模拟倾斜', 'bad');
+      }
+    })['catch'](function(err){
+      gyroState = 'denied';
+      gyroStateEl.textContent = '状态：denied（异常）';
+      L('✗ requestPermission 抛错：' + err.message, 'bad');
+    });
+  } else {
+    L('非 iOS 或无 requestPermission，直接订阅');
+    gyroState = 'granted';
+    gyroStateEl.textContent = '状态：granted（无需授权）';
+    window.addEventListener('deviceorientation', onOrient);
+  }
+});
+
+/* =========== ② 长拖拽：60% 卡住 =========== */
+var stage = document.getElementById('stage');
+var knob  = document.getElementById('knob');
+
+var dragging = false;
+var startX = 0, curX = 0, maxX = 0;
+var passed = false;                 /* 是否已突破 60% 卡点 */
+var activeId = null;
+var lastMoveT = 0;
+var barrierT = 0;                   /* 卡住计时 */
+
+function layout(){
+  maxX = stage.clientWidth - knob.offsetWidth - 12;
+}
+setTimeout(layout, 50);
+window.addEventListener('resize', layout);
+
+function setKnob(x){
+  curX = Math.max(0, Math.min(maxX, x));
+  knob.style.transform = 'translateX(' + curX + 'px)';
+}
+
+stage.addEventListener('pointerdown', function(e){
+  if (dragging) return;
+  dragging = true;
+  activeId = e.pointerId;
+  startX = e.clientX - curX;
+  lastMoveT = Date.now();
+  stage.setPointerCapture(e.pointerId);
+  L('pointerdown id=' + e.pointerId + ' pointerType=' + e.pointerType);
+}, {passive:true});
+
+stage.addEventListener('pointermove', function(e){
+  if (!dragging || e.pointerId !== activeId) return;
+  lastMoveT = Date.now();
+  var want = e.clientX - startX;
+  var barrier = maxX * 0.60;
+
+  if (!passed){
+    if (want >= barrier){
+      /* 卡在 60% */
+      setKnob(barrier);
+      barrierT += 0;
+      if (!stage.__inBarrier){
+        stage.__inBarrier = true;
+        L('⚠ 到达 60% 卡点（继续拖会停在这里）', 'warn');
+      }
+      /* 判定"突破"：必须从卡点再往前推 60px */
+      if (want > barrier + 60 * (maxX / 280)){
+        passed = true;
+        stage.__inBarrier = false;
+        L('✓ 突破卡点，阻尼释放');
+      }
+      return;
+    }
+    setKnob(want);
+  } else {
+    setKnob(want);
+  }
+}, {passive:true});
+
+function endDrag(e, reason){
+  if (!dragging) return;
+  dragging = false;
+  stage.__inBarrier = false;
+  var pct = maxX > 0 ? (curX / maxX * 100).toFixed(0) : '0';
+  L(reason + ' id=' + (e && e.pointerId) + ' 位置=' + pct + '% '
+    + (passed ? '（已过卡点）' : '（未过卡点，回弹）'),
+    reason.indexOf('pointerup') === 0 ? null : 'warn');
+
+  if (!passed){
+    setTimeout(function(){ setKnob(0); }, 60);
+  }
+  activeId = null;
+}
+
+stage.addEventListener('pointerup', function(e){
+  endDrag(e, 'pointerup');
+}, {passive:true});
+
+/* 这两个是纯 Canvas 方案必须自己接的兜底 —— 不是 R3F 送的 */
+stage.addEventListener('pointercancel', function(e){
+  endDrag(e, 'pointercancel ⚠');
+  setKnob(0); passed = false;
+}, {passive:true});
+
+stage.addEventListener('lostpointercapture', function(e){
+  if (dragging){
+    L('lostpointercapture ⚠ 捕获丢失，强制复位', 'bad');
+    dragging = false; setKnob(0); passed = false; activeId = null;
+  }
+}, {passive:true});
+
+/* 超时兜底：iOS 掉帧时 pointerup 可能永远不来 */
+setInterval(function(){
+  if (dragging && Date.now() - lastMoveT > 900){
+    L('⚠ 900ms 无 move 事件 —— 疑似 pointerup 丢失，强制复位', 'bad');
+    dragging = false; setKnob(0); passed = false; activeId = null;
+  }
+}, 300);
+
+/* 抬起手指但没收到 up（Safari 兜底） */
+document.addEventListener('touchend', function(){
+  if (dragging){
+    setTimeout(function(){
+      if (dragging){ L('⚠ touchend 后仍处 dragging —— 补一次复位', 'bad'); }
+    }, 120);
+  }
+}, {passive:true});
+
+L('ready · UA=' + navigator.userAgent.slice(0, 60));
+L('请依次测试 ①②，把日志截图发我');
+})();
+</script>
+</body>
+</html>
