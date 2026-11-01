@@ -998,62 +998,67 @@ function rArchive(p){
     sx.fillRect(0,0,W,H);
   }
 
-  /* ---------- 眼球：预渲染帧 + 硬切（不插值，不做平移） ---------- */
-  if (el > 15.4){
-    if (!window.__eyeFrames) buildEyeFrames();
-
+  /* ---------- 眼睛：原图不动，只让它“活” ---------- */
+  var imS = IMGS.eyeSharp, imB = IMGS.eyeBlur;
+  if (imS && imS.complete && el > 15.4){
     var tIn = el - 15.4;
     var a2 = Math.min(1, tIn/0.18);
     var pop = Math.max(0, 1 - tIn/0.45);
 
-    /* 突脸那一下整体放大，之后就定死 */
-    var k = 1.0 + pop*0.85;
-    var w2 = W*k, h2 = H*k;
-    var x2 = (W-w2)/2, y2 = (H-h2)/2;
+    var locked = el >= 21.0;
+    var settle = locked ? Math.min(1, (el-21.0)/1.4) : 0;   /* 0→1，逐渐定住 */
 
-    /* ---- 帧序列：不规律的停留，偶尔回头 ---- */
-    var SEQ = [
-      [16.00, 1], [16.42, 2], [16.86, 4], [17.22, 3],
-      [17.70, 1], [18.05, 5], [18.48, 6], [18.86, 7],
-      [19.28, 5], [19.62, 2], [19.95, 4], [20.22, 6],
-      [20.48, 0]
-    ];
-    var fi = 0;
-    for (var q=0;q<SEQ.length;q++){ if (el >= SEQ[q][0]) fi = SEQ[q][1]; }
+    /* 呼吸：两个频率叠加，相位缓慢漂移 —— 所以永远不重复 */
+    var breath = 0.5 + 0.5*Math.sin(el*0.52 + Math.sin(el*0.17)*2.1);
 
-    /* 20.55–21.05 快速连切，像在急扫 */
-    if (el >= 20.55 && el < 21.05){
-      var step = Math.floor((el-20.55)/0.075);
-      var FAST = [1,4,6,2,7,5,0];
-      fi = FAST[step % FAST.length];
-    }
+    /* 整体缩放：突脸 → 呼吸 → 锁定后再轻轻顶一点 */
+    var k = 1.18 + pop*0.85 + breath*0.050*(1-settle*0.7) + settle*0.070;
 
-    /* 21.05 之后彻底定格在正中，不再动 */
-    if (el >= 21.05) fi = 0;
+    /* 手持微晃：两个不同频率叠加，锁定后归零 */
+    var hx = (Math.sin(el*0.61)*2.4 + Math.sin(el*1.37)*0.9) * (1-settle);
+    var hy = (Math.cos(el*0.47)*1.9 + Math.cos(el*1.19)*0.7) * (1-settle);
+
+    /* 极轻微转动，像有人端着摄影机 */
+    var rot = Math.sin(el*0.38)*0.0048*(1-settle);
+
+    /* 对焦：没锁定时轻微失焦，锁定后彻底清晰 */
+    var blurAmt = (1-settle) * (0.20 + 0.10*Math.sin(el*0.83 + 1.2));
+
+    var base = Math.max(W/600, H/1067);
+    var dw = 600*base*k, dh = 1067*base*k;
 
     sx.globalAlpha = a2;
-    var fr = window.__eyeFrames[fi];
-    if (fr) sx.drawImage(fr, x2, y2, w2, h2);
+    sx.save();
+    sx.translate(W/2 + hx, H/2 + hy);
+    sx.rotate(rot);
+    sx.filter = 'brightness(1.42) contrast(1.24)';
+    sx.drawImage(imS, -dw/2, -dh/2, dw, dh);
+    if (blurAmt > 0.012 && imB && imB.complete){
+      sx.globalAlpha = a2 * Math.min(0.9, blurAmt);
+      sx.drawImage(imB, -dw/2, -dh/2, dw, dh);
+    }
+    sx.filter = 'none';
+    sx.restore();
+    sx.globalAlpha = a2;
 
-    /* 定格之后：极弱的亮度呼吸，证明它还活着（但不是位移） */
-    if (el >= 21.05){
-      var br = 0.5 + 0.5*Math.sin((el-21.05)*2.2);
-      sx.globalAlpha = a2 * (0.05 + br*0.05);
-      sx.fillStyle = '#cfd8c0';
+    /* 锁定那一下：过曝，然后暗下来 */
+    if (el > 21.0 && el < 21.5){
+      var fl = 1 - (el-21.0)/0.5;
+      sx.globalAlpha = fl*0.28;
+      sx.fillStyle = '#d2dbc6';
       sx.fillRect(0,0,W,H);
-      sx.globalAlpha = a2;
     }
 
-    /* 锁定过曝 */
-    if (el > 21.4 && el < 21.85){
-      var fl = 1 - (el-21.4)/0.45;
-      sx.globalAlpha = fl*0.20;
-      sx.fillStyle = '#cdd6c4';
+    /* 定住之后，只剩极缓慢的一次呼吸，证明它还活着 */
+    if (el >= 21.0){
+      var later = Math.sin((el-21.0)*0.9)*0.5+0.5;
+      sx.globalAlpha = 0.03 + later*0.035;
+      sx.fillStyle = '#b9c4ad';
       sx.fillRect(0,0,W,H);
     }
 
     /* 眨眼 */
-    var blinks = [24.6, 28.8, 33.2];
+    var blinks = [25.2, 29.4, 34.0];
     for (var bi=0; bi<blinks.length; bi++){
       var dt2 = el - blinks[bi];
       if (dt2 > -0.13 && dt2 < 0.13){
@@ -1146,7 +1151,7 @@ window.__imgs = function(){
 };
 
 /* 每屏底色强度不同：越往后越暗 */
-var PAGE_LEVEL = [0.96, 0.94, 0.92, 0.90, 0.88, 0.84, 0.74];
+var PAGE_LEVEL = [0.96, 0.94, 0.92, 0.90, 0.88, 0.84, 0.94];
 var waveLeft = 0, nextWave = 9;
 
 function updateExposure(dt){
