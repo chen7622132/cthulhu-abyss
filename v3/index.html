@@ -289,25 +289,15 @@ var PAGES = [
 
 /* -------- 09 旧案卷 -------- */
 {
-  kind: 'doc',
+  kind: 'oldcase',
   stamp: '附　卷　一',
   reg: '14 · 10',
   title: '舊　　案',
-  org: '閩海關稅務司公署',
-  no: '第 十九 號',
-  paras: [
-    '逕啟者：民國十四年十月，霞浦三沙灣外，漁船「金順」，船牌閩霞字第〇三一號，出港後未歸。',
-    '船主林阿水，年四十一歲。船員四名：林阿火、陳水來、王番薯、許乞食。',
-    '又查：民國十一年十月，亦有「金順」一案，船牌同號，船主林阿水，年四十一歲。',
-    '查該船出港之日，亦未經汛口掛驗。',
-    '本關派員查勘三次。海面無獲，灘上無跡，社廟階前亦無所見。',
-    '附記：民國十一年、十四年、十七年，三案卷宗，字跡相同。墨色相同。紙同。'
-  ],
-  sign: '擬：查無實據，註銷。',
-  date: '民國十四年十二月　日',
+  text: '逕啟者民國十四年十月霞浦三沙灣外漁船金順船牌閩霞字第〇三一號出港後未歸\n船主林阿水年四十一歲船員四名林阿火陳水來王番薯許乞食\n又查民國十一年十月亦有金順一案船牌同號船主林阿水年四十一歲\n查該船出港之日亦未經汛口掛驗\n本關派員查勘三次海面無獲灘上無跡社廟階前亦無所見\n附記民國十一年十四年十七年三案卷宗字跡相同墨色相同紙同',
+  zhu: ['此數不對', '三回同'],
   seal: ['註','銷'],
-  redact: ['十四年十月'],
-  hint: '上滑　續'
+  date: '民國十四年十二月　日',
+  sign: '擬：查無實據，註銷。'
 },
 
 /* -------- 10 木牌译文 -------- */
@@ -565,24 +555,11 @@ function rDoc(p){
   sx.fillStyle = C_DIM;
   sx.fillText(p.date, PAD, sy+30);
 
-  sx.save();
-  sx.strokeStyle = 'rgba(104,27,11,.40)';
-  sx.lineWidth = 2;
-  /* 不是矩形：四角加起来不是 360 度，但你说不出差在哪 */
-  var bx = W-PAD-70, by = sy-26;
-  sx.beginPath();
-  sx.moveTo(bx+1, by+2);
-  sx.lineTo(bx+69, by-1);
-  sx.lineTo(bx+71, by+68);
-  sx.lineTo(bx-1, by+71);
-  sx.closePath();
-  sx.stroke();
-  sx.globalAlpha = .55;
-  sx.font = '14px ' + SERIF;
-  sx.fillStyle = 'rgba(104,27,11,.9)';
-  sx.fillText(p.seal[0], W-PAD-57, sy+2);
-  sx.fillText(p.seal[1], W-PAD-57, sy+22);
-  sx.restore();
+  /* 官印：方、粗边、朱红、盖歪了、边上被磨掉了几块 */
+  bigSeal(W-PAD-44, sy+10, 84, p.seal[0] + p.seal[1] + '　　', -0.052, 0.66);
+
+  /* 印下压着一小条纸：贴上去的验讫条 */
+  stampSlip(W-PAD-186, sy+34, 74, 22, -0.036);
 }
 
 
@@ -649,6 +626,112 @@ function redactLine(line, x, y, fnt, key, leakSide){
   sx.globalAlpha = 1;
   sx.restore();
   return true;
+}
+
+
+/* 官印：方、粗边、朱红、盖歪了、边上有磨损 */
+function bigSeal(cx, cy, size, chars, ang, al){
+  sx.save();
+  sx.translate(cx, cy);
+  sx.rotate(ang);
+
+  var h = size/2;
+  var red = 'rgba(146,28,13,';
+
+  sx.strokeStyle = red + al.toFixed(2) + ')';
+  sx.lineWidth = size * 0.050;
+  sx.strokeRect(-h, -h, size, size);
+  sx.strokeStyle = red + (al*0.52).toFixed(2) + ')';
+  sx.lineWidth = size * 0.013;
+  sx.strokeRect(-h + size*0.064, -h + size*0.064, size*0.872, size*0.872);
+
+  var fs = size * 0.30;
+  sx.font = 'bold ' + fs.toFixed(1) + 'px ' + SERIF;
+  sx.fillStyle = red + (al*0.92).toFixed(2) + ')';
+  sx.textAlign = 'center';
+  sx.textBaseline = 'middle';
+  for (var i=0;i<chars.length && i<4;i++){
+    var col = i % 2;
+    var row = Math.floor(i/2);
+    var tx = (col === 0 ? size*0.228 : -size*0.228);
+    var ty = (row === 0 ? -size*0.195 : size*0.215);
+    if (chars.charAt(i) === '　') continue;
+    sx.save();
+    sx.translate(tx, ty);
+    sx.scale(1.16, 1.0);
+    sx.fillText(chars.charAt(i), 0, 0);
+    sx.restore();
+  }
+  sx.textAlign = 'left';
+  sx.textBaseline = 'alphabetic';
+
+  /* 磨损：用纸色啃掉几处，边就不完整了 */
+  var paperCol = 'rgba(126,119,95,1)';
+  for (var k=0;k<9;k++){
+    var a = (k*0.7 + 0.3) * Math.PI*2;
+    var rr = h * (0.84 + srnd(cx*0.31 + k*3.7)*0.30);
+    sx.fillStyle = paperCol;
+    sx.beginPath();
+    sx.ellipse(
+      Math.cos(a)*rr, Math.sin(a)*rr,
+      size*(0.018 + srnd(k*11+1)*0.032),
+      size*(0.014 + srnd(k*13+3)*0.026),
+      a, 0, Math.PI*2
+    );
+    sx.fill();
+  }
+  /* 印泥不匀 */
+  for (var q=0;q<5;q++){
+    sx.globalAlpha = 0.30;
+    sx.fillStyle = paperCol;
+    sx.beginPath();
+    sx.ellipse(
+      (srnd(q*17+1)-0.5)*size*0.66,
+      (srnd(q*23+2)-0.5)*size*0.66,
+      size*(0.018+srnd(q*5)*0.028),
+      size*(0.016+srnd(q*7)*0.022),
+      0, 0, Math.PI*2
+    );
+    sx.fill();
+  }
+  sx.globalAlpha = 1;
+  sx.restore();
+}
+
+/* 小票：带齿孔的一小条纸，贴上，盖了个"驗讫" */
+function stampSlip(x, y, w, h, ang){
+  sx.save();
+  sx.translate(x, y);
+  sx.rotate(ang);
+
+  sx.fillStyle = 'rgba(214,206,178,.30)';
+  sx.fillRect(0, 0, w, h);
+  sx.strokeStyle = 'rgba(242,234,208,.36)';
+  sx.lineWidth = 0.7;
+  sx.strokeRect(0, 0, w, h);
+
+  var n = 9;
+  for (var i=0;i<n;i++){
+    var px2 = (i+0.5) * w/n;
+    sx.fillStyle = 'rgba(126,119,95,.52)';
+    sx.beginPath(); sx.arc(px2, 0, 1.5, 0, Math.PI*2); sx.fill();
+    sx.beginPath(); sx.arc(px2, h, 1.5, 0, Math.PI*2); sx.fill();
+  }
+
+  sx.font = '7px ' + MONO;
+  sx.fillStyle = 'rgba(60,52,38,.72)';
+  sx.fillText('閩海關　驗訖', 4, h*0.56);
+
+  sx.strokeStyle = 'rgba(146,28,13,.66)';
+  sx.lineWidth = 1.5;
+  sx.strokeRect(w*0.64, h*0.16, w*0.28, h*0.64);
+  sx.font = 'bold ' + (h*0.44).toFixed(1) + 'px ' + SERIF;
+  sx.fillStyle = 'rgba(146,28,13,.76)';
+  sx.textAlign = 'center';
+  sx.fillText('驗', w*0.78, h*0.68);
+  sx.textAlign = 'left';
+
+  sx.restore();
 }
 
 /* 装订孔：两枚，贯穿所有页
@@ -1368,6 +1451,8 @@ function rTelegram(p){
   sx.fillText(p.date, W-PAD, y+24);
   sx.textAlign = 'left';
 
+  stampSlip(W-PAD-130, H-306, 104, 30, -0.026);
+
   /* 一枚骑缝章，压在右边 */
   sx.save();
   sx.globalAlpha = .42;
@@ -1985,6 +2070,60 @@ function rMap(p){
   sx.textAlign = 'right';
   sx.fillText(p.note, gx+gw-10, gy+gh-42);
   sx.textAlign = 'left';
+}
+
+
+/* ---------- 08 旧案卷：竖排右起，朱笔写在行间 ---------- */
+function rOldCase(p){
+  var fs = 15, colW = fs * 1.62;
+  var x = W - PAD - 18;
+  var y = 158;
+
+  function col(str, cx, startY, fsz, colr, alpha){
+    var cy = startY;
+    for (var i=0;i<str.length;i++){
+      var ch = str.charAt(i);
+      if (ch === '　' || ch === ' '){ cy += fsz*1.30; continue; }
+      var jx = (srnd(i*7+cx*0.13) - 0.5) * 0.7;
+      var jy = (srnd(i*11+cy*0.07) - 0.5) * 0.7;
+      sx.font = fsz + 'px ' + SERIF;
+      sx.fillStyle = 'rgba(' + colr + ',' + alpha + ')';
+      sx.fillText(ch, cx + jx, cy + jy);
+      cy += fsz * 1.30;
+    }
+    return cy;
+  }
+
+  col(p.title.replace(/　/g, ''), x, y, 20, '22,18,12', '0.92');
+
+  var lines = p.text.split('\n');
+  var cx = x - colW * 1.9;
+  var lastCx = cx;
+  for (var i=0;i<lines.length;i++){
+    if (cx < PAD + 46) break;
+    col(lines[i], cx, y, fs, '22,18,12', '0.90');
+    lastCx = cx;
+    cx -= colW;
+  }
+
+  /* 朱笔：在最后一列的左边，写得很小 */
+  if (p.zhu){
+    var zx = lastCx - colW * 1.2;
+    for (var k=0;k<p.zhu.length;k++){
+      col(p.zhu[k], zx - k*colW*0.72, 430, 11, '104,27,11', '0.80');
+    }
+  }
+
+  /* 骑缝：右边缘半枚方章 */
+  bigSeal(W - 6, H*0.52, 64, p.seal[0] + p.seal[1] + '　　', 0.03, 0.44);
+
+  /* 末尾转横：日期与拟批 */
+  sx.font = '12px ' + SERIF;
+  sx.fillStyle = 'rgba(40,34,22,.76)';
+  sx.fillText(p.date, PAD, H - 92);
+  sx.font = '12px ' + SERIF;
+  sx.fillStyle = 'rgba(104,27,11,.74)';
+  sx.fillText(p.sign, PAD, H - 68);
 }
 
 /* ---------- 05 表格 ---------- */
@@ -2974,6 +3113,7 @@ function drawSource(tc){
   if (p.kind === 'group') rGroup(p);
   if (p.kind === 'telegram') rTelegram(p);
   if (p.kind === 'manuscript') rManuscript(p);
+  if (p.kind === 'oldcase') rOldCase(p);
   if (p.kind === 'note')  rNote(p);
   if (p.kind === 'archive') rArchive(p);
 
