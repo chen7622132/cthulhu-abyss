@@ -998,67 +998,58 @@ function rArchive(p){
     sx.fillRect(0,0,W,H);
   }
 
-  /* ---------- 眼睛：原图不动，只让它“活” ---------- */
-  var imS = IMGS.eyeSharp, imB = IMGS.eyeBlur;
-  if (imS && imS.complete && el > 15.4){
+  /* ---------- 眼睛：整张死定，只有瞳孔在走 ---------- */
+  var imC = IMGS.eyeClean, imP = IMGS.pupil2;
+  if (imC && imC.complete && el > 15.4){
     var tIn = el - 15.4;
-    var a2 = Math.min(1, tIn/0.18);
-    var pop = Math.max(0, 1 - tIn/0.45);
+    var a2 = Math.min(1, tIn/0.16);
+    var pop = Math.max(0, 1 - tIn/0.42);      /* 只有入场这一下会动整体 */
 
-    var locked = el >= 21.0;
-    var settle = locked ? Math.min(1, (el-21.0)/1.4) : 0;   /* 0→1，逐渐定住 */
+    var base = Math.max(W/540, H/960);
+    var k = base * (1.0 + pop*0.80);
+    var w2 = 540*k, h2 = 960*k;
+    var x2 = (W-w2)/2, y2 = (H-h2)/2;
+    var cx0 = x2 + 274*k, cy0 = y2 + 462*k;
 
-    /* 呼吸：两个频率叠加，相位缓慢漂移 —— 所以永远不重复 */
-    var breath = 0.5 + 0.5*Math.sin(el*0.52 + Math.sin(el*0.17)*2.1);
-
-    /* 整体缩放：突脸 → 呼吸 → 锁定后再轻轻顶一点 */
-    var k = 1.18 + pop*0.85 + breath*0.050*(1-settle*0.7) + settle*0.070;
-
-    /* 手持微晃：两个不同频率叠加，锁定后归零 */
-    var hx = (Math.sin(el*0.61)*2.4 + Math.sin(el*1.37)*0.9) * (1-settle);
-    var hy = (Math.cos(el*0.47)*1.9 + Math.cos(el*1.19)*0.7) * (1-settle);
-
-    /* 极轻微转动，像有人端着摄影机 */
-    var rot = Math.sin(el*0.38)*0.0048*(1-settle);
-
-    /* 对焦：没锁定时轻微失焦，锁定后彻底清晰 */
-    var blurAmt = (1-settle) * (0.20 + 0.10*Math.sin(el*0.83 + 1.2));
-
-    var base = Math.max(W/600, H/1067);
-    var dw = 600*base*k, dh = 1067*base*k;
-
+    /* 底图：一像素都不动 */
     sx.globalAlpha = a2;
-    sx.save();
-    sx.translate(W/2 + hx, H/2 + hy);
-    sx.rotate(rot);
-    sx.filter = 'brightness(1.42) contrast(1.24)';
-    sx.drawImage(imS, -dw/2, -dh/2, dw, dh);
-    if (blurAmt > 0.012 && imB && imB.complete){
-      sx.globalAlpha = a2 * Math.min(0.9, blurAmt);
-      sx.drawImage(imB, -dw/2, -dh/2, dw, dh);
-    }
+    sx.filter = 'brightness(1.40) contrast(1.22)';
+    sx.drawImage(imC, x2, y2, w2, h2);
     sx.filter = 'none';
-    sx.restore();
-    sx.globalAlpha = a2;
 
-    /* 锁定那一下：过曝，然后暗下来 */
-    if (el > 21.0 && el < 21.5){
-      var fl = 1 - (el-21.0)/0.5;
-      sx.globalAlpha = fl*0.28;
+    /* 瞳孔：沿固定路径一直走，节奏 0.62 秒一步，0.055 秒滑到位 */
+    var PATH = [[0,0],[-24,-9],[22,-11],[26,8],[-20,10],[0,0],[-15,-7],[17,7]];
+    var STEP = 0.62, MOVE = 0.055;
+    var gx = 0, gy = 0;
+
+    if (el >= 21.0){
+      gx = 0; gy = 0;                          /* 锁定：回正，停住 */
+    } else if (el > 15.9){
+      var idx = Math.floor((el-15.9)/STEP);
+      var fr = ((el-15.9) - idx*STEP)/STEP;
+      var pz = Math.min(1, fr*STEP/MOVE);
+      var f0 = PATH[idx % PATH.length];
+      var f1 = PATH[(idx+1) % PATH.length];
+      gx = f0[0] + (f1[0]-f0[0])*pz;
+      gy = f0[1] + (f1[1]-f0[1])*pz;
+    }
+
+    if (imP && imP.complete){
+      var TW = 102*k, TH = 341*k;
+      var px = cx0 + gx*k, py = cy0 + gy*k;
+      sx.drawImage(imP, px - TW/2, py - TH/2, TW, TH);
+    }
+
+    /* 锁定那一下：过曝 */
+    if (el > 21.0 && el < 21.45){
+      var fl = 1 - (el-21.0)/0.45;
+      sx.globalAlpha = fl*0.24;
       sx.fillStyle = '#d2dbc6';
       sx.fillRect(0,0,W,H);
     }
 
-    /* 定住之后，只剩极缓慢的一次呼吸，证明它还活着 */
-    if (el >= 21.0){
-      var later = Math.sin((el-21.0)*0.9)*0.5+0.5;
-      sx.globalAlpha = 0.03 + later*0.035;
-      sx.fillStyle = '#b9c4ad';
-      sx.fillRect(0,0,W,H);
-    }
-
     /* 眨眼 */
-    var blinks = [25.2, 29.4, 34.0];
+    var blinks = [25.0, 29.2, 33.8];
     for (var bi=0; bi<blinks.length; bi++){
       var dt2 = el - blinks[bi];
       if (dt2 > -0.13 && dt2 < 0.13){
