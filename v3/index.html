@@ -998,49 +998,45 @@ function rArchive(p){
     sx.fillRect(0,0,W,H);
   }
 
-  /* ---------- 眼睛：整张死定，只有瞳孔在走 ---------- */
-  var imC = IMGS.eyeClean, imP = IMGS.pupil2;
-  if (imC && imC.complete && el > 11.4){
+  /* ---------- 眼睛：同心环球面转动，虹膜跟着走，边缘不动 ---------- */
+  var imF = IMGS.eyeFull;
+  if (imF && imF.complete && el > 11.4){
     var tIn = el - 11.4;
     var a2 = Math.min(1, tIn/0.16);
-    var pop = Math.max(0, 1 - tIn/0.42);      /* 只有入场这一下会动整体 */
+    var pop = Math.max(0, 1 - tIn/0.42);
 
     var base = Math.max(W/540, H/960);
-    var k = base * (1.0 + pop*0.80);
+    var drift = Math.min(1, Math.max(0, (el-11.4)/14.0));
+    var k = base * (1.0 + pop*0.80 + drift*0.055);
     var w2 = 540*k, h2 = 960*k;
     var x2 = (W-w2)/2, y2 = (H-h2)/2;
     var cx0 = x2 + 274*k, cy0 = y2 + 462*k;
 
-    /* 底图：一像素都不动 */
-    sx.globalAlpha = a2;
-    sx.filter = 'brightness(1.40) contrast(1.22)';
-    sx.drawImage(imC, x2, y2, w2, h2);
-    sx.filter = 'none';
-
-    /* 瞳孔：沿固定路径一直走，节奏 0.62 秒一步，0.055 秒滑到位 */
-    var PATH = [[0,0],[-32,-12],[30,-14],[34,10],[-28,13],[0,0],[-20,-9],[22,9]];
+    /* 视线路径 */
+    var PATH = [[0,0],[-30,-11],[28,-13],[32,9],[-26,12],[0,0],[-19,-8],[21,8]];
     var STEP = 0.62, MOVE = 0.055;
     var gx = 0, gy = 0;
-
     if (el >= 16.6){
-      gx = 0; gy = 0;                          /* 锁定：回正，停住 */
+      gx = 0; gy = 0;
     } else if (el > 12.0){
       var idx = Math.floor((el-12.0)/STEP);
       var fr = ((el-12.0) - idx*STEP)/STEP;
-      var pz = Math.min(1, fr*STEP/MOVE);
+      var pz = Math.min(1, Math.min(1, fr*STEP/MOVE));
       var f0 = PATH[idx % PATH.length];
       var f1 = PATH[(idx+1) % PATH.length];
       gx = f0[0] + (f1[0]-f0[0])*pz;
       gy = f0[1] + (f1[1]-f0[1])*pz;
     }
 
-    if (imP && imP.complete){
-      var TW = 102*k, TH = 341*k;
-      var px = cx0 + gx*k, py = cy0 + gy*k;
-      sx.drawImage(imP, px - TW/2, py - TH/2, TW, TH);
-    }
+    sx.globalAlpha = a2;
+    sx.filter = 'brightness(1.40) contrast(1.22)';
 
-    /* 锁定那一下：过曝 */
+    /* 底图：静止 */
+    sx.drawImage(imF, x2, y2, w2, h2);
+
+    sx.filter = 'none';
+
+    /* 锁定过曝 */
     if (el > 16.6 && el < 17.05){
       var fl = 1 - (el-16.6)/0.45;
       sx.globalAlpha = fl*0.24;
