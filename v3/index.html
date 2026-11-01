@@ -206,6 +206,7 @@ var PAGES = [
     ['五', '一〇四·八', '　　—', '　　—']
   ],
   unit: '單位：公尺',
+  squeeze: true,
   tail: '第五段，第二次測量未記。',
   tail2: '按：同日午後，潮退。'
 },
@@ -239,7 +240,7 @@ var PAGES = [
     { name:'三、澳口',
       rows:[
         ['海圖所標', '〇〇一 至 〇〇七'],
-        ['本縣舊冊', '〇〇一 至 〇〇六']
+        ['本縣舊冊', '〇〇〇 至 〇〇六']
       ]}
   ],
   tail: '以上三項，均不合。',
@@ -420,7 +421,11 @@ var PAGES = [
 ];
 
 /* 页码按顺序重排——加页不必改数据 */
-for (var _pi=0; _pi<PAGES.length; _pi++){ PAGES[_pi].num = ('0'+(_pi+1)).slice(-2); }
+for (var _pi=0; _pi<PAGES.length; _pi++){
+  var _n = _pi + 1;
+  if (_pi >= 7) _n += 1;          /* 第 8 件之后，跳过 09 —— 那一页不在卷里 */
+  PAGES[_pi].num = ('0'+_n).slice(-2);
+}
 
 /* ============================================================
    3. 画布
@@ -487,11 +492,11 @@ function chrome(p, tc){
   /* 页脚 */
   sx.font = '11px ' + MONO;
   sx.fillStyle = C_FAINT;
-  var tot = ('0' + PAGES.length).slice(-2);
+  var tot = ('0' + (PAGES.length + 1)).slice(-2);
   sx.fillText('記錄 ' + p.num + ' / ' + tot, PAD, H-34);
 
   sx.textAlign = 'right';
-  sx.fillText(p.num === ('0' + PAGES.length).slice(-2) ? '○' : '↑ ↓', W-PAD, H-34);
+  sx.fillText(p.num === ('0' + (PAGES.length + 1)).slice(-2) ? '○' : '↑ ↓', W-PAD, H-34);
   sx.textAlign = 'left';
 
   /* REC */
@@ -1125,7 +1130,7 @@ function rGroup(p){
   /* 七个人位：上四、下三 */
   var pos = [
     [0.135,0.28],[0.385,0.28],[0.635,0.28],[0.875,0.28],
-    [0.20,0.66],[0.50,0.66],[0.80,0.66]
+    [0.20,0.66],[0.50,0.66],[0.72,0.66]     /* 第七位：挨得太近，装不下一个人 */
   ];
   for (var i=0;i<7;i++){
     var bx = gx + gw*pos[i][0] - 26;
@@ -1962,6 +1967,11 @@ function rTable(p){
   sx.fillText(p.cap, PAD, y+20);
 
   var ty = 150, rh = 44;
+  /* 行高：默认等距；squeeze 的表格越往下越挤 */
+  function rowH(r){ return p.squeeze ? rh * (1 - r*0.085) : rh; }
+  var rowY = [], _accY = ty + 26;
+  for (var _r=0; _r<p.rows.length; _r++){ rowY.push(_accY); _accY += rowH(_r); }
+
   var cols = [0.10, 0.34, 0.34, 0.22];
   var xs = [], acc = PAD;
   for (var i=0;i<cols.length;i++){ xs.push(acc); acc += cols[i]*CW; }
@@ -1985,24 +1995,25 @@ function rTable(p){
     var sk = (srnd(v*7+3)-0.5)*2.6;
     sx.beginPath();
     sx.moveTo(xs[v], ty);
-    sx.lineTo(xs[v]+sk, ty+26+rh*p.rows.length);
+    sx.lineTo(xs[v]+sk, _accY);
     sx.stroke();
   }
 
   /* 行 */
   for (var r=0;r<p.rows.length;r++){
     var row = p.rows[r];
-    var ry = ty+26+rh*r;
+    var ry = rowY[r];
+    var rhi = rowH(r);
     var odd = (r % 2 === 1);
 
     if (odd){
       sx.fillStyle = 'rgba(74,66,50,.045)';
-      sx.fillRect(PAD, ry, CW, rh);
+      sx.fillRect(PAD, ry, CW, rhi);
     }
 
     sx.strokeStyle = 'rgba(74,66,50,.10)';
     var hk = (srnd(r*11+5)-0.5)*1.6;
-    sx.beginPath(); sx.moveTo(PAD, ry+rh); sx.lineTo(PAD+CW, ry+rh+hk); sx.stroke();
+    sx.beginPath(); sx.moveTo(PAD, ry+rhi); sx.lineTo(PAD+CW, ry+rhi+hk); sx.stroke();
 
     for (var c=0;c<row.length;c++){
       var isLast = (r === p.rows.length-1);
@@ -2012,21 +2023,21 @@ function rTable(p){
       else sx.fillStyle = 'rgba(28,24,17,.88)';
 
       if (c===0){
-        sx.fillText(row[c], xs[c]+6, ry+28);
+        sx.fillText(row[c], xs[c]+6, ry + rhi*0.58 + 5);
       } else {
         sx.textAlign = 'center';
-        sx.fillText(row[c], xs[c] + cols[c]*CW/2, ry+28);
+        sx.fillText(row[c], xs[c] + cols[c]*CW/2, ry + rhi*0.58 + 5);
         sx.textAlign = 'left';
       }
     }
   }
 
   /* 铅笔勾（第四行）+ 橡皮擦痕（第二行） */
-  var cy1 = ty+26+rh*3 + rh/2;
+  var cy1 = rowY[3] + rowH(3)/2;
   penLine(xs[1]+cols[1]*CW-26, cy1, xs[1]+cols[1]*CW-14, cy1+9, 21, 'rgba(206,198,174,.62)', 1.8);
   penLine(xs[1]+cols[1]*CW-14, cy1+9, xs[1]+cols[1]*CW+6, cy1-13, 23, 'rgba(206,198,174,.62)', 1.8);
 
-  var cy2 = ty+26+rh*1 + rh/2;
+  var cy2 = rowY[1] + rowH(1)/2;
   var eg = sx.createRadialGradient(xs[2]+cols[2]*CW/2, cy2, 0, xs[2]+cols[2]*CW/2, cy2, 46);
   eg.addColorStop(0, 'rgba(186,178,152,.20)');
   eg.addColorStop(1, 'rgba(186,178,152,0)');
@@ -2036,10 +2047,10 @@ function rTable(p){
   /* 单位 */
   sx.font = '10px ' + MONO;
   sx.fillStyle = C_FAINT;
-  sx.fillText(p.unit, PAD, ty+26+rh*p.rows.length+20);
+  sx.fillText(p.unit, PAD, _accY + 20);
 
   /* 结语 */
-  var ny = ty+26+rh*p.rows.length+62;
+  var ny = _accY + 62;
   sx.font = '14px ' + SERIF;
   sx.fillStyle = C_TXT;
   sx.fillText(p.tail, PAD, ny);
