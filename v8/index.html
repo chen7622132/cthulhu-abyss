@@ -85,54 +85,520 @@ var DOC = [
 var SERIF = '"Songti SC","Noto Serif CJK SC","STSong",serif';
 var KAI   = '"Kaiti SC","STKaiti","KaiTi","Songti SC",serif';
 
-/* 逐字手写：大小、基线、角度都偏 */
-function handText(txt, x, y, size, alpha, seed, tilt){
-  var cx = x;
-  var drift = 0;                     /* 行气：一行写下来，会慢慢往下沉或往上飘 */
-  var baseAng = tilt || 0;           /* 整行的倾斜 */
+/* ============================================================
+   拓片工坊
+   —— 第 1 页不再"画一张纸"，而是"拓一张纸"。
+   墨是主体，字是被挖空的地方。字和墨出自同一层像素，
+   再被同一层污渍、折痕、暗角一起压过 —— 所以它拔不出来。
+   ============================================================ */
 
-  for (var k=0;k<txt.length;k++){
-    var ch = txt.charAt(k);
-    if (ch === '　' || ch === ' '){ cx += size * 0.66; continue; }
+/* 纸的外形：不是一个矩形，是手撕的 */
+function paperQuad(){
+  return [
+    [W*0.074, H*0.041],
+    [W*0.944, H*0.022],
+    [W*0.961, H*0.957],
+    [W*0.057, H*0.976]
+  ];
+}
 
-    var fs  = size * (0.82 + rnd(seed + k*3.1) * 0.30);
-    var dy  = (rnd(seed + k*7.3) - 0.5) * size * 0.24 + drift;
-    var sp  = 0.96 + rnd(seed + k*19.1) * 0.26;
-    var rot = baseAng + (rnd(seed + k*11.7) - 0.5) * 0.13;
-    /* 每个字的宽高比都不一样 —— 这是手写和印刷最直观的分界 */
-    var sx2 = 0.90 + rnd(seed + k*31.7) * 0.22;
-    var sy2 = 0.90 + rnd(seed + k*37.3) * 0.20;
-
-    /* 墨色：起笔浓 → 收笔淡。这是"手写"和"印刷"的分界 */
-    var inA = Math.min(1, alpha * (0.98 + rnd(seed + k*13.9) * 0.22));
-    var outA = inA * (0.58 + rnd(seed + k*23.3) * 0.22);
-
-    ctx.save();
-    ctx.translate(cx, y + dy);
-    ctx.rotate(rot);
-    ctx.scale(sx2, sy2);
-    ctx.font = fs.toFixed(1) + 'px ' + KAI;
-
-    /* 墨色：起笔接近黑，收笔淡到发灰 —— 跨度要够大才看得出来 */
-    var g = ctx.createLinearGradient(0, -fs*0.66, 0, fs*0.56);
-    g.addColorStop(0,    'rgba(16,12,7,'   + Math.min(1, inA*1.10).toFixed(2) + ')');
-    g.addColorStop(0.35, 'rgba(20,16,10,'  + Math.min(1, inA*1.00).toFixed(2) + ')');
-    g.addColorStop(0.70, 'rgba(52,44,31,'  + (outA*1.05).toFixed(2) + ')');
-    g.addColorStop(1,    'rgba(86,76,56,'  + (outA*0.78).toFixed(2) + ')');
-    ctx.fillStyle = g;
-    ctx.fillText(ch, 0, 0);
-
-    /* 笔画边缘一点点洇：纸把墨吸开了 */
-    ctx.globalAlpha = 0.16;
-    ctx.fillStyle = 'rgba(40,34,22,1)';
-    ctx.fillText(ch, 0.5, 0.5);
-    ctx.globalAlpha = 1;
-
-    ctx.restore();
-
-    cx += fs * sp;
-    drift += (rnd(seed + k*29.7) - 0.5) * 0.9;         /* 行气累积 */
+function traceEdge(g, a, b, seed){
+  var n = 24;
+  var nx = -(b[1]-a[1]), ny = (b[0]-a[0]);
+  var L = Math.sqrt(nx*nx+ny*ny) || 1; nx /= L; ny /= L;
+  for (var i=1;i<n;i++){
+    var t = i/n;
+    var x = a[0]+(b[0]-a[0])*t;
+    var y = a[1]+(b[1]-a[1])*t;
+    var j = (rnd(seed+i*3.17)-0.5)*2.4;
+    if (rnd(seed+i*7.71) > 0.91) j += (rnd(seed+i*11.3)-0.5)*13;
+    g.lineTo(x+nx*j, y+ny*j);
   }
+  g.lineTo(b[0], b[1]);
+}
+
+function paperPath(g){
+  var q = paperQuad();
+  g.beginPath();
+  g.moveTo(q[0][0], q[0][1]);
+  traceEdge(g, q[0], q[1], 31);
+  traceEdge(g, q[1], q[2], 53);
+  traceEdge(g, q[2], q[3], 71);
+  traceEdge(g, q[3], q[0], 97);
+  g.closePath();
+}
+
+/* ---------- 纸：只在字被挖开的地方露出来 ---------- */
+function paintPaper(g){
+  g.fillStyle = '#dad4c0';
+  g.fillRect(0,0,W,H);
+
+  for (var i=0;i<64;i++){
+    var x = rnd(i*2.31)*W, y = rnd(i*4.77)*H, r = W*(0.09+rnd(i*6.13)*0.34);
+    var warm = rnd(i*8.39) > 0.42;
+    var gg = g.createRadialGradient(x,y,0,x,y,r);
+    gg.addColorStop(0, warm ? 'rgba(228,218,194,0.11)' : 'rgba(148,136,112,0.11)');
+    gg.addColorStop(1, warm ? 'rgba(228,218,194,0)'    : 'rgba(148,136,112,0)');
+    g.fillStyle = gg;
+    g.beginPath(); g.arc(x,y,r,0,6.2832); g.fill();
+  }
+
+  g.lineCap = 'round';
+  for (var i=0;i<1500;i++){
+    var x = rnd(i*1.77)*W, y = rnd(i*3.11)*H;
+    var len = 3 + rnd(i*5.31)*16;
+    var ang = (rnd(i*7.93)-0.5)*0.75;
+    var dark = rnd(i*9.17) > 0.52;
+    g.strokeStyle = dark ? 'rgba(124,114,94,'+(0.04+rnd(i*11.3)*0.07).toFixed(3)+')'
+                         : 'rgba(255,251,238,'+(0.04+rnd(i*11.3)*0.07).toFixed(3)+')';
+    g.lineWidth = 0.5 + rnd(i*13.71)*0.6;
+    g.beginPath();
+    g.moveTo(x,y);
+    g.lineTo(x+Math.cos(ang)*len, y+Math.sin(ang)*len);
+    g.stroke();
+  }
+}
+
+/* ---------- 墨：一遍一遍地扑 ---------- */
+function paintInk(g){
+  /* 每一下扑，压力不同 —— 所以墨色本身是分层的，不是一块死黑 */
+  for (var i=0;i<330;i++){
+    var x = W*(rnd(i*2.11)*1.10 - 0.05);
+    var y = H*(rnd(i*3.73)*1.06 - 0.03);
+    var r = W*(0.13 + rnd(i*5.17)*0.40);
+    var a = 0.18 + rnd(i*7.31)*0.32;
+    /* 这一步墨的"灰度"：越往后扑越实 */
+    var tone = 4 + Math.floor(rnd(i*3.91)*46);
+    var gg = g.createRadialGradient(x,y,r*0.10,x,y,r);
+    gg.addColorStop(0,   'rgba('+tone+','+(tone-2)+','+(tone-4)+','+a.toFixed(3)+')');
+    gg.addColorStop(0.62,'rgba('+tone+','+(tone-2)+','+(tone-4)+','+(a*0.72).toFixed(3)+')');
+    gg.addColorStop(1,   'rgba('+tone+','+(tone-2)+','+(tone-4)+',0)');
+    g.fillStyle = gg;
+    g.beginPath(); g.arc(x,y,r,0,6.2832); g.fill();
+  }
+
+  g.fillStyle = 'rgba(17,15,12,0.58)';
+  g.fillRect(0,0,W,H);
+
+  /* 漏白：扑包没压实的地方，纸从墨底下透出来 */
+  for (var a2=0;a2<5;a2++){
+    g.fillStyle = 'rgba(200,193,176,'+(0.045+a2*0.030).toFixed(3)+')';
+    g.beginPath();
+    for (var i=0;i<900;i++){
+      var s = a2*900+i;
+      var x = rnd(s*1.31)*W, y = rnd(s*2.57)*H;
+      var r = 0.4 + rnd(s*6.03)*1.6;
+      g.moveTo(x,y); g.arc(x,y,r,0,6.2832);
+    }
+    g.fill();
+  }
+
+  /* 墨不到边：拓的时候纸边没按住，一圈纸白露出来 —— 这是"它是张纸"最硬的证据 */
+  carveBorder(g);
+}
+
+function carveBorder(g){
+  var q = paperQuad();
+  g.save();
+  g.globalCompositeOperation = 'destination-out';
+  g.fillStyle = '#000';
+  for (var i=0;i<4;i++){
+    var a = q[i], b = q[(i+1)%4];
+    var dx = b[0]-a[0], dy = b[1]-a[1];
+    var L = Math.sqrt(dx*dx+dy*dy) || 1;
+    var nx = -dy/L, ny = dx/L;
+    /* 法线要指向纸的内部 */
+    if ((W/2-a[0])*nx + (H/2-a[1])*ny < 0){ nx = -nx; ny = -ny; }
+
+    var ang = Math.atan2(ny, nx);
+    var n = Math.round(L/3.2);
+    for (var j=0;j<n;j++){
+      var t = (j + rnd(i*97+j*13.1)*0.92)/n;
+      var px = a[0]+(b[0]-a[0])*t;
+      var py = a[1]+(b[1]-a[1])*t;
+
+      /* 露纸的深度：绝大多数只露一丝，偶尔深进去一块 —— 手撕的边 */
+      var dep = 1.2 + rnd(i*31+j*7.73)*3.6;
+      if (rnd(i*41+j*11.31) > 0.93) dep += rnd(i*57+j*3.17)*7.5;
+
+      g.globalAlpha = 0.94;
+      g.beginPath();
+      g.ellipse(px + nx*dep*0.45, py + ny*dep*0.45, dep*0.95, dep*0.62, ang, 0, 6.2832);
+      g.fill();
+    }
+  }
+  g.restore();
+}
+
+/* ---------- 一个字：带毛边、带崩口的模子 ---------- */
+/* 整页一百多个字，共用一块画布 —— 每字新建一块太慢 */
+var GM = null, GMX = null;
+
+function glyphMask(ch, fs, seed){
+  var pad = Math.ceil(fs*0.55);
+  var s = Math.ceil(fs + pad*2);
+  if (!GM || GM.width < s){
+    var sz = Math.max(120, s);
+    GM = document.createElement('canvas');
+    GM.width = sz; GM.height = sz;
+    GMX = GM.getContext('2d');
+  }
+  var x = GMX;
+  x.setTransform(1,0,0,1,0,0);
+  x.globalAlpha = 1;
+  x.globalCompositeOperation = 'source-over';
+  x.clearRect(0, 0, GM.width, GM.height);
+  x.font = fs.toFixed(1)+'px '+SERIF;
+  x.textBaseline = 'alphabetic';
+  x.fillStyle = '#fff';
+
+  var by = pad + fs*0.80;
+
+  /* 七遍微偏移：中间实，边缘毛 */
+  for (var p=0;p<7;p++){
+    x.globalAlpha = 0.36;
+    var ox = (rnd(seed*1.37+p*3.11)-0.5)*2.4;
+    var oy = (rnd(seed*2.71+p*5.93)-0.5)*2.4;
+    x.fillText(ch, pad+ox, by+oy);
+  }
+
+  /* 崩口：石面有坑，拓不到 */
+  x.globalCompositeOperation = 'destination-out';
+  var n = 4 + Math.floor(rnd(seed*4.9)*7);
+  for (var q=0;q<n;q++){
+    x.globalAlpha = 0.42 + rnd(seed*6.1+q*3.3)*0.50;
+    var qx = pad + (rnd(seed*7.3+q*2.9)-0.5)*fs*0.92;
+    var qy = by - fs*0.30 + (rnd(seed*8.7+q*4.1)-0.5)*fs*0.92;
+    var qr = 0.7 + rnd(seed*9.9+q*6.7)*2.4;
+    x.beginPath(); x.arc(qx,qy,qr,0,6.2832); x.fill();
+  }
+  return { c:GM, pad:pad, by:by, s:s };
+}
+
+/* 纸面的起伏场（连续、多尺度）—— 拿它去弯字，字才会跟着纸皱 */
+function wrinkleField(x, y){
+  return Math.sin(x*0.0173 + y*0.0061) * 0.55
+       + Math.sin(x*0.0431 - y*0.0237) * 0.28
+       + Math.sin(y*0.0389 + x*0.0041) * 0.17;
+}
+
+function carveGlyph(g, ch, cx, cy, fs, seed, rot, str){
+  var m = glyphMask(ch, fs*DPR, seed);
+  var st = (str == null) ? 0.935 : str;
+  g.save();
+  g.translate(cx, cy);
+  if (rot) g.rotate(rot);
+  g.globalCompositeOperation = 'destination-out';
+  g.globalAlpha = st;
+
+  /* 把字切成横条，一条一条按纸面的起伏错开。
+     一条整字贴上去 = 浮；一条条错开 = 跟着纸皱。 */
+  var bands = 10;
+  var bp = m.s / bands;
+  var y0 = -m.by/DPR;
+  for (var b=0;b<bands;b++){
+    var wy = y0 + (b+0.5)*bp/DPR;
+    var v1 = wrinkleField(cx, cy + wy);
+    var v2 = wrinkleField(cx + wy*0.8 + 5.0, cy + wy + 4.0);
+    var ox = v1*2.0;
+    var oy = v2*1.0;
+    g.drawImage(m.c, 0, b*bp, m.s, bp,
+      -m.pad/DPR + ox, y0 + (b*bp)/DPR + oy, m.s/DPR, bp/DPR);
+  }
+  g.restore();
+}
+
+/* ---------- 一条线：同样毛 ---------- */
+function carvePath(g, fn, w, seed, str){
+  var st = (str == null) ? 0.62 : str;
+  g.save();
+  g.globalCompositeOperation = 'destination-out';
+  g.strokeStyle = '#fff';
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  for (var p=0;p<5;p++){
+    g.globalAlpha = 1 - Math.pow(1-st, 1/5);
+    g.lineWidth = w * (0.72 + rnd(seed+p*2.13)*0.5);
+    g.save();
+    g.translate((rnd(seed+p*3.37)-0.5)*1.5, (rnd(seed+p*4.71)-0.5)*1.5);
+    g.beginPath();
+    fn(g);
+    g.stroke();
+    g.restore();
+  }
+  g.restore();
+}
+
+/* ---------- 正文 ---------- */
+function carveDocText(k){
+  var M = docMetrics();
+  var u = M.u;
+  var y = H * 0.175;
+
+  for (var i=0;i<LINES.length;i++){
+    var L = LINES[i];
+    var x0;
+    if (L.al === 'c')      x0 = W/2 - textW(L.t, L.s*u)/2;
+    else if (L.al === 'r') x0 = M.right - textW(L.t, L.s*u);
+    else                   x0 = M.left;
+
+    var cx = x0;
+    for (var j=0;j<L.t.length;j++){
+      var ch = L.t.charAt(j);
+      if (ch === '　' || ch === ' '){ cx += L.s*u*0.60; continue; }
+      var fs  = L.s*u*(0.975 + rnd(i*13+j*7)*0.05);
+      var dy  = (rnd(i*17+j*11)-0.5)*L.s*u*0.075;
+      var rot = (rnd(i*19+j*23)-0.5)*0.020;
+      carveGlyph(k, ch, cx, y+dy, fs, i*37+j*11+3, rot, 0.855 + rnd(i*29+j*17)*0.14);
+      cx += fs*1.045;
+    }
+    y += L.gap * u * 1.52;
+  }
+}
+
+/* ---------- 页角编号 + 函形略图（都是刻的，不是画的） ---------- */
+function carveLines(k){
+  var U = W/390;
+  var M = docMetrics();
+
+  /* 编号框 */
+  var bx = M.right - 46*U, by = M.top - 44*U;
+  carvePath(k, function(g){ g.rect(bx, by, 46*U, 26*U); }, 1.0, 401, 0.55);
+
+  var n = '乙　之三';
+  var nfs = 9.5*U;
+  var nw = 0;
+  for (var i=0;i<n.length;i++) nw += (n.charAt(i)==='　') ? nfs*0.60 : nfs*1.05;
+  var cx = bx + (46*U - nw)/2 + nfs*0.1;
+  for (var i=0;i<n.length;i++){
+    var ch = n.charAt(i);
+    if (ch === '　'){ cx += nfs*0.60; continue; }
+    carveGlyph(k, ch, cx, by + 17.5*U, nfs, 900+i*13, 0, 0.50);
+    cx += nfs*1.05;
+  }
+
+  /* 函形略图 */
+  var ax = W*0.30, ay = H*0.615, aw = W*0.44, ah = W*0.30;
+  var ad = W*0.085;
+
+  carvePath(k, function(g){ g.rect(ax, ay, aw, ah); }, 1.0, 501, 0.50);
+  /* 描第二遍 —— 尺子压着画歪了，重描一道，没有完全盖住 */
+  carvePath(k, function(g){ g.rect(ax+1.4, ay+1.1, aw-0.8, ah-1.6); }, 0.8, 507, 0.24);
+  carvePath(k, function(g){
+    g.moveTo(ax, ay);
+    g.lineTo(ax + aw*0.16, ay - ad*0.62);
+    g.lineTo(ax + aw*0.84, ay - ad*0.62);
+    g.lineTo(ax + aw, ay);
+  }, 1.0, 511, 0.50);
+  carvePath(k, function(g){
+    g.moveTo(ax + aw*0.16, ay - ad*0.62);
+    g.lineTo(ax + aw*0.24, ay - ad);
+    g.lineTo(ax + aw*0.76, ay - ad);
+    g.lineTo(ax + aw*0.84, ay - ad*0.62);
+  }, 1.0, 521, 0.50);
+
+  var corners = [[0.06,0.10],[0.90,0.10],[0.06,0.82],[0.90,0.82]];
+  for (var i=0;i<4;i++){
+    (function(p2, s){
+      carvePath(k, function(g){ g.rect(ax+aw*p2[0], ay+ah*p2[1], aw*0.055, ah*0.13); }, 0.9, s, 0.46);
+    })(corners[i], 531+i*7);
+  }
+
+  /* 尺寸线 */
+  carvePath(k, function(g){
+    g.moveTo(ax, ay+ah+10*U); g.lineTo(ax+aw, ay+ah+10*U);
+    g.moveTo(ax, ay+ah+6*U);  g.lineTo(ax, ay+ah+14*U);
+    g.moveTo(ax+aw, ay+ah+6*U); g.lineTo(ax+aw, ay+ah+14*U);
+  }, 0.85, 561, 0.46);
+  carvePath(k, function(g){
+    g.moveTo(ax-12*U, ay); g.lineTo(ax-12*U, ay+ah);
+  }, 0.85, 571, 0.46);
+
+  /* 标注小字 */
+  var lbl = '一尺二寸';
+  var lfs = 7*U;
+  var lw = lbl.length * lfs * 1.05;
+  var lx = ax + aw/2 - lw/2;
+  for (var i=0;i<lbl.length;i++){
+    carveGlyph(k, lbl.charAt(i), lx, ay+ah+21*U, lfs, 600+i*9, 0, 0.42);
+    lx += lfs*1.05;
+  }
+  carveGlyph(k, '一', ax-14*U, ay+ah/2, lfs, 631, 0, 0.42);
+  carveGlyph(k, '尺', ax-14*U, ay+ah/2+lfs*1.05, lfs, 637, 0, 0.42);
+
+  var t2 = '附：函形略圖';
+  var tx = ax;
+  for (var i=0;i<t2.length;i++){
+    carveGlyph(k, t2.charAt(i), tx, ay-ad-8*U, 7.5*U, 700+i*11, 0, 0.42);
+    tx += 7.5*U*1.05;
+  }
+
+  /* 划掉的线（画错了，改了） */
+  carvePath(k, function(g){
+    g.moveTo(ax+aw*0.62, ay+ah*0.34); g.lineTo(ax+aw*0.78, ay+ah*0.46);
+    g.moveTo(ax+aw*0.78, ay+ah*0.34); g.lineTo(ax+aw*0.62, ay+ah*0.46);
+  }, 0.9, 741, 0.40);
+}
+
+/* ---------- 后期：让所有东西一起起伏 ---------- */
+/* 一张灰度噪声图 —— 128 是中点，overlay 混合时不改变亮度，只改起伏 */
+function noiseCanvas(w, h, seed, amp){
+  var c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  var x = c.getContext('2d');
+  var im = x.createImageData(w, h);
+  for (var i=0;i<w*h;i++){
+    var v = 128 + (rnd(seed + i*1.731) - 0.5) * (amp || 96);
+    if (v < 0) v = 0; if (v > 255) v = 255;
+    im.data[i*4] = im.data[i*4+1] = im.data[i*4+2] = v;
+    im.data[i*4+3] = 255;
+  }
+  x.putImageData(im, 0, 0);
+  return c;
+}
+
+function finishSheet(g){
+  /* 0) 先铺纸的"物质"：皱纹 + 纤维。
+        这两层盖在字上面，所以字跑不出纸。 */
+
+  /* 皱纹：三个尺度的起伏，越细越淡 */
+  var sc = [[22, 48, 0.62], [54, 118, 0.42], [126, 274, 0.26]];
+  g.save();
+  g.globalCompositeOperation = 'overlay';
+  g.imageSmoothingEnabled = true;
+  for (var i=0;i<sc.length;i++){
+    var n = noiseCanvas(sc[i][0], sc[i][1], i*113+7, 100);
+    g.globalAlpha = sc[i][2];
+    g.drawImage(n, 0, 0, sc[i][0], sc[i][1], 0, 0, W, H);
+  }
+  g.restore();
+
+  /* 纤维：一根一根，大致一个走向，有的深有的浅。
+     这一层最关键 —— 它证明"墨是渗在纸里的"，不是贴在纸上的。 */
+  g.save();
+  g.lineCap = 'round';
+  for (var i=0;i<1500;i++){
+    var x = rnd(i*1.377)*W, y = rnd(i*2.913)*H;
+    var len = 3 + rnd(i*4.131)*19;
+    var ang = 0.40 + (rnd(i*6.173)-0.5)*0.34;
+    var dark = rnd(i*8.317) > 0.486;
+    g.strokeStyle = dark ? 'rgba(8,7,5,'+(0.05+rnd(i*3.17)*0.09).toFixed(3)+')'
+                         : 'rgba(232,222,198,'+(0.05+rnd(i*3.17)*0.10).toFixed(3)+')';
+    g.lineWidth = 0.4 + rnd(i*9.731)*0.75;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + Math.cos(ang)*len, y + Math.sin(ang)*len);
+    g.stroke();
+  }
+  g.restore();
+
+  /* 1) 纸不平：大块、软、不规律的明暗。
+        这一层最重要 —— 它盖在墨和字上面，
+        让所有东西一起"跟着纸"高低，谁也不会浮在谁上面。 */
+  g.save();
+  g.globalCompositeOperation = 'screen';
+  for (var i=0;i<18;i++){
+    var x = W*rnd(i*5.11), y = H*rnd(i*7.31);
+    var r = W*(0.18 + rnd(i*9.13)*0.42);
+    var amt = 0.055 + rnd(i*11.7)*0.085;
+    var gg = g.createRadialGradient(x,y,0,x,y,r);
+    gg.addColorStop(0,'rgba(120,110,88,'+amt.toFixed(3)+')');
+    gg.addColorStop(1,'rgba(120,110,88,0)');
+    g.fillStyle = gg; g.beginPath(); g.arc(x,y,r,0,6.2832); g.fill();
+  }
+  g.restore();
+
+  g.save();
+  g.globalCompositeOperation = 'multiply';
+  for (var i=0;i<15;i++){
+    var x = W*rnd(i*3.77), y = H*rnd(i*6.19);
+    var r = W*(0.15 + rnd(i*8.71)*0.34);
+    var amt = 0.11 + rnd(i*12.3)*0.13;
+    var gg = g.createRadialGradient(x,y,0,x,y,r);
+    gg.addColorStop(0,'rgba(56,48,36,'+amt.toFixed(3)+')');
+    gg.addColorStop(1,'rgba(56,48,36,0)');
+    g.fillStyle = gg; g.beginPath(); g.arc(x,y,r,0,6.2832); g.fill();
+  }
+  g.restore();
+
+  /* 2) 折痕拿掉了。一条贯穿全屏的亮线，怎么调淡都会读成"打光"，读不成"折"。 */
+
+  /* 3) 霉斑 / 水渍：压在字上 */
+  g.save();
+  g.globalCompositeOperation = 'multiply';
+  for (var i=0;i<22;i++){
+    var x = W*rnd(i*2.7), y = H*rnd(i*4.3), r = W*(0.06+rnd(i*6.9)*0.20);
+    var gg = g.createRadialGradient(x,y,r*0.18,x,y,r);
+    gg.addColorStop(0,'rgba(96,84,60,0.18)');
+    gg.addColorStop(1,'rgba(96,84,60,0)');
+    g.fillStyle = gg;
+    g.beginPath(); g.arc(x,y,r,0,6.2832); g.fill();
+  }
+  g.restore();
+
+  /* 4) 颗粒：密度要忽疏忽密，不然就是一层均匀的电子噪点 */
+  for (var i=0;i<3;i++){
+    g.fillStyle = (i%2===0) ? 'rgba(0,0,0,0.065)' : 'rgba(226,216,192,0.060)';
+    g.beginPath();
+    for (var j=0;j<1100;j++){
+      var s = i*1103+j;
+      var x = rnd(s*1.91)*W, y = rnd(s*3.37)*H;
+      var dens = 0.5 + 0.5*Math.sin(x*0.0121 + s*0.7) * Math.cos(y*0.0103 + s*1.3);
+      if (rnd(s*7.77) > 0.10 + 0.90*dens) continue;
+      g.moveTo(x,y); g.arc(x,y,0.55+rnd(s*5.7)*1.15,0,6.2832);
+    }
+    g.fill();
+  }
+
+  /* 5) 暗角：轻。纸边必须看得见 —— 那是"这是张纸"最硬的证据 */
+  var vg = g.createRadialGradient(W*0.5,H*0.48,H*0.36, W*0.5,H*0.5,H*1.04);
+  vg.addColorStop(0,   'rgba(0,0,0,0)');
+  vg.addColorStop(0.74,'rgba(0,0,0,0.09)');
+  vg.addColorStop(1,   'rgba(0,0,0,0.52)');
+  g.fillStyle = vg;
+  g.fillRect(0,0,W,H);
+}
+
+/* ---------- 烘焙：一次算完，之后只 drawImage ---------- */
+var BR = null, BRms = 0;
+
+function bakeDoc(){
+  var cw = Math.floor(W*DPR), ch = Math.floor(H*DPR);
+  if (BR && BR.width === cw && BR.height === ch) return BR;
+  var t0 = (window.performance && performance.now) ? performance.now() : 0;
+
+  var main = document.createElement('canvas');
+  main.width = cw; main.height = ch;
+  var g = main.getContext('2d');
+  g.setTransform(DPR,0,0,DPR,0,0);
+
+  var bg = g.createRadialGradient(W*0.45,H*0.30,10, W*0.5,H*0.5,H*1.05);
+  bg.addColorStop(0,'rgb(24,20,14)');
+  bg.addColorStop(0.5,'rgb(11,10,8)');
+  bg.addColorStop(1,'rgb(3,3,2)');
+  g.fillStyle = bg; g.fillRect(0,0,W,H);
+
+  g.save(); paperPath(g); g.clip();
+  paintPaper(g);
+  g.restore();
+
+  var ink = document.createElement('canvas');
+  ink.width = cw; ink.height = ch;
+  var k = ink.getContext('2d');
+  k.setTransform(DPR,0,0,DPR,0,0);
+  k.save(); paperPath(k); k.clip();
+  paintInk(k);
+  carveLines(k);
+  carveDocText(k);
+  k.restore();
+
+  g.drawImage(ink, 0, 0, W, H);
+
+  finishSheet(g);
+
+  BR = main;
+  BRms = (window.performance && performance.now) ? (performance.now()-t0) : 0;
+  return BR;
 }
 
 /* ---------- 第 1 页：空白纸照片 + 程序化的字 ---------- */
@@ -150,93 +616,66 @@ var PAPERQ = [
   [0.185, 0.788]
 ];
 
+/* ============================================================
+   第 1 页：不装纸了。
+   只有字，和它自己被读出来的过程。
+   ============================================================ */
+var REVEAL = 0;
+
+var LINES = [
+  { t:'霞浦北鄉　白雲庵　後山',   s:18, w:0.62, gap:44, k:0, al:'c' },
+  { t:'民國二十三年　四月　十一日', s:12, w:0.40, gap:52, k:0, al:'c' },
+  { t:'本日掘至四尺，得石函一具。', s:15, w:0.88, gap:30, k:1, al:'l' },
+  { t:'函長一尺二寸，廣八寸，高一尺。盝頂。', s:13, w:0.74, gap:26, k:1, al:'l' },
+  { t:'四角有鎖，鎖已鏽。',        s:13, w:0.74, gap:40, k:1, al:'l' },
+  { t:'函體完好。鎖扣未動。',      s:17, w:1.00, gap:28, k:2, al:'l' },
+  { t:'周圍土層無擾動。',          s:17, w:1.00, gap:46, k:2, al:'l' },
+  { t:'匠人云：此石非本地所產。',  s:13, w:0.70, gap:40, k:1, al:'l' },
+  { t:'記此。',                    s:15, w:0.84, gap:54, k:1, al:'l' },
+  { t:'測繪員　沈硯秋　記',        s:12, w:0.44, gap:0,  k:0, al:'r' }
+];
+
+/* 排版尺度：全部按 W 走，换屏幕不会错位 */
+function docMetrics(){
+  var u = W / 390;                 /* 1 个 390 宽屏单位 */
+  return { u:u, left:W*0.135, right:W*0.865, top:H*0.155 };
+}
+
 function drawDoc(){
-  /* --- 底：照片 --- */
-  if (pOk){
-    var sc = Math.max(W/paper.width, H/paper.height);
-    var dw = paper.width*sc, dh = paper.height*sc;
-    ctx.drawImage(paper, (W-dw)/2, (H-dh)/2, dw, dh);
-  } else {
-    ctx.fillStyle = '#141009';
-    ctx.fillRect(0,0,W,H);
+  var B = bakeDoc();
+
+  /* 整页一次性贴上：字和纸是同一张位图，天然长在一起 */
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  ctx.drawImage(B, 0, 0);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+
+  /* 显影：像有人提着灯，从中间慢慢照开 */
+  var rr = H * (0.14 + REVEAL * 1.20);
+  var a0 = Math.max(0, 0.985 * (1 - REVEAL * 1.06));
+  var vg = ctx.createRadialGradient(W*0.5, H*0.44, rr*0.03, W*0.5, H*0.44, rr);
+  vg.addColorStop(0,    'rgba(0,0,0,'+a0.toFixed(3)+')');
+  vg.addColorStop(0.60, 'rgba(0,0,0,'+Math.min(1, a0+0.30).toFixed(3)+')');
+  vg.addColorStop(1,    'rgba(0,0,0,1)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0,0,W,H);
+
+  /* 最外一圈永远留黑 —— 拓片不是贴在屏幕上的 */
+  var edge = ctx.createRadialGradient(W*0.5,H*0.5,H*0.46, W*0.5,H*0.5,H*0.90);
+  edge.addColorStop(0,'rgba(0,0,0,0)');
+  edge.addColorStop(1,'rgba(0,0,0,0.36)');
+  ctx.fillStyle = edge;
+  ctx.fillRect(0,0,W,H);
+}
+
+function textW(txt, fs){
+  var w = 0;
+  for (var i=0;i<txt.length;i++){
+    var c = txt.charAt(i);
+    w += (c==='　'||c===' ') ? fs*0.60 : fs*1.045;
   }
-
-  /* --- 纸的包围盒（屏幕坐标） --- */
-  var x0 = W * 0.185, x1 = W * 0.770;
-  var y0 = H * 0.222, y1 = H * 0.790;
-  var pw = x1 - x0, ph = y1 - y0;
-
-  /* --- 只在纸面里写字 --- */
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(x0, y0);
-  ctx.lineTo(x1, y0 + ph*0.014);
-  ctx.lineTo(x1, y1);
-  ctx.lineTo(x0, y1 - ph*0.003);
-  ctx.closePath();
-  ctx.clip();
-
-  /* 纸上的光：左上亮，右下暗，和照片一致 */
-  var lg = ctx.createRadialGradient(x0+pw*0.22, y0+ph*0.14, 10,
-                                    x0+pw*0.22, y0+ph*0.14, pw*2.1);
-  lg.addColorStop(0,   'rgba(255,236,196,.10)');
-  lg.addColorStop(0.5, 'rgba(255,236,196,.02)');
-  lg.addColorStop(1,   'rgba(34,26,14,.30)');
-  ctx.fillStyle = lg;
-  ctx.fillRect(x0-10, y0-10, pw+20, ph+20);
-
-  /* 正文 */
-  var padT = ph * 0.055;
-  var yy = y0 + padT;
-
-  for (var d=0; d<DOC.length; d++){
-    var it = DOC[d];
-    if (it.y) yy = y0 + padT + it.y;
-    if (it.t){
-      var tilt = (rnd(d*5.7) - 0.5) * 0.040;
-      var xoff = (rnd(d*9.1) - 0.5) * 4.5;
-      handText(it.t, x0 + pw*0.075 + xoff, yy, it.s, it.ink, d*37 + 5, tilt);
-
-      if (it.fix){
-        ctx.save();
-        ctx.strokeStyle = 'rgba(34,27,16,.42)';
-        ctx.lineWidth = 1.15;
-        ctx.beginPath();
-        ctx.moveTo(x0 + pw*0.075 + it.fix[0], yy - it.s*0.34);
-        ctx.lineTo(x0 + pw*0.075 + it.fix[0] + it.fix[1], yy - it.s*0.24);
-        ctx.stroke();
-        ctx.restore();
-      }
-    }
-    yy += it.gap;
-  }
-
-  /* 收文戳 */
-  ctx.save();
-  ctx.translate(x1 - pw*0.30, y1 - ph*0.145);
-  ctx.rotate(-0.035);
-  ctx.fillStyle = 'rgba(52,36,18,.14)';
-  ctx.fillRect(1.6, 2.0, 68, 24);
-  ctx.strokeStyle = 'rgba(122,48,28,.40)';
-  ctx.lineWidth = 1.05;
-  ctx.strokeRect(0,0,68,24);
-  ctx.font = '11px ' + SERIF;
-  ctx.fillStyle = 'rgba(122,48,28,.52)';
-  ctx.fillText('收到　四月十一', 4, 16);
-  ctx.restore();
-
-  ctx.restore();
-
-  /* --- 全画面收尾：和石函页同一层空气 --- */
-  var vg = ctx.createRadialGradient(W*.5,H*.46,H*.22,W*.5,H*.5,H*.94);
-  vg.addColorStop(0,'rgba(0,0,0,0)');
-  vg.addColorStop(1,'rgba(0,0,0,.60)');
-  ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
-
-  for (var gg=0;gg<55;gg++){
-    ctx.fillStyle = Math.random()<.5 ? 'rgba(255,250,232,.030)' : 'rgba(0,0,0,.035)';
-    ctx.fillRect(Math.random()*W, Math.random()*H, 1.2, 1.2);
-  }
+  return w;
 }
 
 /* ============================================================
@@ -503,15 +942,29 @@ function goPage(n, dir){
   })();
 }
 
+/* 第 1 页进场：字一行一行浮出来 */
+var revealT0 = 0, revealOn = false;
+function startReveal(){
+  if (revealOn) return;
+  revealOn = true;
+  revealT0 = performance.now();
+  (function anim(){
+    REVEAL = Math.min(1, (performance.now()-revealT0)/2300);
+    draw();
+    if (REVEAL < 1) requestAnimationFrame(anim);
+  })();
+}
+
 /* 低频呼吸 */
 setInterval(function(){ if (page === 1 && flip < 0.02) draw(); }, 200);
 
-window.__state = function(){ return { page:page, flip:flip.toFixed(2), view:VIEW }; };
+window.__state = function(){ return { page:page, flip:flip.toFixed(2), view:VIEW, bake:Math.round(BRms) }; };
 window.__go = function(n){ page = n; draw(); };
 window.__flip = function(v){ flip = v; draw(); };
 
 resize();
 setTimeout(resize, 120);
+setTimeout(startReveal, 260);
 })();
 </script>
 </body>
