@@ -73,10 +73,11 @@
     box-shadow:0 0 0 1px rgba(40,30,18,.45),0 3px 10px rgba(40,30,18,.28);}
   .art img{width:100%;height:100%;object-fit:cover;display:block;}
   .art canvas{position:absolute;inset:0;width:100%;height:100%;display:none;
-    touch-action:none;}
+    touch-action:none;will-change:transform;transform:translateZ(0);
+    contain:paint;}
   .art.d3{background:transparent;
     box-shadow:inset 0 0 0 1px rgba(90,74,48,.34),inset 0 0 26px rgba(120,100,66,.14);}
-  .art.d3::after{box-shadow:inset 0 0 26px rgba(120,100,66,.16);}
+  .art.d3::after{box-shadow:none;display:none;}
   .art .hint{position:absolute;left:0;right:0;bottom:5px;text-align:center;
     font-size:9px;color:rgba(58,48,34,.46);letter-spacing:.18em;pointer-events:none;z-index:2;}
   .art::after{content:"";position:absolute;inset:0;pointer-events:none;
@@ -414,7 +415,9 @@ var D3 = (function(){
     VIS = cv3 && cv3.style.display!=='none' && cv3.getBoundingClientRect().width>2;
     if(!x3 || !VIS) return;
     x3.setTransform(DP3,0,0,DP3,0,0);
-    x3.clearRect(0,0,W3,H3);
+    x3.setTransform(1,0,0,1,0,0);
+    x3.clearRect(0,0,cv3.width,cv3.height);
+    x3.setTransform(DP3,0,0,DP3,0,0);
     upd();
     PXc=W3*0.5; PYc=H3*0.46; PSc=Math.min(W3*0.78, H3*2.1);
 
@@ -428,15 +431,32 @@ var D3 = (function(){
     }
     faces.sort(function(a,b){return a.dep-b.dep;});
 
-    for(var i=0;i<faces.length;i++){
-      var fd=faces[i];
-      var lit=-fd.n[0]*0.42-fd.n[1]*0.52+fd.n[2]*0.30;
-      var a=cl(lit,0,1);
-      if(a>0.08) hatch(fd.pts, (5+a*13)*DV, i*37+11, (0.10+a*0.24).toFixed(2), a>0.55 && DV>0.8);
+    var fast = drag.on;   /* 手指按着的时候只留骨架，松开再补排线 */
+
+    if(!fast){
+      for(var i=0;i<faces.length;i++){
+        var fd=faces[i];
+        var lit=-fd.n[0]*0.42-fd.n[1]*0.52+fd.n[2]*0.30;
+        var a=cl(lit,0,1);
+        if(a>0.08) hatch(fd.pts, 5+a*13, i*37+11, (0.10+a*0.24).toFixed(2), a>0.55);
+      }
     }
 
-    for(var i=0;i<BOX.E.length;i++){
-      handLine(pjv(BOX.E[i][0]), pjv(BOX.E[i][1]), i*53+7, 1.4, 0.78);
+    if(fast){
+      /* 快画：一条线一笔，不抖不描 */
+      x3.lineCap='round';
+      x3.strokeStyle='rgba('+INK+',0.62)';
+      x3.lineWidth=1.3;
+      x3.beginPath();
+      for(var i=0;i<BOX.E.length;i++){
+        var pa=pjv(BOX.E[i][0]), pb=pjv(BOX.E[i][1]);
+        x3.moveTo(pa[0],pa[1]); x3.lineTo(pb[0],pb[1]);
+      }
+      x3.stroke();
+    } else {
+      for(var i=0;i<BOX.E.length;i++){
+        handLine(pjv(BOX.E[i][0]), pjv(BOX.E[i][1]), i*53+7, 1.4, 0.78);
+      }
     }
 
     /* 尺寸线 */
@@ -472,7 +492,7 @@ var D3 = (function(){
     var r=cv3.getBoundingClientRect();
     if(r.width<2) return;
     W3=Math.round(r.width); H3=Math.round(r.height);
-    DP3=Math.min(3,window.devicePixelRatio||1);
+    DP3=Math.min(2,window.devicePixelRatio||1);
     cv3.width=Math.floor(W3*DP3); cv3.height=Math.floor(H3*DP3);
   }
 
@@ -502,6 +522,7 @@ var D3 = (function(){
       drag.on=false; RECT=null;
       spin.v=cl(spin.v,-0.12,0.12); spin.vx=cl(spin.vx,-0.08,0.08);
       NEXT=true;
+      setTimeout(function(){ NEXT=true; }, 80);
     },{passive:true});
     cv3.addEventListener('pointercancel',function(){
       drag.on=false; RECT=null; spin.v=0; spin.vx=0; NEXT=true;
