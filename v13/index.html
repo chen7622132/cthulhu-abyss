@@ -29,52 +29,61 @@ var SERIF = '"Songti SC","Noto Serif CJK SC","STSong","SimSun",serif';
 var MONO  = '"Courier New","SF Mono",Menlo,monospace';
 var AMBER = '246,204,148';
 var AMBER2= '214,168,116';
+var COLD  = '120,206,190';
 
 /* ============================================================
-   一件器物：盝顶石函
+   器物
    ============================================================ */
-var cam = { ry:0.62, rx:0.30, dist:3.05, scale:1 };
-var spin = { vx:0, vy:0 };
-
-function makeBox(w, h, d, cap){
-  /* 盝顶石函：直壁 → 檐口外伸 → 斜坡收到平顶 */
-  var e  = 0.036;                      /* 出檐伸出的量 */
+function makeBox(w, h, d){
+  var e  = 0.036;
   var cw = w + e, cd = d + e;
-  var ry0 = h*0.40;                    /* 檐口高度（直壁顶） */
-  var ty  = h;                         /* 平顶高度 */
+  var ry0 = h*0.40, ty = h;
   var tw  = w*0.64, td = d*0.64;
-
   var V = [
-    /* 0-3 底 */
     [-w,-h,-d],[ w,-h,-d],[ w,-h, d],[-w,-h, d],
-    /* 4-7 直壁顶（檐口内沿） */
     [-w, ry0,-d],[ w, ry0,-d],[ w, ry0, d],[-w, ry0, d],
-    /* 8-11 檐外沿 */
     [-cw, ry0,-cd],[ cw, ry0,-cd],[ cw, ry0, cd],[-cw, ry0, cd],
-    /* 12-15 平顶 */
     [-tw, ty,-td],[ tw, ty,-td],[ tw, ty, td],[-tw, ty, td]
   ];
   var E = [
-    [0,1],[1,2],[2,3],[3,0],           /* 底 */
-    [0,4],[1,5],[2,6],[3,7],           /* 直壁竖棱 */
-    [4,5],[5,6],[6,7],[7,4],           /* 檐口内沿 */
-    [4,8],[5,9],[6,10],[7,11],         /* 檐，水平往外伸 */
-    [8,9],[9,10],[10,11],[11,8],       /* 檐外沿 */
-    [8,12],[9,13],[10,14],[11,15],     /* 斜坡 */
-    [12,13],[13,14],[14,15],[15,12]    /* 平顶 */
+    [0,1],[1,2],[2,3],[3,0],
+    [0,4],[1,5],[2,6],[3,7],
+    [4,5],[5,6],[6,7],[7,4],
+    [4,8],[5,9],[6,10],[7,11],
+    [8,9],[9,10],[10,11],[11,8],
+    [8,12],[9,13],[10,14],[11,15],
+    [12,13],[13,14],[14,15],[15,12]
   ];
-  return { V:V, E:E, cap:cap, w:w, h:h, d:d, cw:cw, cd:cd, ry0:ry0 };
+  return { V:V, E:E, w:w, h:h, d:d, cw:cw, cd:cd, ry0:ry0 };
 }
 
-var OUTER = makeBox(0.56, 0.38, 0.38, 'outer');
-var INNER = makeBox(0.38, 0.24, 0.25, 'inner');
-var INNER2= makeBox(0.23, 0.15, 0.16, 'inner2');
+var OUTER = makeBox(0.56, 0.38, 0.38);
+var INNER = makeBox(0.38, 0.24, 0.25);
+var INNER2= makeBox(0.23, 0.15, 0.16);
 
-/* ---------- 投影 ---------- */
-var PX = 0, PY = 0, PS = 1;
+/* ============================================================
+   相机 / 异常状态
+   ============================================================ */
+var cam  = { ry:0.62, rx:0.30, dist:3.05 };
+var spin = { vx:0, vy:0 };
+var PX=0, PY=0, PS=1;
 
-function project(p, lift){
+/* 畸变：某个顶点会自己跑出去，再缩回来 */
+var mal = { v:-1, t0:0, dur:0, dx:0, dy:0, dz:0 };
+var nextMal = 5200;
+
+function project(p, lift, vidx, T){
   var x = p[0], y = p[1] + (lift||0), z = p[2];
+
+  if (mal.v === vidx){
+    var q = (T - mal.t0) / mal.dur;
+    if (q > 0 && q < 1){
+      var m = Math.sin(q*Math.PI);
+      m = m*m;
+      x += mal.dx*m; y += mal.dy*m; z += mal.dz*m;
+    }
+  }
+
   var cy = Math.cos(cam.ry), sy = Math.sin(cam.ry);
   var x1 =  x*cy - z*sy;
   var z1 =  x*sy + z*cy;
@@ -82,57 +91,60 @@ function project(p, lift){
   var y1 =  y*cx - z1*sx;
   var z2 =  y*sx + z1*cx;
   var k = cam.dist / (cam.dist + z2);
-  return [PX + x1*k*PS, PY + y1*k*PS, z2, k];
+
+  /* 端点抖动：模拟信号本身不稳，不是画面抖 */
+  var jx = (rnd(T*0.021 + (vidx||0)*13.7) - 0.5) * 0.85;
+  var jy = (rnd(T*0.019 + (vidx||0)*7.31) - 0.5) * 0.85;
+
+  return [PX + x1*k*PS + jx, PY + y1*k*PS + jy, z2, k];
 }
 
-/* ---------- 画一个箱体 ---------- */
-function drawBox(b, lift, alpha, lw, glow){
-  var top = [], bot = [];
-  for (var i=0;i<b.E.length;i++){
-    var a = b.E[i][0], c = b.E[i][1];
-    /* 盖子：顶点 4-11 抬起来 */
-    var la = (a >= 4) ? lift : 0;
-    var lc = (c >= 4) ? lift : 0;
-    var pa = project(b.V[a], la);
-    var pc = project(b.V[c], lc);
-    var zavg = (pa[2] + pc[2]) / 2;
-    (zavg < 0 ? top : bot).push([pa, pc, zavg]);
+function drawBox(b, lift, alpha, lw, glow, buildP, T){
+  var near = [], far = [];
+  var total = b.E.length;
+  for (var i=0;i<total;i++){
+    if (buildP != null && (i+1)/total > buildP) continue;
+    var e = b.E[i];
+    var la = (e[0] >= 4) ? lift : 0;
+    var lc = (e[1] >= 4) ? lift : 0;
+    var pa = project(b.V[e[0]], la, e[0], T);
+    var pc = project(b.V[e[1]], lc, e[1], T);
+    var zavg = (pa[2] + pc[2]) * 0.5;
+    (zavg < 0 ? near : far).push([pa, pc, zavg]);
   }
   function paint(list, mul){
     for (var i=0;i<list.length;i++){
-      var pa = list[i][0], pc = list[i][1];
-      var k = list[i][2];
-      var aa = alpha * mul * clamp(1 - (k + b.d)*0.22, 0.35, 1);
+      var pa = list[i][0], pc = list[i][1], k = list[i][2];
+      var aa = alpha * mul * clamp(1 - (k + b.d)*0.22, 0.32, 1);
       var midY = (pa[1]+pc[1])*0.5;
       var inScan = Math.abs(midY - scanY) < 17;
-      if (inScan) aa = Math.min(1, aa*2.1 + 0.15);
-      ctx.strokeStyle = inScan ? 'rgba(255,246,224,'+aa.toFixed(3)+')'
+      if (inScan){ aa = Math.min(1, aa*2.1 + 0.16); }
+      ctx.strokeStyle = inScan ? 'rgba(255,248,230,'+aa.toFixed(3)+')'
                                : 'rgba('+AMBER+','+aa.toFixed(3)+')';
-      ctx.lineWidth = inScan ? lw*2.0 : lw;
+      ctx.lineWidth = inScan ? lw*1.95 : lw;
       ctx.beginPath();
       ctx.moveTo(pa[0], pa[1]);
       ctx.lineTo(pc[0], pc[1]);
-      ctx.stroke();
-      if (glow){
+      if (glow && (inScan || mul > 0.8)){
         ctx.save();
-        ctx.shadowColor = 'rgba('+AMBER+',0.6)';
-        ctx.shadowBlur = 6;
+        ctx.shadowColor = inScan ? 'rgba(255,240,214,0.9)' : 'rgba('+AMBER+',0.55)';
+        ctx.shadowBlur = inScan ? 12 : 6;
         ctx.stroke();
         ctx.restore();
+      } else {
+        ctx.stroke();
       }
     }
   }
-  paint(bot, 0.42);
-  paint(top, 1.00);
+  paint(far, 0.38);
+  paint(near, 1.00);
 }
 
-
-/* ---------- 测量标注 ---------- */
-function drawMeasure(){
-  /* 包围盒 */
+/* ---------- 测量层 ---------- */
+function drawMeasure(T){
   var minx=1e9, maxx=-1e9, miny=1e9, maxy=-1e9;
   for (var i=0;i<OUTER.V.length;i++){
-    var p = project(OUTER.V[i], 0);
+    var p = project(OUTER.V[i], 0, i, T);
     if (p[0]<minx) minx=p[0];
     if (p[0]>maxx) maxx=p[0];
     if (p[1]<miny) miny=p[1];
@@ -145,8 +157,6 @@ function drawMeasure(){
   ctx.strokeStyle = 'rgba('+AMBER+',0.20)';
   ctx.lineWidth = 1;
   ctx.setLineDash([3,5]);
-
-  /* 四角的准星 */
   var cn = [[minx,miny,1,1],[maxx,miny,-1,1],[maxx,maxy,-1,-1],[minx,maxy,1,-1]];
   for (var i=0;i<4;i++){
     var c = cn[i], L = 9;
@@ -157,20 +167,18 @@ function drawMeasure(){
   }
   ctx.restore();
 
-  /* 淡框 */
   ctx.save();
-  ctx.strokeStyle = 'rgba('+AMBER+',0.10)';
+  ctx.strokeStyle = 'rgba('+AMBER+',0.09)';
   ctx.lineWidth = 1;
   ctx.setLineDash([2,6]);
   ctx.strokeRect(minx, miny, maxx-minx, maxy-miny);
   ctx.restore();
 
-  /* 宽度标注 */
   ctx.save();
-  ctx.fillStyle = 'rgba('+AMBER2+',0.62)';
+  ctx.fillStyle = 'rgba('+AMBER2+',0.60)';
   ctx.font = '9px '+MONO;
   ctx.textAlign = 'center';
-  ctx.strokeStyle = 'rgba('+AMBER+',0.32)';
+  ctx.strokeStyle = 'rgba('+AMBER+',0.30)';
   ctx.lineWidth = 1;
   var by = maxy + 22;
   ctx.beginPath();
@@ -178,9 +186,10 @@ function drawMeasure(){
   ctx.moveTo(minx, by-4); ctx.lineTo(minx, by+4);
   ctx.moveTo(maxx, by-4); ctx.lineTo(maxx, by+4);
   ctx.stroke();
-  ctx.fillText('一尺二寸', (minx+maxx)/2, by-6);
+  var badM = (Math.floor(T/13000)%4 === 3) && (T%13000 > 11500);
+  ctx.fillStyle = badM ? 'rgba(255,120,90,0.85)' : 'rgba('+AMBER2+',0.60)';
+  ctx.fillText(badM ? '不可測' : '一尺二寸', (minx+maxx)/2, by-6);
 
-  /* 高度标注 */
   var bx = minx - 20;
   ctx.beginPath();
   ctx.moveTo(bx, miny); ctx.lineTo(bx, maxy);
@@ -194,46 +203,100 @@ function drawMeasure(){
   ctx.restore();
   ctx.restore();
 
-  /* 顶点小圆点：扫描仪正在取点 */
+  /* 取样点 —— 数目会偶尔跳一下，机器数不清 */
   ctx.save();
-  ctx.fillStyle = 'rgba('+AMBER+',0.55)';
+  ctx.fillStyle = 'rgba('+AMBER+',0.5)';
   for (var i=0;i<OUTER.V.length;i++){
-    var p2 = project(OUTER.V[i], 0);
-    ctx.beginPath();
-    ctx.arc(p2[0], p2[1], 1.5, 0, 6.2832);
-    ctx.fill();
+    var p2 = project(OUTER.V[i], 0, i, T);
+    ctx.beginPath(); ctx.arc(p2[0], p2[1], 1.4, 0, 6.2832); ctx.fill();
   }
   ctx.restore();
 
-  /* 左侧刻度尺 */
+  /* 左侧刻度 */
   ctx.save();
-  ctx.strokeStyle = 'rgba('+AMBER+',0.22)';
+  ctx.strokeStyle = 'rgba('+AMBER+',0.20)';
   ctx.lineWidth = 1;
-  var sy = H*0.16, ey = H*0.88;
+  var sy = H*0.17, ey = H*0.90;
   ctx.beginPath();
-  ctx.moveTo(26, sy); ctx.lineTo(26, ey);
-  for (var i=0;i<=32;i++){
-    var yy = sy + (ey-sy)*i/32;
-    var L2 = (i%4===0) ? 7 : 3.5;
-    ctx.moveTo(26, yy); ctx.lineTo(26+L2, yy);
+  ctx.moveTo(24, sy); ctx.lineTo(24, ey);
+  for (var i=0;i<=34;i++){
+    var yy = sy + (ey-sy)*i/34;
+    var L2 = (i%4===0) ? 6.5 : 3;
+    ctx.moveTo(24, yy); ctx.lineTo(24+L2, yy);
   }
   ctx.stroke();
   ctx.restore();
+}
 
-  /* 角度读数 */
+
+/* ============================================================
+   不该存在的东西
+   —— 箱子里有一组点，装不下，也不该被扫到。
+      只有扫描线经过时，它才肯显形。
+   ============================================================ */
+var GHOST = [];
+var GEDGE = [];
+(function(){
+  for (var i=0;i<11;i++){
+    GHOST.push([
+      (rnd(i*3.17)-0.5)*1.34,
+      (rnd(i*5.71)-0.5)*0.86,
+      (rnd(i*7.33)-0.5)*1.02
+    ]);
+  }
+  GEDGE = [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,0],
+           [2,7],[4,9],[1,6],[5,10]];
+})();
+
+function drawGhost(T, base){
+  for (var i=0;i<GEDGE.length;i++){
+    var a = GEDGE[i][0], b = GEDGE[i][1];
+    var pa = project(GHOST[a], 0, -2, T);
+    var pb = project(GHOST[b], 0, -2, T);
+    var midY = (pa[1]+pb[1])*0.5;
+    var d = Math.abs(midY - scanY);
+    /* 只有扫描线扫过时它才亮；离得越远越看不见 */
+    var k = Math.max(0.16, 1 - d/95);
+    var al = (0.14 + 0.42*(k-0.16)/0.84) * base;
+    ctx.strokeStyle = 'rgba('+COLD+','+al.toFixed(3)+')';
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(pa[0], pa[1]);
+    ctx.lineTo(pb[0], pb[1]);
+    ctx.stroke();
+    if (k > 0.72){
+      ctx.save();
+      ctx.shadowColor = 'rgba('+COLD+',0.7)';
+      ctx.shadowBlur = 9;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+/* 一条从箱体里探出来的东西，很慢地动 */
+function drawTenacle(T, base){
+  var p0 = project([-OUTER.w*0.92, -OUTER.h*0.55, OUTER.d*0.9], 0, -2, T);
+  var wob = Math.sin(T*0.00061)*0.5 + Math.sin(T*0.00023)*0.5;
+  var wob2 = Math.cos(T*0.00047)*0.5;
+  var L = 34 + wob*10;
   ctx.save();
-  ctx.fillStyle = 'rgba('+AMBER2+',0.55)';
-  ctx.font = '9.5px '+MONO;
-  ctx.textAlign = 'right';
-  var deg = ((cam.ry*180/Math.PI)%360+360)%360;
-  ctx.fillText('θ  '+deg.toFixed(1)+'°', W*0.885, H*0.135);
-  ctx.fillText('φ  '+(cam.rx*180/Math.PI).toFixed(1)+'°', W*0.885, H*0.152);
+  ctx.strokeStyle = 'rgba('+COLD+','+(0.24*base).toFixed(3)+')';
+  ctx.lineWidth = 1.0;
+  ctx.beginPath();
+  ctx.moveTo(p0[0], p0[1]);
+  ctx.bezierCurveTo(
+    p0[0] - L*0.6, p0[1] + L*0.35 + wob2*8,
+    p0[0] - L*1.1, p0[1] + L*0.15 - wob2*14,
+    p0[0] - L*0.95, p0[1] - L*0.42 + wob*10
+  );
+  ctx.stroke();
   ctx.restore();
 }
 
 /* ---------- 四把锁 ---------- */
 var LOCKS = [];
-function lockPositions(b){
+function lockPositions(b, T){
   var out = [];
   var y = b.ry0 - b.h*0.030;
   var pts = [
@@ -241,8 +304,8 @@ function lockPositions(b){
     [ b.w, y,  b.d], [-b.w, y,  b.d]
   ];
   for (var i=0;i<4;i++){
-    var p = project(pts[i], 0);
-    out.push({ x:p[0], y:p[1], z:p[2], i:i, on:false, shake:0 });
+    var p = project(pts[i], 0, -1, T);
+    out.push({ x:p[0], y:p[1], z:p[2], on:false, shake:0 });
   }
   return out;
 }
@@ -250,188 +313,303 @@ function lockPositions(b){
 var lockHit = -1, lockMsg = '', lockMsgT = 0;
 
 /* ============================================================
-   CRT 后处理素材
+   开机时间线
    ============================================================ */
+var T0 = 0;
+var scanY = -999, scanP = 0;
+var openLift = 0, openTarget = 0;
+var glitchUntil = 0, nextGlitch = 7000;
+
 var SCAN = null;
 function bakeScan(){
   if (SCAN) return;
   var c = document.createElement('canvas');
   c.width = 4; c.height = 4;
   var x = c.getContext('2d');
-  x.fillStyle = 'rgba(0,0,0,0.26)';
-  x.fillRect(0,0,4,1);
-  x.fillStyle = 'rgba(0,0,0,0.08)';
-  x.fillRect(0,1,4,1);
+  x.fillStyle = 'rgba(0,0,0,0.26)'; x.fillRect(0,0,4,1);
+  x.fillStyle = 'rgba(0,0,0,0.08)'; x.fillRect(0,1,4,1);
   SCAN = ctx.createPattern(c,'repeat');
 }
 
-/* ============================================================
-   状态
-   ============================================================ */
-var openLift = 0, openTarget = 0;
-var scanY = -999, scanP = 0;
-var lastT = performance.now();
+/* 漂浮的尘 */
+var DUST = [];
+for (var i=0;i<16;i++){
+  DUST.push({ x:rnd(i*3.1), y:rnd(i*5.7), v:0.000006 + rnd(i*7.3)*0.000012, a:0.10+rnd(i*9.1)*0.20, r:0.5+rnd(i*11.3)*1.1 });
+}
 
 /* ============================================================
    绘制
    ============================================================ */
 function draw(){
   var now = performance.now();
-  var dt = Math.min(60, now-lastT);
-  lastT = now;
+  var e = now - T0;
 
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;
 
-  var bg = ctx.createRadialGradient(W*0.5, H*0.46, 10, W*0.5, H*0.5, H*0.95);
-  bg.addColorStop(0,   'rgb(14,10,7)');
-  bg.addColorStop(0.55,'rgb(7,5,4)');
-  bg.addColorStop(1,   'rgb(1,1,1)');
+  /* 底：暖褐 + 一层极淡的青，让琥珀色显得病 */
+  var bg = ctx.createRadialGradient(W*0.5, H*0.44, 10, W*0.5, H*0.5, H*0.96);
+  bg.addColorStop(0,   'rgb(15,11,8)');
+  bg.addColorStop(0.52,'rgb(7,6,5)');
+  bg.addColorStop(1,   'rgb(1,2,1)');
   ctx.fillStyle = bg;
   ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  var cg = ctx.createRadialGradient(W*0.18, H*0.86, 10, W*0.18, H*0.86, H*0.95);
+  cg.addColorStop(0, 'rgba(28,86,78,0.16)');
+  cg.addColorStop(1, 'rgba(28,86,78,0)');
+  ctx.fillStyle = cg;
+  ctx.fillRect(0,0,W,H);
+  ctx.restore();
 
   /* 惯性 */
   cam.ry += spin.vy; cam.rx += spin.vx;
   spin.vy *= 0.94; spin.vx *= 0.94;
   cam.rx = clamp(cam.rx, -0.85, 0.85);
-
-  /* 盖子的开合 */
   openLift += (openTarget - openLift) * 0.12;
 
+  /* 呼吸：整体极缓慢地涨落 */
   PX = W*0.5;
   PY = H*0.50;
-  PS = W*0.86;
+  PS = W*0.86 * (1 + Math.sin(now*0.00092)*0.013);
 
-  /* 地面投影：一圈椭圆，跟着旋转不变，给一点"放着"的感觉 */
+  /* 扫描位置 */
+  scanP = ((e*0.00013) % 1);
+  scanY = H*0.13 + (H*0.76)*scanP;
+
+  /* 畸变调度 */
+  if (e > 4200 && now > nextMal){
+    mal.v = Math.floor(rnd(now*0.0013)*16);
+    mal.t0 = now;
+    mal.dur = 380 + rnd(now*0.0021)*520;
+    var dir = rnd(now*0.0037)*6.2832;
+    mal.dx = Math.cos(dir)*0.085;
+    mal.dy = (rnd(now*0.0043)-0.5)*0.13;
+    mal.dz = Math.sin(dir)*0.085;
+    nextMal = now + 6000 + rnd(now*0.0059)*9000;
+  }
+
+  /* 信号干扰 */
+  if (now > glitchUntil && now > nextGlitch){
+    glitchUntil = now + 70 + rnd(now*0.001)*110;
+    nextGlitch = now + 6500 + rnd(now*0.003)*11000;
+  }
+  var gx = (now < glitchUntil) ? (rnd(now*0.017)-0.5)*6 : 0;
+
+  /* ---------- 第一段：黑 ---------- */
+  if (e < 460){
+    frameCRT(now, 0, true);
+    requestAnimationFrame(draw); return;
+  }
+
+  /* ---------- 第二段：字 ---------- */
+  if (e < 1850){
+    var a1 = clamp((e-460)/420, 0, 1) * clamp((1850-e)/420, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = a1;
+    ctx.fillStyle = 'rgba('+AMBER2+',0.95)';
+    ctx.font = '13px '+SERIF;
+    ctx.textAlign = 'left';
+    ctx.fillText('霞浦縣測繪隊', W*0.115, H*0.47);
+    ctx.fillText('光學測繪儀　乙之三', W*0.115, H*0.505);
+    ctx.globalAlpha = a1*0.45;
+    ctx.font = '9.5px '+MONO;
+    ctx.fillText('MDL VII  ·  S/N 0013', W*0.115, H*0.545);
+    ctx.restore();
+    frameCRT(now, 0, true);
+    requestAnimationFrame(draw); return;
+  }
+
+  /* ---------- 第三段：拉线 ---------- */
+  if (e < 2560){
+    var p2 = clamp((e-1850)/680, 0, 1);
+    var ease = 1 - Math.pow(1-p2, 3);
+    var hh = H*0.5*ease;
+    var g2 = ctx.createLinearGradient(0, H/2-hh, 0, H/2+hh);
+    g2.addColorStop(0,   'rgba('+AMBER+',0)');
+    g2.addColorStop(0.5, 'rgba('+AMBER+',0.30)');
+    g2.addColorStop(1,   'rgba('+AMBER+',0)');
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, H/2-hh, W, hh*2);
+    if (p2 < 0.18){
+      ctx.fillStyle = 'rgba(255,246,228,'+(0.95*(1-p2/0.18)).toFixed(3)+')';
+      ctx.fillRect(0, H/2-1.3, W, 2.6);
+    }
+    frameCRT(now, 0, true);
+    requestAnimationFrame(draw); return;
+  }
+
+  /* ---------- 第四段起：画面 ---------- */
+  var buildP = clamp((e-2560)/1300, 0, 1);
+  buildP = buildP*buildP*(3-2*buildP);
+
   ctx.save();
-  ctx.strokeStyle = 'rgba('+AMBER+',0.10)';
+  ctx.translate(gx, 0);
+
+  /* 地影 */
+  ctx.save();
+  ctx.strokeStyle = 'rgba('+AMBER+',0.045)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.ellipse(PX, PY + PS*0.34, PS*0.52, PS*0.13, 0, 0, 6.2832);
   ctx.stroke();
   ctx.restore();
 
-  /* 扫描平面：从上往下，扫到的线会亮起来 */
-  scanP = ((now*0.00013) % 1);
-  scanY = H*0.14 + (H*0.74)*scanP;
-
   /* 器物 */
   if (openLift > 0.02){
-    drawBox(INNER2, openLift*0.30, 0.20, 0.9, false);
-    drawBox(INNER,  openLift*0.16, 0.34, 1.0, false);
+    drawBox(INNER2, openLift*0.30, 0.20, 0.9, false, 1, now);
+    drawBox(INNER,  openLift*0.16, 0.34, 1.0, false, 1, now);
   }
-  drawBox(OUTER, openLift*0.42, 1.0, 1.25, true);
+  drawBox(OUTER, openLift*0.42, 1.0, 1.25, true, buildP, now);
 
-  /* ---------- 测量层：这台机器在"量"它 ---------- */
-  drawMeasure();
+  if (buildP > 0.02){
+    drawMeasure(now);
+  }
+
+  /* 不该存在的 */
+  if (buildP > 0.85){
+    drawGhost(now, 1);
+    drawTenacle(now, 1);
+  }
 
   /* 锁 */
-  LOCKS = lockPositions(OUTER);
-  for (var i=0;i<LOCKS.length;i++){
-    var L = LOCKS[i];
-    var lockOpen = L.on && openLift < 0.3;
-    ctx.save();
-    ctx.translate(L.x, L.y);
-    if (L.shake > 0) ctx.translate((rnd(now*0.03)-0.5)*3*L.shake, 0);
-    ctx.strokeStyle = 'rgba('+AMBER+','+(0.9-L.z*0.2).toFixed(3)+')';
-    ctx.lineWidth = 1.6;
-    ctx.shadowColor = 'rgba('+AMBER+',0.8)';
-    ctx.shadowBlur = 8;
-    var s = 8.6;
-    ctx.strokeRect(-s*0.62, -s*0.80, s*1.24, s*1.50);
-    /* 锁梁：锁着是闭合，开了是抬起来 */
-    ctx.beginPath();
-    if (lockOpen){
-      ctx.arc(0, -s*0.80, s*0.46, Math.PI*1.08, Math.PI*1.92);
-    } else {
-      ctx.arc(0, -s*0.80, s*0.46, Math.PI, Math.PI*2);
+  LOCKS = lockPositions(OUTER, now);
+  if (buildP > 0.9){
+    for (var i=0;i<LOCKS.length;i++){
+      var L = LOCKS[i];
+      var lockOpen = L.on && openLift < 0.3;
+      ctx.save();
+      ctx.translate(L.x, L.y);
+      if (L.shake > 0) ctx.translate((rnd(now*0.03)-0.5)*3*L.shake, 0);
+      ctx.strokeStyle = 'rgba('+AMBER+','+(0.9-L.z*0.2).toFixed(3)+')';
+      ctx.lineWidth = 1.6;
+      ctx.shadowColor = 'rgba('+AMBER+',0.8)';
+      ctx.shadowBlur = 8;
+      var s = 8.6;
+      ctx.strokeRect(-s*0.62, -s*0.80, s*1.24, s*1.50);
+      ctx.beginPath();
+      if (lockOpen) ctx.arc(0, -s*0.80, s*0.46, Math.PI*1.08, Math.PI*1.92);
+      else          ctx.arc(0, -s*0.80, s*0.46, Math.PI, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+      if (L.shake > 0) L.shake -= 0.04;
     }
-    ctx.stroke();
+  }
+  ctx.restore();
+
+  /* 扫描线 */
+  if (buildP > 0.3){
+    ctx.save();
+    var sg = ctx.createLinearGradient(0, scanY-26, 0, scanY+26);
+    sg.addColorStop(0,   'rgba('+AMBER+',0)');
+    sg.addColorStop(0.46,'rgba('+AMBER+',0.10)');
+    sg.addColorStop(0.5, 'rgba(210,255,246,0.20)');
+    sg.addColorStop(0.54,'rgba('+AMBER+',0.10)');
+    sg.addColorStop(1,   'rgba('+AMBER+',0)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, scanY-26, W, 52);
+    ctx.fillStyle = 'rgba(232,255,250,0.30)';
+    ctx.fillRect(0, scanY-0.6, W, 1.0);
     ctx.restore();
-    if (L.shake > 0) L.shake -= 0.04;
   }
 
-  /* 扫描线本体 */
+  /* 尘 */
   ctx.save();
-  var sg = ctx.createLinearGradient(0, scanY-26, 0, scanY+26);
-  sg.addColorStop(0,   'rgba('+AMBER+',0)');
-  sg.addColorStop(0.5, 'rgba(255,244,220,0.16)');
-  sg.addColorStop(1,   'rgba('+AMBER+',0)');
-  ctx.fillStyle = sg;
-  ctx.fillRect(0, scanY-26, W, 52);
-  ctx.fillStyle = 'rgba(255,246,226,0.42)';
-  ctx.fillRect(0, scanY-0.6, W, 1.2);
+  for (var i=0;i<DUST.length;i++){
+    var d = DUST[i];
+    var dx = (d.x + Math.sin(now*0.00017 + i*1.7)*0.012) * W;
+    var dy = ((d.y + now*d.v) % 1) * H;
+    ctx.fillStyle = 'rgba(255,236,208,'+d.a.toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(dx, dy, d.r, 0, 6.2832); ctx.fill();
+  }
   ctx.restore();
 
-  /* ---------- 界面文字 ---------- */
-  ctx.save();
-  ctx.fillStyle = 'rgb('+AMBER2+')';
-  ctx.font = '10.5px '+MONO;
-  ctx.textAlign = 'left';
-
-  /* 左上：状态块 */
-  ctx.globalAlpha = 0.95;
-  var blink = (Math.floor(now/380)%2 === 0) ? 1 : 0.3;
-  ctx.fillStyle = 'rgba(255,110,72,'+blink.toFixed(2)+')';
-  ctx.beginPath(); ctx.arc(W*0.115+3.5, H*0.098, 3.2, 0, 6.2832); ctx.fill();
-
-  ctx.fillStyle = 'rgba(255,228,196,0.92)';
-  ctx.font = '11px '+MONO;
-  ctx.fillText('掃描中', W*0.115+13, H*0.1025);
-
-  ctx.fillStyle = 'rgba('+AMBER2+',0.62)';
-  ctx.font = '10.5px '+MONO;
-  ctx.fillText('石函 · 第一重', W*0.115, H*0.122);
-  ctx.fillText('白雲庵後山', W*0.115, H*0.1385);
-
-  /* 一条很短的竖线，把状态和器物分开 */
-  ctx.globalAlpha = 0.22;
-  ctx.fillStyle = 'rgba('+AMBER+',1)';
-  ctx.fillRect(W*0.115, H*0.150, 26, 1);
-
-  /* 右上：主读数 —— 扫描深度，整块画面的视觉锚点 */
-  var depth = Math.round(scanP*384);
-  ctx.textAlign = 'right';
-  ctx.globalAlpha = 0.95;
-  ctx.fillStyle = 'rgba(255,238,208,0.96)';
-  ctx.font = '19px '+MONO;
-  ctx.fillText(('0000'+depth).slice(-4), W*0.885, H*0.104);
-  ctx.globalAlpha = 0.55;
-  ctx.fillStyle = 'rgb('+AMBER2+')';
-  ctx.font = '9px '+MONO;
-  ctx.fillText('mm　DEPTH', W*0.885, H*0.1175);
-
-  ctx.globalAlpha = 0.42;
-  ctx.fillText('θ '+(((cam.ry*180/Math.PI)%360+360)%360).toFixed(1)+'°', W*0.885, H*0.1335);
-  ctx.fillText('φ '+(cam.rx*180/Math.PI).toFixed(1)+'°', W*0.885, H*0.147);
-
-  /* 底部操作条：框起来，让它看起来是"可交互区" */
-  ctx.globalAlpha = 0.30;
-  ctx.fillStyle = 'rgba('+AMBER+',1)';
-  ctx.fillRect(W*0.115, H*0.922, W*0.77, 1);
-  ctx.fillRect(W*0.115, H*0.962, W*0.77, 1);
-  ctx.globalAlpha = 0.66;
-  ctx.fillStyle = 'rgba(255,226,190,0.86)';
-  ctx.font = '10px '+MONO;
-  ctx.textAlign = 'center';
-  ctx.fillText('拖動旋轉　·　點鎖　·　雙擊掀蓋', W*0.5, H*0.948);
-  ctx.restore();
-
-  /* 点锁之后的一行字 */
-  if (lockMsgT > 0){
-    lockMsgT -= dt;
-    var a = clamp(lockMsgT/400, 0, 1);
+  /* ---------- 信息层 ---------- */
+  if (buildP > 0.55){
+    var ia = clamp((buildP-0.55)/0.45, 0, 1);
     ctx.save();
-    ctx.globalAlpha = a*0.92;
+    ctx.globalAlpha = ia;
+    ctx.fillStyle = 'rgb('+AMBER2+')';
+    ctx.font = '10.5px '+MONO;
+    ctx.textAlign = 'left';
+
+    var blink = (Math.floor(now/380)%2 === 0) ? 1 : 0.28;
+    ctx.fillStyle = 'rgba(255,110,72,'+blink.toFixed(2)+')';
+    ctx.beginPath(); ctx.arc(W*0.115+3.5, H*0.098, 3.2, 0, 6.2832); ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,228,196,0.92)';
+    ctx.font = '11px '+MONO;
+    ctx.fillText('掃描中', W*0.115+13, H*0.1025);
+
+    ctx.fillStyle = 'rgba('+AMBER2+',0.60)';
+    ctx.font = '10.5px '+MONO;
+    ctx.fillText('石函 · 第一重', W*0.115, H*0.122);
+    ctx.fillText('白雲庵後山', W*0.115, H*0.1385);
+
+    ctx.globalAlpha = ia*0.22;
+    ctx.fillStyle = 'rgba('+AMBER+',1)';
+    ctx.fillRect(W*0.115, H*0.150, 26, 1);
+
+    /* 主读数 */
+    var depth = Math.round(scanP*384);
+    var badDepth = (Math.floor(now/9000)%5 === 0) && (now%9000 > 8000);
+    ctx.globalAlpha = ia*0.95;
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255,238,208,0.96)';
+    ctx.font = '19px '+MONO;
+    ctx.fillText(badDepth ? '----' : ('0000'+depth).slice(-4), W*0.885, H*0.104);
+    ctx.globalAlpha = ia*0.55;
+    ctx.fillStyle = 'rgb('+AMBER2+')';
+    ctx.font = '9px '+MONO;
+    ctx.fillText('mm　DEPTH', W*0.885, H*0.1175);
+
+    /* 取样点数：偶尔多一个 */
+    var pts = OUTER.V.length + ((now%11000 > 10200) ? 1 : 0);
+    ctx.fillText('PTS '+pts, W*0.885, H*0.1335);
+    ctx.fillText('θ '+(((cam.ry*180/Math.PI)%360+360)%360).toFixed(1)+'°', W*0.885, H*0.147);
+    ctx.restore();
+  }
+
+  /* 底部操作条 */
+  if (buildP > 0.75){
+    var ba = clamp((buildP-0.75)/0.25, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = ba*0.28;
+    ctx.fillStyle = 'rgba('+AMBER+',1)';
+    ctx.fillRect(W*0.115, H*0.922, W*0.77, 1);
+    ctx.fillRect(W*0.115, H*0.962, W*0.77, 1);
+    ctx.globalAlpha = ba*0.62;
+    ctx.fillStyle = 'rgba(255,226,190,0.86)';
+    ctx.font = '10px '+MONO;
+    ctx.textAlign = 'center';
+    ctx.fillText('拖動旋轉　·　點鎖　·　雙擊掀蓋', W*0.5, H*0.948);
+    ctx.restore();
+  }
+
+  /* 点锁后的字 */
+  if (lockMsgT > 0){
+    lockMsgT -= 16;
+    var a3 = clamp(lockMsgT/380, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = a3*0.95;
     ctx.fillStyle = 'rgba(255,240,212,1)';
     ctx.font = '15px '+SERIF;
     ctx.textAlign = 'center';
-    ctx.fillText(lockMsg, W*0.5, H*0.80);
+    ctx.fillText(lockMsg, W*0.5, H*0.805);
     ctx.restore();
   }
 
-  /* ---------- CRT ---------- */
+  frameCRT(now, gx, false);
+  requestAnimationFrame(draw);
+}
+
+/* ============================================================
+   CRT 壳
+   ============================================================ */
+function frameCRT(now, gx, quiet){
   var nS = 11, gap = H/nS;
   ctx.fillStyle = 'rgba(0,0,0,0.88)';
   for (var i=0;i<nS;i++){
@@ -447,6 +625,7 @@ function draw(){
   ctx.fillRect(0,0,W,H);
   ctx.restore();
 
+  /* 慢慢下移的亮带 */
   var bandY = ((now*0.030) % (H+320)) - 160;
   var bgr = ctx.createLinearGradient(0, bandY-80, 0, bandY+80);
   bgr.addColorStop(0,   'rgba('+AMBER+',0)');
@@ -455,23 +634,34 @@ function draw(){
   ctx.fillStyle = bgr;
   ctx.fillRect(0, bandY-80, W, 160);
 
+  /* 噪点 */
   ctx.save();
-  for (var i=0;i<160;i++){
+  for (var i=0;i<200;i++){
     var s2 = Math.floor(now*0.5)*2654435761 + i*97;
-    ctx.fillStyle = (rnd(s2*0.0031)>0.5) ? 'rgba(255,238,210,'+(0.012+rnd(s2*0.0021)*0.04).toFixed(3)+')'
+    ctx.fillStyle = (rnd(s2*0.0031)>0.5) ? 'rgba(255,238,210,'+(0.012+rnd(s2*0.0021)*0.042).toFixed(3)+')'
                                           : 'rgba(0,0,0,0.06)';
     ctx.fillRect(rnd(s2*0.000713)*W, rnd(s2*0.00137)*H, 1, 1);
   }
   ctx.restore();
 
+  /* 玻璃反光：一道很斜的淡光，证明外面隔着一层玻璃 */
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  var gl = ctx.createLinearGradient(W*0.05, 0, W*0.72, H*0.55);
+  gl.addColorStop(0,    'rgba(150,190,196,0.030)');
+  gl.addColorStop(0.42, 'rgba(150,190,196,0.008)');
+  gl.addColorStop(1,    'rgba(150,190,196,0)');
+  ctx.fillStyle = gl;
+  ctx.fillRect(0,0,W,H);
+  ctx.restore();
+
+  /* 暗角 */
   var vg = ctx.createRadialGradient(W*0.5, H*0.47, H*0.30, W*0.5, H*0.5, H*0.88);
   vg.addColorStop(0,   'rgba(0,0,0,0)');
-  vg.addColorStop(0.70,'rgba(0,0,0,0.13)');
-  vg.addColorStop(1,   'rgba(0,0,0,0.60)');
+  vg.addColorStop(0.70,'rgba(0,0,0,0.14)');
+  vg.addColorStop(1,   'rgba(0,0,0,0.66)');
   ctx.fillStyle = vg;
   ctx.fillRect(0,0,W,H);
-
-  requestAnimationFrame(draw);
 }
 
 /* ============================================================
@@ -482,62 +672,47 @@ var g = { on:false, x0:0, y0:0, lastX:0, lastY:0, moved:0, t0:0 };
 cv.addEventListener('pointerdown', function(e){
   var r = cv.getBoundingClientRect();
   g.on = true;
-  g.x0 = e.clientX - r.left; g.y0 = e.clientY - r.top;
+  g.x0 = e.clientX-r.left; g.y0 = e.clientY-r.top;
   g.lastX = g.x0; g.lastY = g.y0;
   g.moved = 0; g.t0 = performance.now();
+  var t = performance.now();
+  if (t - (cv._lt||0) < 300){ openTarget = openTarget > 0.5 ? 0 : 1; }
+  cv._lt = t;
 }, {passive:true});
 
 cv.addEventListener('pointermove', function(e){
   if (!g.on) return;
   var r = cv.getBoundingClientRect();
-  var x = e.clientX - r.left, y = e.clientY - r.top;
-  var dx = x - g.lastX, dy = y - g.lastY;
+  var x = e.clientX-r.left, y = e.clientY-r.top;
+  var dx = x-g.lastX, dy = y-g.lastY;
   g.lastX = x; g.lastY = y;
-  g.moved += Math.abs(dx) + Math.abs(dy);
-  cam.ry += dx * 0.010;
-  cam.rx = clamp(cam.rx + dy * 0.006, -0.85, 0.85);
-  spin.vy = dx * 0.0025;
+  g.moved += Math.abs(dx)+Math.abs(dy);
+  cam.ry += dx*0.010;
+  cam.rx = clamp(cam.rx + dy*0.006, -0.85, 0.85);
+  spin.vy = dx*0.0025;
   spin.vx = 0;
 }, {passive:true});
 
 cv.addEventListener('pointerup', function(e){
   if (!g.on) return;
   g.on = false;
+  if (g.moved >= 12) return;
   var r = cv.getBoundingClientRect();
-  var x = e.clientX - r.left, y = e.clientY - r.top;
-
-  if (g.moved < 12){
-    /* 点到了哪把锁 */
-    var found = -1, best = 26;
-    for (var i=0;i<LOCKS.length;i++){
-      var L = LOCKS[i];
-      var d2 = (L.x-x)*(L.x-x) + (L.y-y)*(L.y-y);
-      if (d2 < best*best && L.z > -0.2){ best = Math.sqrt(d2); found = i; }
-    }
-    if (found >= 0){
-      var L2 = LOCKS[found];
-      L2.on = !L2.on;
-      L2.shake = 1;
-      if (L2.on){ lockMsg = '咔。'; }
-      else { lockMsg = '鎖扣未動。'; }
-      lockMsgT = 1600;
-    } else {
-      /* 空白处双击 = 掀盖 */
-      if (performance.now() - g.t0 < 220){}
-    }
-    if (lockHit >= 0 && lockHit !== found){}
+  var x = e.clientX-r.left, y = e.clientY-r.top;
+  var found = -1, best = 28;
+  for (var i=0;i<LOCKS.length;i++){
+    var L = LOCKS[i];
+    var d2 = (L.x-x)*(L.x-x)+(L.y-y)*(L.y-y);
+    if (d2 < best*best && L.z > -0.2){ best = Math.sqrt(d2); found = i; }
+  }
+  if (found >= 0){
+    var L2 = LOCKS[found];
+    L2.on = !L2.on;
+    L2.shake = 1;
+    lockMsg = L2.on ? '咔。' : '鎖扣未動。';
+    lockMsgT = 1600;
     lockHit = found;
   }
-}, {passive:true});
-
-/* 双击掀盖 */
-var lastTap = 0;
-cv.addEventListener('pointerdown', function(e){
-  var t = performance.now();
-  if (t - lastTap < 300){
-    openTarget = openTarget > 0.5 ? 0 : 1;
-  }
-  lastTap = t;
 }, {passive:true});
 
 function resize(){
@@ -555,10 +730,11 @@ window.addEventListener('orientationchange', function(){ setTimeout(resize, 150)
 
 resize();
 setTimeout(resize, 160);
+T0 = performance.now();
 draw();
 
 window.__open = function(v){ openTarget = v; };
-window.__state = function(){ return { ry:cam.ry.toFixed(2), rx:cam.rx.toFixed(2), open:openLift.toFixed(2), locks:LOCKS.length }; };
+window.__state = function(){ return { ry:cam.ry.toFixed(2), open:openLift.toFixed(2), locks:LOCKS.length }; };
 })();
 </script>
 </body>
