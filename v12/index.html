@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#000">
+<title>七重</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+    touch-action:none;}
+  canvas{position:fixed;left:0;top:0;width:100%;height:100%;display:block;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(function(){
+'use strict';
+
+var cv  = document.getElementById('c');
+var ctx = cv.getContext('2d');
+var W = 390, H = 844, DPR = 1;
+
+function rnd(s){ var x = Math.sin(s*127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+var SERIF = '"Songti SC","Noto Serif CJK SC","STSong","SimSun",serif';
+var MONO  = '"Courier New","SF Mono",Menlo,monospace';
+
+var AMBER  = '246,204,148';
+var AMBER2 = '214,168,116';
+
+/* ============================================================
+   页面数据
+   ============================================================ */
+var PAGES = [
+{
+  head: 'Y-03',
+  foot: '001 / 025',
+  lines: [
+    { t:'霞浦北鄉　白雲庵　後山',         s:22,  al:'c', gap:36 },
+    { t:'民國二十三年　四月　十一日',     s:15.3,  al:'c', gap:34 },
+    { t:'',                               s:14.2,  al:'l', gap:26 },
+    { t:'　本日掘至四尺，得石函一具。',   s:19.1,al:'l', gap:32 },
+    { t:'　函長一尺二寸，廣八寸，高一尺。',s:17.4, al:'l', gap:28 },
+    { t:'　盝頂。四角有鎖，鎖已鏽。',     s:17.4,  al:'l', gap:34 },
+    { t:'',                               s:14.2,  al:'l', gap:14 },
+    { t:'　函體完好。',                   s:21,  al:'l', gap:32, hi:true },
+    { t:'　鎖扣未動。',                   s:21,  al:'l', gap:32, hi:true },
+    { t:'',                               s:14.2,  al:'l', gap:14 },
+    { t:'　周圍土層無擾動。',             s:19.1,al:'l', gap:36 },
+    { t:'　匠人云：此石非本地所產。',     s:17.4,  al:'l', gap:44 },
+    { t:'',                               s:14.2,  al:'l', gap:16 },
+    { t:'　記此。',                       s:19.1,al:'l', gap:36 },
+    { t:'測繪員　沈硯秋　記',             s:15.8,al:'r', gap:0  }
+  ]
+},
+{
+  head: 'Y-04',
+  foot: '002 / 025',
+  lines: [
+    { t:'同日　申時　再記',               s:16.4,  al:'c', gap:40 },
+    { t:'',                               s:14.2,  al:'l', gap:24 },
+    { t:'　石函置於案上，重約四十斤。',   s:18.5,  al:'l', gap:32 },
+    { t:'　盝頂，四隅各一鎖。',           s:18.5,  al:'l', gap:34 },
+    { t:'　鎖面皆銘，四鎖同文：',         s:18.5,  al:'l', gap:38 },
+    { t:'',                               s:14.2,  al:'l', gap:20 },
+    { t:'封　者　勿　啟',                 s:21,  al:'c', gap:38, hi:true },
+    { t:'',                               s:14.2,  al:'l', gap:20 },
+    { t:'　字口新。',                     s:18.5,  al:'l', gap:30 },
+    { t:'　不似百年前物。',               s:18.5,  al:'l', gap:40 },
+    { t:'',                               s:14.2,  al:'l', gap:18 },
+    { t:'　匠人皆不肯近前。問之，',       s:17.4,  al:'l', gap:30 },
+    { t:'　但云：庵裡從前沒有這個。',     s:17.4,  al:'l', gap:40 },
+    { t:'',                               s:14.2,  al:'l', gap:20 },
+    { t:'　夜宿庵中。燈不得熄。',         s:17.4,  al:'l', gap:0  }
+  ]
+}
+];
+
+/* ============================================================
+   排版
+   ============================================================ */
+var GLYPH = [];
+
+function layout(idx){
+  GLYPH = [];
+  var LINES = PAGES[idx].lines;
+  var u = W/390;
+  var left = W*0.115, right = W*0.885;
+  var y = H*0.142;
+
+  for (var i=0;i<LINES.length;i++){
+    var L = LINES[i];
+    var fs = L.s*u;
+    var wsum = 0;
+    for (var j=0;j<L.t.length;j++){
+      var c = L.t.charAt(j);
+      wsum += (c==='　') ? fs*0.62 : fs*1.045;
+    }
+    var x0;
+    if (L.al === 'c')      x0 = W/2 - wsum/2;
+    else if (L.al === 'r') x0 = right - wsum;
+    else                   x0 = left;
+
+    var cx = x0;
+    for (var j=0;j<L.t.length;j++){
+      var c = L.t.charAt(j);
+      if (c === '　'){ cx += fs*0.62; continue; }
+      GLYPH.push({ ch:c, x:cx, y:y, s:fs, hi:!!L.hi });
+      cx += fs*1.045;
+    }
+    y += L.gap * u * 1.16 + fs*0.34;
+  }
+}
+
+/* ============================================================
+   预热：整页文字（含辉光）
+   ============================================================ */
+var TEXT = null, tctx = null;
+
+function bakeText(){
+  var cw = Math.floor(W*DPR), chh = Math.floor(H*DPR);
+  TEXT = document.createElement('canvas');
+  TEXT.width = cw; TEXT.height = chh;
+  tctx = TEXT.getContext('2d');
+  tctx.setTransform(DPR,0,0,DPR,0,0);
+  tctx.clearRect(0,0,W,H);
+  tctx.textBaseline = 'alphabetic';
+
+  /* 一层很薄的辉光：磷光不是从字里发出来的，是从字周围渗出来的 */
+  tctx.save();
+  tctx.shadowColor = 'rgba('+AMBER+',0.75)';
+  tctx.shadowBlur = 9;
+  tctx.fillStyle = 'rgba('+AMBER+',0.42)';
+  for (var i=0;i<GLYPH.length;i++){
+    var g = GLYPH[i];
+    tctx.font = g.s.toFixed(1)+'px '+SERIF;
+    tctx.fillText(g.ch, g.x, g.y);
+  }
+  tctx.restore();
+
+  /* 字身：画两遍，第二遍偏 0.4px —— 宋体太细，不加厚在手机上会发虚 */
+  for (var i=0;i<GLYPH.length;i++){
+    var g = GLYPH[i];
+    tctx.font = g.s.toFixed(1)+'px '+SERIF;
+    tctx.fillStyle = g.hi ? 'rgba(255,240,212,1)' : 'rgba('+AMBER+',0.97)';
+    tctx.fillText(g.ch, g.x, g.y);
+    tctx.fillText(g.ch, g.x+0.42, g.y+0.30);
+  }
+}
+
+/* 扫描线图案 */
+var SCAN = null;
+function bakeScan(){
+  if (SCAN) return;
+  var c = document.createElement('canvas');
+  c.width = 4; c.height = 4;
+  var x = c.getContext('2d');
+  x.fillStyle = 'rgba(0,0,0,0.26)';
+  x.fillRect(0,0,4,1);
+  x.fillStyle = 'rgba(0,0,0,0.08)';
+  x.fillRect(0,1,4,1);
+  SCAN = ctx.createPattern(c,'repeat');
+}
+
+/* ============================================================
+   状态
+   ============================================================ */
+var page = 0;
+var shown = 0;
+var t0 = 0;
+var bootT0 = 0;
+var Booting = true;
+var glitchUntil = 0, nextGlitch = 4000;
+var wipeT0 = -1;             /* 换页时的一道扫过 */
+
+function boot(){
+  bootT0 = performance.now();
+  Booting = true;
+}
+
+function restart(){
+  layout(page);
+  bakeText();
+  shown = 0;
+  t0 = performance.now();
+}
+
+function goPage(n){
+  if (wipeT0 > 0) return;
+  wipeT0 = performance.now();
+  setTimeout(function(){
+    page = (n + PAGES.length) % PAGES.length;
+    restart();
+    wipeT0 = -1;
+  }, 200);
+}
+
+/* ============================================================
+   绘制
+   ============================================================ */
+function draw(){
+  var now = performance.now();
+
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+
+  var bg = ctx.createRadialGradient(W*0.5, H*0.44, 10, W*0.5, H*0.5, H*0.95);
+  bg.addColorStop(0,   'rgb(14,10,7)');
+  bg.addColorStop(0.55,'rgb(7,5,4)');
+  bg.addColorStop(1,   'rgb(1,1,1)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,W,H);
+
+  /* 开机 */
+  if (Booting){
+    var p = clamp((now-bootT0)/680, 0, 1);
+    var ease = 1 - Math.pow(1-p, 3);
+    var hh = H*0.5*ease;
+    var g2 = ctx.createLinearGradient(0, H/2-hh, 0, H/2+hh);
+    g2.addColorStop(0,   'rgba('+AMBER+',0)');
+    g2.addColorStop(0.5, 'rgba('+AMBER+',0.26)');
+    g2.addColorStop(1,   'rgba('+AMBER+',0)');
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, H/2-hh, W, hh*2);
+    if (p < 0.20){
+      ctx.fillStyle = 'rgba(255,242,218,'+(0.92*(1-p/0.20)).toFixed(3)+')';
+      ctx.fillRect(0, H/2-1.2, W, 2.4);
+    }
+    if (p >= 1){ Booting = false; restart(); }
+  }
+
+  /* 信号干扰 */
+  if (now > glitchUntil && now > nextGlitch){
+    glitchUntil = now + 80 + rnd(now*0.001)*110;
+    nextGlitch = now + 7000 + rnd(now*0.003)*11000;
+  }
+  var gx = (now < glitchUntil) ? (rnd(now*0.017)-0.5)*7 : 0;
+
+  var flick = 0.95 + Math.sin(now*0.0041)*0.02 + (rnd(Math.floor(now*0.06))-0.5)*0.035;
+
+  ctx.save();
+  ctx.translate(gx, 0);
+
+  if (!Booting && TEXT){
+    var el = now - t0;
+    shown = Math.floor(el / 33);
+    if (shown > GLYPH.length) shown = GLYPH.length;
+
+    var limitY = 0, limitX = 0, done = true;
+    if (shown < GLYPH.length){
+      var last = GLYPH[Math.max(0,shown-1)];
+      limitY = last.y + 5;
+      limitX = last.x + last.s*1.06;
+      done = false;
+    }
+
+    ctx.save();
+    if (!done){
+      ctx.beginPath();
+      ctx.rect(-20, -20, W+40, limitY);
+      ctx.clip();
+    }
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.drawImage(TEXT, 0, 0);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.restore();
+
+    /* 当前行打到一半 */
+    if (!done && shown > 0){
+      var cur = GLYPH[shown];
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.beginPath();
+      var ly = Math.floor((cur.y - cur.s*1.15)*DPR);
+      var lh = Math.floor((cur.s*1.55)*DPR);
+      ctx.rect(0, ly, Math.floor(limitX*DPR), lh);
+      ctx.clip();
+      ctx.drawImage(TEXT, 0, 0);
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.restore();
+    }
+
+    /* 光标：还没打完才闪 */
+    if (!done && shown > 0 && Math.floor(now/420)%2 === 0){
+      var cur2 = GLYPH[shown];
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba('+AMBER+',0.80)';
+      ctx.fillRect(limitX + 1, cur2.y - cur2.s*0.74, cur2.s*0.52, cur2.s*0.96);
+      ctx.restore();
+    }
+
+    /* 打完之后，右下角给一个很小的提示 */
+    if (done){
+      var aP = clamp((now - t0 - GLYPH.length*33)/600, 0, 1);
+      ctx.save();
+      ctx.globalAlpha = aP * (0.30 + Math.sin(now*0.0028)*0.10);
+      ctx.fillStyle = 'rgb('+AMBER2+')';
+      ctx.font = '10px '+MONO;
+      ctx.textAlign = 'right';
+      ctx.fillText('▸', W*0.885, H*0.905);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+
+  /* 换页时扫过的一道 */
+  if (wipeT0 > 0){
+    var wp = clamp((now-wipeT0)/200, 0, 1);
+    var wy = wp*H;
+    var wg = ctx.createLinearGradient(0, wy-60, 0, wy+60);
+    wg.addColorStop(0,   'rgba('+AMBER+',0)');
+    wg.addColorStop(0.5, 'rgba('+AMBER+',0.30)');
+    wg.addColorStop(1,   'rgba('+AMBER+',0)');
+    ctx.fillStyle = wg;
+    ctx.fillRect(0, wy-60, W, 120);
+    ctx.fillStyle = 'rgba(255,244,222,'+(0.5*(1-wp)).toFixed(3)+')';
+    ctx.fillRect(0, wy-0.8, W, 1.6);
+  }
+
+  /* 胶片齿孔 */
+  var nS = 11, gap = H/nS;
+  ctx.fillStyle = 'rgba(0,0,0,0.88)';
+  for (var i=0;i<nS;i++){
+    var y = i*gap + gap*0.35;
+    ctx.fillRect(0, y, 4.5, gap*0.22);
+    ctx.fillRect(W-4.5, y, 4.5, gap*0.22);
+  }
+
+  /* 扫描线 */
+  bakeScan();
+  ctx.save();
+  ctx.globalAlpha = 0.38;
+  ctx.fillStyle = SCAN;
+  ctx.fillRect(0,0,W,H);
+  ctx.restore();
+
+  /* 慢慢下移的亮带 */
+  var bandY = ((now*0.032) % (H+320)) - 160;
+  var bgr = ctx.createLinearGradient(0, bandY-80, 0, bandY+80);
+  bgr.addColorStop(0,   'rgba('+AMBER+',0)');
+  bgr.addColorStop(0.5, 'rgba('+AMBER+',0.028)');
+  bgr.addColorStop(1,   'rgba('+AMBER+',0)');
+  ctx.fillStyle = bgr;
+  ctx.fillRect(0, bandY-80, W, 160);
+
+  /* 噪点 */
+  ctx.save();
+  for (var i=0;i<220;i++){
+    var s = Math.floor(now*0.5)*2654435761 + i*97;
+    var nx2 = rnd(s*0.000713)*W;
+    var ny2 = rnd(s*0.00137)*H;
+    var a2 = 0.015 + rnd(s*0.0021)*0.05;
+    ctx.fillStyle = (rnd(s*0.0031)>0.5) ? 'rgba(255,238,210,'+a2.toFixed(3)+')' : 'rgba(0,0,0,'+(a2*2).toFixed(3)+')';
+    ctx.fillRect(nx2, ny2, 1, 1);
+  }
+  ctx.restore();
+
+  /* 整体灯管闪 */
+  ctx.fillStyle = 'rgba(0,0,0,'+clamp(1-flick,0,0.4).toFixed(3)+')';
+  ctx.fillRect(0,0,W,H);
+
+  /* 暗角 */
+  var vg = ctx.createRadialGradient(W*0.5, H*0.47, H*0.30, W*0.5, H*0.5, H*0.88);
+  vg.addColorStop(0,   'rgba(0,0,0,0)');
+  vg.addColorStop(0.70,'rgba(0,0,0,0.13)');
+  vg.addColorStop(1,   'rgba(0,0,0,0.60)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0,0,W,H);
+
+  /* 页眉页脚 */
+  ctx.save();
+  ctx.globalAlpha = 0.38;
+  ctx.fillStyle = 'rgb('+AMBER2+')';
+  ctx.font = '9.5px '+MONO;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  ctx.fillText(PAGES[page].head, W*0.115, H*0.075);
+  ctx.textAlign = 'right';
+  ctx.fillText(PAGES[page].foot, W*0.885, H*0.945);
+  ctx.restore();
+
+  requestAnimationFrame(draw);
+}
+
+/* ============================================================
+   交互 / 尺寸
+   ============================================================ */
+var gst = { on:false, x:0, y:0 };
+
+cv.addEventListener('pointerdown', function(e){
+  var r = cv.getBoundingClientRect();
+  gst.on = true; gst.x = e.clientX-r.left; gst.y = e.clientY-r.top;
+}, {passive:true});
+
+cv.addEventListener('pointerup', function(e){
+  if (!gst.on) return;
+  gst.on = false;
+  if (shown < GLYPH.length){ shown = GLYPH.length; t0 = performance.now() - GLYPH.length*33 - 700; return; }
+  goPage(page + 1);
+}, {passive:true});
+
+function resize(){
+  var r = cv.getBoundingClientRect();
+  W = Math.max(1, Math.round(r.width));
+  H = Math.max(1, Math.round(r.height));
+  DPR = Math.min(3, window.devicePixelRatio || 1);
+  cv.width  = Math.floor(W*DPR);
+  cv.height = Math.floor(H*DPR);
+  SCAN = null;
+  layout(page);
+  bakeText();
+}
+
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', function(){ setTimeout(resize, 150); });
+
+resize();
+setTimeout(resize, 160);
+boot();
+draw();
+
+window.__state = function(){ return { page:page, glyphs:GLYPH.length, shown:shown }; };
+window.__next = function(){ goPage(page+1); };
+})();
+</script>
+</body>
+</html>
