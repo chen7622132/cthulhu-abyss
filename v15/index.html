@@ -102,6 +102,24 @@
   .note::before{content:"";position:absolute;left:-14px;top:5px;
     width:13px;height:1px;background:rgba(178,67,40,.75);
     transform:rotate(22deg);transform-origin:right center;}
+  @keyframes shk{
+    0%,100%{transform:translate(0,0)}
+    14%{transform:translate(-2.5px,1px)}
+    30%{transform:translate(2px,-1.5px)}
+    46%{transform:translate(-1.5px,-1px)}
+    62%{transform:translate(1.5px,1.5px)}
+    80%{transform:translate(-1px,0.5px)}
+  }
+  .sheet.shk{animation:shk .46s ease-out;}
+  .ghostline{margin-top:12px;font-size:12px;color:rgba(120,96,64,.62);
+    letter-spacing:.10em;animation:fadein .8s ease both;}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .note.flip{animation:flipit .9s ease;}
+  @keyframes flipit{
+    0%{opacity:1}28%{opacity:0;transform:rotate(-7deg) scale(1.12)}
+    62%{opacity:0;transform:rotate(3deg) scale(.94)}
+    100%{opacity:1;transform:rotate(-7deg) scale(1)}
+  }
   .cap{font-size:9.5px;color:#8a7550;letter-spacing:.12em;text-align:right;
     margin:3px 2px 0;font-style:italic;}
   .gain{margin-top:8px;font-size:10.5px;color:#a8442c;letter-spacing:.06em;
@@ -118,6 +136,8 @@
   .btn:disabled{opacity:.35;}
 
   /* ---------------- 线索 ---------------- */
+  .ask{width:100%;font-size:11.5px;color:#6d5f45;letter-spacing:.10em;
+    padding:0 1px 5px;font-style:italic;}
   .cluebar{position:relative;z-index:2;padding:8px 13px 10px;display:flex;gap:5px;flex-wrap:wrap;
     min-height:30px;}
   .cl{font-size:9.5px;color:#6d5f45;border:1px solid rgba(112,96,68,.30);
@@ -559,7 +579,63 @@ var S = {
   clues: [],
   opened: 0,
   ended: false,
+  evDone: {},
+  pending: null,
   gone: false        /* 掀开一重之后，藏经阁不在了 */
+};
+
+/* ============================================================
+   事件：看完一处之后，有东西回应你
+   ============================================================ */
+function shake(){
+  var sh = document.querySelector('.sheet');
+  if (!sh) return;
+  sh.classList.remove('shk');
+  void sh.offsetWidth;
+  sh.classList.add('shk');
+  setTimeout(function(){ sh.classList.remove('shk'); }, 460);
+}
+function ghostLine(txt){
+  var t = $('txt');
+  var d = document.createElement('div');
+  d.className = 'ghostline';
+  d.textContent = txt;
+  t.appendChild(d);
+}
+
+var EVENTS = {
+  /* 山门：你明明只来过两次，它记得三次 */
+  gate: function(){
+    S.oil = Math.max(0, S.oil - 1);
+    renderStat();
+    shake();
+    ghostLine('（你記得只來過兩次。）');
+  },
+  /* 大殿：你自己写的批注，被改了 */
+  hall: function(){
+    shake();
+    var n = $('note');
+    if (n){
+      n.textContent = '臉回來了';
+      n.classList.add('flip');
+    }
+    setTimeout(function(){
+      ghostLine('（那不是你寫的字。）');
+    }, 700);
+  },
+  /* 后山：坑的尺寸变了 */
+  yard: function(){
+    shake();
+    var t = $('txt');
+    var d = document.createElement('div');
+    d.className = 'ghostline';
+    d.textContent = '（你量過的。你確定。）';
+    t.appendChild(d);
+    setTimeout(function(){
+      S.mind = Math.max(0, S.mind - 6);
+      renderStat();
+    }, 900);
+  }
 };
 
 /* ============================================================
@@ -628,6 +704,40 @@ function renderClues(){
 function renderActs(){
   var a = $('acts');
   a.innerHTML = '';
+
+  /* 正在问你记不记 */
+  if (S.pending){
+    var q = document.createElement('div');
+    q.className = 'ask';
+    q.textContent = S.pending.q;
+    a.appendChild(q);
+
+    var y = document.createElement('div');
+    y.className = 'btn';
+    y.textContent = '記入冊中';
+    y.onclick = function(){
+      var pd = S.pending; S.pending = null;
+      S.clues.push({id:pd.id, txt:pd.txt});
+      S.mind = Math.max(0, S.mind - 8);
+      renderClues(); renderStat();
+      flash('記下了。');
+      renderActs();
+      setTimeout(EVENTS[pd.place], 1600);
+    };
+    a.appendChild(y);
+
+    var n = document.createElement('div');
+    n.className = 'btn ghost';
+    n.textContent = '不記';
+    n.onclick = function(){
+      var pd = S.pending; S.pending = null;
+      flash('你什麼都沒寫。');
+      renderActs();
+      setTimeout(EVENTS[pd.place], 900);
+    };
+    a.appendChild(n);
+    return;
+  }
   var p = PLACES[S.at];
 
   /* 细看 */
@@ -713,6 +823,17 @@ function look(){
   }
 
   renderActs();
+
+  /* 看到最后一条：先问记不记；记与不记，后面的事不一样 */
+  if (seen === p.lines.length-1 && !S.evDone[S.at]){
+    S.evDone[S.at] = 1;
+    if (p.clue){
+      S.pending = {place:S.at, q:'這一處，記下來麼？', id:p.clue.id, txt:p.clue.txt};
+      renderActs();
+    } else {
+      setTimeout(EVENTS[S.at], 900);
+    }
+  }
 
   /* 三处看尽，藏经阁自己不锁了 */
   if (S.at === 'lib' && seen === 1 && !S.gone){
