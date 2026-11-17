@@ -61,6 +61,148 @@ var OUTER = makeBox(0.56, 0.38, 0.38);
 var INNER = makeBox(0.38, 0.24, 0.25);
 var INNER2= makeBox(0.23, 0.15, 0.16);
 
+
+/* ============================================================
+   点云：整个器物由点构成，不是靠线勾轮廓
+   ============================================================ */
+var CLOUD = [];
+var CLOUD2 = [];
+
+function quad(a,b,c,d,n,seed,out,nx,ny,nz){
+  for (var i=0;i<n;i++){
+    var u = rnd(seed + i*1.731);
+    var v = rnd(seed + i*3.137 + 0.37);
+    var w0 = (1-u)*(1-v), w1 = u*(1-v), w2 = u*v, w3 = (1-u)*v;
+    out.push([
+      a[0]*w0 + b[0]*w1 + c[0]*w2 + d[0]*w3,
+      a[1]*w0 + b[1]*w1 + c[1]*w2 + d[1]*w3,
+      a[2]*w0 + b[2]*w1 + c[2]*w2 + d[2]*w3,
+      nx, ny, nz
+    ]);
+  }
+}
+
+/* 一条棱上密排点 —— 轮廓必须比面更实，否则看起来是散沙 */
+function edgeLine(a, b, n, out, nx, ny, nz){
+  for (var i=0;i<n;i++){
+    var t = i/(n-1);
+    out.push([
+      a[0]+(b[0]-a[0])*t,
+      a[1]+(b[1]-a[1])*t,
+      a[2]+(b[2]-a[2])*t,
+      nx||0, ny||1, nz||0
+    ]);
+  }
+}
+
+function buildCloud(b, density, body, cap){
+  var w=b.w, h=b.h, d=b.d, ry0=b.ry0, cw=b.cw, cd=b.cd;
+  var tw=w*0.64, td=d*0.64;
+  var N = function(area){ return Math.max(60, Math.round(area*density)); };
+  var S = 0.707;
+
+  /* 身 */
+  quad([-w,-h,-d],[w,-h,-d],[w,-h,d],[-w,-h,d], N(4*w*d*0.7), 1.0, body, 0,-1,0);
+  quad([-w,-h, d],[ w,-h, d],[ w,ry0, d],[-w,ry0, d], N(2*w*(ry0+h)*1.3), 2.1, body, 0,0,1);
+  quad([ w,-h, d],[ w,-h,-d],[ w,ry0,-d],[ w,ry0, d], N(2*d*(ry0+h)*1.3), 3.3, body, 1,0,0);
+  quad([ w,-h,-d],[-w,-h,-d],[-w,ry0,-d],[ w,ry0,-d], N(2*w*(ry0+h)*1.3), 4.7, body, 0,0,-1);
+  quad([-w,-h,-d],[-w,-h, d],[-w,ry0, d],[-w,ry0,-d], N(2*d*(ry0+h)*1.3), 5.9, body, -1,0,0);
+
+  /* 檐（属于盖） */
+  quad([-w,ry0, d],[ w,ry0, d],[ cw,ry0, cd],[-cw,ry0, cd], N((cw-w)*2*d*3.4), 6.3, cap, 0,1,0);
+  quad([ w,ry0, d],[ w,ry0,-d],[ cw,ry0,-cd],[ cw,ry0, cd], N((cw-w)*2*d*3.4), 7.1, cap, 1,0,0);
+  quad([ w,ry0,-d],[-w,ry0,-d],[-cw,ry0,-cd],[ cw,ry0,-cd], N((cw-w)*2*d*3.4), 8.3, cap, 0,1,0);
+  quad([-w,ry0,-d],[-w,ry0, d],[-cw,ry0, cd],[-cw,ry0,-cd], N((cw-w)*2*d*3.4), 9.1, cap, -1,0,0);
+
+  /* 斜坡 */
+  quad([-cw,ry0, cd],[ cw,ry0, cd],[ tw, h, td],[-tw, h, td], N(2*w*(h-ry0)*2.0), 10.7, cap, 0,S,S);
+  quad([ cw,ry0, cd],[ cw,ry0,-cd],[ tw, h,-td],[ tw, h, td], N(2*w*(h-ry0)*2.0), 11.3, cap, S,S,0);
+  quad([ cw,ry0,-cd],[-cw,ry0,-cd],[-tw, h,-td],[ tw, h,-td], N(2*w*(h-ry0)*2.0), 12.9, cap, 0,S,-S);
+  quad([-cw,ry0,-cd],[-cw,ry0, cd],[-tw, h, td],[-tw, h,-td], N(2*w*(h-ry0)*2.0), 13.7, cap, -S,S,0);
+
+  /* 顶 */
+  quad([-tw,h,-td],[tw,h,-td],[tw,h,td],[-tw,h,td], N(4*tw*td*1.7), 14.3, cap, 0,1,0);
+
+  /* 棱：全部加密 */
+  var E = [
+    [[-w,-h,-d],[ w,-h,-d]], [[ w,-h,-d],[ w,-h, d]], [[ w,-h, d],[-w,-h, d]], [[-w,-h, d],[-w,-h,-d]],
+    [[-w,-h,-d],[-w,ry0,-d]], [[ w,-h,-d],[ w,ry0,-d]], [[ w,-h, d],[ w,ry0, d]], [[-w,-h, d],[-w,ry0, d]],
+    [[-w,ry0,-d],[ w,ry0,-d]], [[ w,ry0,-d],[ w,ry0, d]], [[ w,ry0, d],[-w,ry0, d]], [[-w,ry0, d],[-w,ry0,-d]],
+    [[-cw,ry0,-cd],[ cw,ry0,-cd]], [[ cw,ry0,-cd],[ cw,ry0, cd]], [[ cw,ry0, cd],[-cw,ry0, cd]], [[-cw,ry0, cd],[-cw,ry0,-cd]],
+    [[-tw,h,-td],[ tw,h,-td]], [[ tw,h,-td],[ tw,h, td]], [[ tw,h, td],[-tw,h, td]], [[-tw,h, td],[-tw,h,-td]],
+    [[-cw,ry0, cd],[-tw,h, td]], [[ cw,ry0, cd],[ tw,h, td]], [[ cw,ry0,-cd],[ tw,h,-td]], [[-cw,ry0,-cd],[-tw,h,-td]],
+    [[-w,ry0,-d],[-cw,ry0,-cd]], [[ w,ry0,-d],[ cw,ry0,-cd]], [[ w,ry0, d],[ cw,ry0, cd]], [[-w,ry0, d],[-cw,ry0, cd]]
+  ];
+  for (var i=0;i<E.length;i++){
+    var target = (i <= 11) ? body : cap;
+    edgeLine(E[i][0], E[i][1], 26, target, 0, 1, 0);
+  }
+}
+var CBODY = [], CCAP = [], IBODY = [], ICAP = [];
+buildCloud(OUTER, 8600, CBODY, CCAP);
+buildCloud(INNER, 8600, IBODY, ICAP);
+
+/* 高速投影：每帧只算一次三角函数 */
+var _cy=1,_sy=0,_cx=1,_sx=0;
+function updateCam(){
+  _cy = Math.cos(cam.ry); _sy = Math.sin(cam.ry);
+  _cx = Math.cos(cam.rx); _sx = Math.sin(cam.rx);
+}
+function proj2(x, y, z){
+  var x1 =  x*_cy - z*_sy;
+  var z1 =  x*_sy + z*_cy;
+  var y1 =  y*_cx - z1*_sx;
+  var z2 =  y*_sx + z1*_cx;
+  var k = cam.dist / (cam.dist + z2);
+  return [PX + x1*k*PS, PY + y1*k*PS, z2];
+}
+
+var BUCK = [];
+for (var _b=0;_b<9;_b++) BUCK.push([]);
+
+function drawCloud(list, T, limit, lift, boost){
+  for (var b=0;b<9;b++) BUCK[b].length = 0;
+  var n = Math.min(list.length, Math.floor(list.length*limit));
+
+  var Lx = -0.42, Ly = -0.52, Lz = 0.74;   /* 光从左上前方来 */
+  for (var i=0;i<n;i++){
+    var p = list[i];
+    var q = proj2(p[0], p[1]+(lift||0), p[2]);
+    var sx = q[0], sy = q[1], z = q[2];
+    if (sx < -6 || sx > W+6 || sy < -6 || sy > H+6) continue;
+
+    /* 法线也跟着转 */
+    var nx1 =  p[3]*_cy - p[5]*_sy;
+    var nz1 =  p[3]*_sy + p[5]*_cy;
+    var ny1 =  p[4]*_cx - nz1*_sx;
+    var nz2 =  p[4]*_sx + nz1*_cx;
+    var lit = nx1*Lx + ny1*Ly + nz2*Lz;
+    if (lit < 0) lit = 0;
+    lit = 0.10 + lit*0.90;
+
+    var t = (z + 0.62) / 1.24;
+    var lum = lit * (1 - t*0.55);
+
+    var dd = Math.abs(sy - scanY);
+    if (dd < 26) lum += 0.70 * (1 - dd/26);
+    if (lum > 1) lum = 1;
+
+    var bk = Math.floor(lum*8.99);
+    if (bk < 0) bk = 0;
+    BUCK[bk].push(sx, sy);
+  }
+
+  for (var b=0;b<9;b++){
+    var arr = BUCK[b];
+    if (!arr.length) continue;
+    var a = (0.10 + b*0.105) * (boost || 1);
+    ctx.fillStyle = 'rgba('+AMBER+','+a.toFixed(3)+')';
+    ctx.beginPath();
+    for (var j=0;j<arr.length;j+=2) ctx.rect(arr[j], arr[j+1], 2.05, 2.05);
+    ctx.fill();
+  }
+}
+
 /* ============================================================
    相机 / 异常状态
    ============================================================ */
@@ -458,12 +600,20 @@ function draw(){
   ctx.stroke();
   ctx.restore();
 
-  /* 器物 */
+  /* 器物：主体是点云，线只留骨架 */
+  updateCam();
+
+  var dimBody = 1 - openLift*0.52;
+
   if (openLift > 0.02){
-    drawBox(INNER2, openLift*0.30, 0.20, 0.9, false, 1, now);
-    drawBox(INNER,  openLift*0.16, 0.34, 1.0, false, 1, now);
+    drawCloud(IBODY, now, 1, 0, 1.25);
+    drawCloud(ICAP,  now, 1, openLift*0.16, 1.25);
   }
-  drawBox(OUTER, openLift*0.42, 1.0, 1.25, true, buildP, now);
+
+  drawCloud(CBODY, now, buildP, 0, dimBody);
+  drawCloud(CCAP,  now, buildP, openLift*0.34, dimBody*0.80);
+
+  drawBox(OUTER, openLift*0.34, 0.10, 0.7, false, buildP, now);
 
   if (buildP > 0.02){
     drawMeasure(now);
@@ -734,6 +884,7 @@ T0 = performance.now();
 draw();
 
 window.__open = function(v){ openTarget = v; };
+window.__dbg = function(){ return {cb:CBODY.length, cc:CCAP.length, ib:IBODY.length, ic:ICAP.length}; };
 window.__state = function(){ return { ry:cam.ry.toFixed(2), open:openLift.toFixed(2), locks:LOCKS.length }; };
 })();
 </script>
